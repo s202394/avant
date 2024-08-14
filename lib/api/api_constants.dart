@@ -12,5 +12,7 @@ const String VISIT_ENTRY_URL = URL + 'ApiVisitEntry';
 const String CUSTOMER_SAMPLING_APPROVAL_DETAILS_URL = URL + 'CustomerSamplingApprovalDetails';
 const String CUSTOMER_SAMPLING_APPROVAL_LIST_URL = URL + 'CustomerSamplingApprovalList';
 const String CUSTOMER_SAMPLING_REQUEST_APPROVAL_SUBMIT_URL = URL + 'SubmitCustomerSamplingRequestApproval';
+const String CUSTOMER_SAMPLING_REQUEST_BULK_APPROVAL_SUBMIT_URL = URL + 'SubmitCustomerSamplingRequestBulkApproval';
 const String CUSTOMER_ENTRY_MASTER_URL = URL + 'CustomerEntryMasterAPI';
 const String GEOGRAPHY_URL = URL + 'GeographyAPI';
+const String CUSTOMER_CREATION_URL = URL + 'CustomerCreationAPI';

@@ -1,3 +1,5 @@
+import 'package:json_annotation/json_annotation.dart';
+import 'package:avant/model/customer_entry_master_model.dart';
 class CustomerEntryMasterResponse {
   final String status;
   final List<BoardMaster> boardMasterList;
@@ -39,94 +41,120 @@ class CustomerEntryMasterResponse {
 
   factory CustomerEntryMasterResponse.fromJson(Map<String, dynamic> json) {
     var listBoardMaster = json["BoardMaster"] as List;
-    List<BoardMaster> boardMaster =
+    List<BoardMaster> boardMasterData =
         listBoardMaster.map((i) => BoardMaster.fromJson(i)).toList();
 
     var listClasses = json["Classes"] as List;
-    List<Classes> classes =
+    List<Classes> classesData =
         listClasses.map((i) => Classes.fromJson(i)).toList();
 
     var listChainSchool = json["ChainSchool"] as List;
-    List<ChainSchool> chainSchool =
+    List<ChainSchool> chainSchoolData =
         listChainSchool.map((i) => ChainSchool.fromJson(i)).toList();
 
     var listDataSource = json["DataSource"] as List;
-    List<DataSource> dataSource =
+    List<DataSource> dataSourceData =
         listDataSource.map((i) => DataSource.fromJson(i)).toList();
 
     var listAccountableExecutive = json["AccountableExecutive"] as List;
-    List<AccountableExecutive> accountableExecutive = listAccountableExecutive
-        .map((i) => AccountableExecutive.fromJson(i))
-        .toList();
+    List<AccountableExecutive> accountableExecutiveData =
+        listAccountableExecutive
+            .map((i) => AccountableExecutive.fromJson(i))
+            .toList();
 
     var listSalutationMaster = json["SalutationMaster"] as List;
-    List<SalutationMaster> salutationMaster =
+    List<SalutationMaster> salutationMasterData =
         listSalutationMaster.map((i) => SalutationMaster.fromJson(i)).toList();
 
     var listContactDesignation = json["ContactDesignation"] as List;
-    List<ContactDesignation> contactDesignation = listContactDesignation
+    List<ContactDesignation> contactDesignationData = listContactDesignation
         .map((i) => ContactDesignation.fromJson(i))
         .toList();
 
     var listDepartment = json["Department"] as List;
-    List<Department> department =
+    List<Department> departmentData =
         listDepartment.map((i) => Department.fromJson(i)).toList();
 
     var listSubject = json["Subject"] as List;
-    List<Subject> subject =
+    List<Subject> subjectData =
         listSubject.map((i) => Subject.fromJson(i)).toList();
 
     var listAdoptionRoleMaster = json["AdoptionRoleMaster"] as List;
-    List<AdoptionRoleMaster> adoptionRoleMaster = listAdoptionRoleMaster
+    List<AdoptionRoleMaster> adoptionRoleMasterData = listAdoptionRoleMaster
         .map((i) => AdoptionRoleMaster.fromJson(i))
         .toList();
 
     var listCustomerCategory = json["CustomerCategory"] as List;
-    List<CustomerCategory> customerCategory =
+    List<CustomerCategory> customerCategoryData =
         listCustomerCategory.map((i) => CustomerCategory.fromJson(i)).toList();
 
     var listMonths = json["Months"] as List;
-    List<Months> months = listMonths.map((i) => Months.fromJson(i)).toList();
+    List<Months> monthsData =
+        listMonths.map((i) => Months.fromJson(i)).toList();
 
     var listInstituteType = json["InstituteType"] as List;
-    List<InstituteType> instituteType =
+    List<InstituteType> instituteTypeData =
         listInstituteType.map((i) => InstituteType.fromJson(i)).toList();
 
     var listPurchaseMode = json["PurchaseMode"] as List;
-    List<PurchaseMode> purchaseMode =
+    List<PurchaseMode> purchaseModeData =
         listPurchaseMode.map((i) => PurchaseMode.fromJson(i)).toList();
 
     var listInstituteLevel = json["InstituteLevel"] as List;
-    List<InstituteLevel> instituteLevel =
+    List<InstituteLevel> instituteLevelData =
         listInstituteLevel.map((i) => InstituteLevel.fromJson(i)).toList();
 
     var listAffiliateType = json["AffiliateType"] as List;
-    List<AffiliateType> AffiliateType =
+    List<AffiliateType> affiliateTypeData =
         listAffiliateType.map((i) => AffiliateType.fromJson(i)).toList();
 
     return CustomerEntryMasterResponse(
       status: json['Status'] ?? '',
-      boardMasterList: boardMaster,
-      classesList: classes,
-      chainSchoolList: chainSchool,
-      dataSourceList: dataSource,
-      accountableExecutiveList: adoptionRoleMaster,
-      salutationMasterList: salutationMaster,
-      contactDesignationList: contactDesignation,
-      subjectList: subject,
-      departmentList: department,
-      adoptionRoleMasterList: adoptionRoleMaster,
-      customerCategoryList: customerCategory,
-      monthsList: months,
-      purchaseModeList: purchaseMode,
-      instituteTypeList: instituteType,
-      instituteLevelList: instituteLevel,
-      affiliateTypeList: affiliateType,
+      boardMasterList: boardMasterData,
+      classesList: classesData,
+      chainSchoolList: chainSchoolData,
+      dataSourceList: dataSourceData,
+      accountableExecutiveList: accountableExecutiveData,
+      salutationMasterList: salutationMasterData,
+      contactDesignationList: contactDesignationData,
+      subjectList: subjectData,
+      departmentList: departmentData,
+      adoptionRoleMasterList: adoptionRoleMasterData,
+      customerCategoryList: customerCategoryData,
+      monthsList: monthsData,
+      purchaseModeList: purchaseModeData,
+      instituteTypeList: instituteTypeData,
+      instituteLevelList: instituteLevelData,
+      affiliateTypeList: affiliateTypeData,
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'Status': 'Success',
+      'BoardMaster': boardMasterList,
+      'Classes': classesList,
+      'ChainSchool': chainSchoolList,
+      'DataSource': dataSourceList,
+      'AccountableExecutive': accountableExecutiveList,
+      'SalutationMaster': salutationMasterList,
+      'ContactDesignation': contactDesignationList,
+      'Department': departmentList,
+      'Subject': subjectList,
+      'AdoptionRoleMaster': adoptionRoleMasterList,
+      'CustomerCategory': customerCategoryList,
+      'InstituteType': instituteTypeList,
+      'InstituteType': instituteLevelList,
+      'PurchaseMode': purchaseModeList,
+      'AffiliateType': affiliateTypeList,
+    };
+  }
+}
+abstract class JsonSerializable {
+  Map<String, dynamic> toJson();
 }
 
-class BoardMaster {
+class BoardMaster implements JsonSerializable {
   final int boardId;
   final String boardName;
 
@@ -141,9 +169,16 @@ class BoardMaster {
       boardName: json['BoardName'] ?? '',
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'BoardId': boardId,
+      'BoardName': boardName,
+    };
+  }
 }
 
-class Classes {
+class Classes implements JsonSerializable {
   final int classNumId;
   final String className;
 
@@ -158,9 +193,16 @@ class Classes {
       className: json['ClassName'] ?? 0,
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'ClassNumId': classNumId,
+      'ClassName': className,
+    };
+  }
 }
 
-class ChainSchool {
+class ChainSchool implements JsonSerializable {
   final int chainSchoolId;
   final String chainSchoolName;
 
@@ -175,9 +217,16 @@ class ChainSchool {
       chainSchoolName: json['ChainSchoolName'] ?? '',
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'ChainSchoolId': chainSchoolId,
+      'ChainSchoolName': chainSchoolName,
+    };
+  }
 }
 
-class DataSource {
+class DataSource implements JsonSerializable {
   final int dataSourceId;
   final String dataSourceName;
 
@@ -192,9 +241,16 @@ class DataSource {
       dataSourceName: json['DataSourceName'] ?? '',
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'DataSourceId': dataSourceId,
+      'DataSourceName': dataSourceName,
+    };
+  }
 }
 
-class AccountableExecutive {
+class AccountableExecutive implements JsonSerializable {
   final int sNo;
   final String executiveName;
 
@@ -209,9 +265,16 @@ class AccountableExecutive {
       executiveName: json['ExecutiveName'] ?? '',
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'SNo': sNo,
+      'ExecutiveName': executiveName,
+    };
+  }
 }
 
-class SalutationMaster {
+class SalutationMaster implements JsonSerializable {
   final int salutationId;
   final String salutationName;
 
@@ -226,9 +289,16 @@ class SalutationMaster {
       salutationName: json['SalutationName'] ?? '',
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'SalutationId': salutationId,
+      'SalutationName': salutationName,
+    };
+  }
 }
 
-class ContactDesignation {
+class ContactDesignation implements JsonSerializable {
   final int contactDesignationId;
   final String contactDesignationName;
 
@@ -243,9 +313,16 @@ class ContactDesignation {
       contactDesignationName: json['ContactDesignationName'] ?? '',
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'ContactDesignationId': contactDesignationId,
+      'ContactDesignationName': contactDesignationName,
+    };
+  }
 }
 
-class Subject {
+class Subject implements JsonSerializable {
   final int subjectId;
   final String subjectName;
 
@@ -260,9 +337,16 @@ class Subject {
       subjectName: json['SubjectName'] ?? '',
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'SubjectId': subjectId,
+      'SubjectName': subjectName,
+    };
+  }
 }
 
-class Department {
+class Department implements JsonSerializable {
   final int departmentId;
   final String departmentName;
 
@@ -277,9 +361,16 @@ class Department {
       departmentName: json['DepartmentName'] ?? '',
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'DepartmentId': departmentId,
+      'DepartmentName': departmentName,
+    };
+  }
 }
 
-class AdoptionRoleMaster {
+class AdoptionRoleMaster implements JsonSerializable {
   final int adoptionRoleId;
   final String adoptionRole;
 
@@ -294,9 +385,16 @@ class AdoptionRoleMaster {
       adoptionRole: json['AdoptionRole'] ?? '',
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'AdoptionRoleId': adoptionRoleId,
+      'AdoptionRole': adoptionRole,
+    };
+  }
 }
 
-class CustomerCategory {
+class CustomerCategory implements JsonSerializable {
   final int customerCategoryId;
   final String customerCategoryName;
 
@@ -311,10 +409,17 @@ class CustomerCategory {
       customerCategoryName: json['CustomerCategoryName'] ?? '',
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'CustomerCategoryId': customerCategoryId,
+      'CustomerCategoryName': customerCategoryName,
+    };
+  }
 }
 
-class Months {
-  final int id;
+class Months implements JsonSerializable {
+  final String id;
   final String name;
 
   Months({
@@ -324,14 +429,21 @@ class Months {
 
   factory Months.fromJson(Map<String, dynamic> json) {
     return Months(
-      id: json['ID'] ?? 0,
+      id: json['ID'] ?? '',
       name: json['Name'] ?? '',
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'ID': id,
+      'Name': name,
+    };
+  }
 }
 
-class PurchaseMode {
-  final int modeValue;
+class PurchaseMode implements JsonSerializable {
+  final String modeValue;
   final String modeName;
 
   PurchaseMode({
@@ -341,14 +453,21 @@ class PurchaseMode {
 
   factory PurchaseMode.fromJson(Map<String, dynamic> json) {
     return PurchaseMode(
-      modeValue: json['ModeValue'] ?? 0,
+      modeValue: json['ModeValue'] ?? '',
       modeName: json['ModeName'] ?? '',
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'ModeValue': modeValue,
+      'ModeName': modeName,
+    };
+  }
 }
 
-class InstituteType {
-  final int id;
+class InstituteType implements JsonSerializable {
+  final String id;
   final String instituteType;
 
   InstituteType({
@@ -358,14 +477,21 @@ class InstituteType {
 
   factory InstituteType.fromJson(Map<String, dynamic> json) {
     return InstituteType(
-      id: json['ID'] ?? 0,
+      id: json['ID'] ?? '',
       instituteType: json['InstituteType'] ?? '',
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'ID': id,
+      'InstituteType': instituteType,
+    };
+  }
 }
 
-class InstituteLevel {
-  final int id;
+class InstituteLevel implements JsonSerializable {
+  final String id;
   final String instituteLevel;
 
   InstituteLevel({
@@ -375,14 +501,21 @@ class InstituteLevel {
 
   factory InstituteLevel.fromJson(Map<String, dynamic> json) {
     return InstituteLevel(
-      id: json['ID'] ?? 0,
+      id: json['ID'] ?? '',
       instituteLevel: json['InstituteLevel'] ?? '',
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'ID': id,
+      'InstituteLevel': instituteLevel,
+    };
+  }
 }
 
-class AffiliateType {
-  final int id;
+class AffiliateType implements JsonSerializable {
+  final String id;
   final String affiliateType;
 
   AffiliateType({
@@ -392,8 +525,15 @@ class AffiliateType {
 
   factory AffiliateType.fromJson(Map<String, dynamic> json) {
     return AffiliateType(
-      id: json['ID'] ?? 0,
+      id: json['ID'] ?? '',
       affiliateType: json['AffiliateType'] ?? '',
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'ID': id,
+      'AffiliateType': affiliateType,
+    };
   }
 }

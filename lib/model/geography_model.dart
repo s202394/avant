@@ -46,4 +46,15 @@ class Geography {
       city: json['City'] ?? '',
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'CountryId': countryId,
+      'Country': country,
+      'StateId': stateId,
+      'State': state,
+      'CityId': cityId,
+      'City': city,
+    };
+  }
 }

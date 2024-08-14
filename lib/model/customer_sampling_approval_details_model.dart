@@ -1,36 +1,80 @@
 class CustomerSamplingApprovalDetailsResponse {
-  final String status;
-  final RequestDetails requestDetails;
-  final TitleDetails titleDetails;
-  final ApprovalMatrix approvalMatrix;
-  final CustomerDetails customerDetails;
+  final String? status;
+  final RequestDetails? requestDetails;
+  final List<TitleDetails>? titleDetails;
+  final List<ApprovalMatrix>? approvalMatrix;
+  final CustomerDetails? customerDetails;
+  final List<ClarificationExecutivesList>? clarificationExecutivesList;
+  final List<ClarificationList>? clarificationList;
 
   CustomerSamplingApprovalDetailsResponse({
-    required this.status,
-    required this.requestDetails,
-    required this.titleDetails,
-    required this.approvalMatrix,
-    required this.customerDetails,
+    this.status,
+    this.requestDetails,
+    this.titleDetails,
+    this.approvalMatrix,
+    this.customerDetails,
+    this.clarificationExecutivesList,
+    this.clarificationList,
   });
 
-  factory CustomerSamplingApprovalDetailsResponse.fromJson(
-      Map<String, dynamic> json) {
-    var requestDetailsData = json["RequestDetails"][0];
-    final RequestDetails = RequestDetails.fromJson(requestDetailsData);
-    var titleDetailsData = json["TitleDetails"][0];
-    final TitleDetails = RequestDetails.fromJson(titleDetailsData);
-    var approvalMatrixData = json["TitleDetails"][0];
-    final ApprovalMatrix = ApprovalMatrix.fromJson(approvalMatrixData);
-    var customerDetailsData = json["CustomerDetails"][0];
-    final CustomerDetails = ApprovalMatrix.fromJson(customerDetailsData);
+  factory CustomerSamplingApprovalDetailsResponse.fromJson(Map<String, dynamic> json) {
+    var requestDetailsData = json["RequestDetails"] as List?;
+    RequestDetails? requestDetail;
+    if (requestDetailsData != null && requestDetailsData.isNotEmpty) {
+      requestDetail = RequestDetails.fromJson(requestDetailsData[0]);
+    }
+
+    var titleDetailsData = json["TitleDetails"] as List?;
+    List<TitleDetails>? titleDetailsList;
+    if (titleDetailsData != null && titleDetailsData.isNotEmpty) {
+      titleDetailsList = titleDetailsData.map((i) => TitleDetails.fromJson(i)).toList();
+    }
+
+    var approvalMatrixData = json["ApprovalMatrix"] as List?;
+    List<ApprovalMatrix>? approvalMatrixList;
+    if (approvalMatrixData != null && approvalMatrixData.isNotEmpty) {
+      approvalMatrixList = approvalMatrixData.map((i) => ApprovalMatrix.fromJson(i)).toList();
+    }
+
+    var customerDetailsList = json["CustomerDetails"] as List?;
+    CustomerDetails? customerDetail;
+    if (customerDetailsList != null && customerDetailsList.isNotEmpty) {
+      customerDetail = CustomerDetails.fromJson(customerDetailsList[0]);
+    }
+
+    var clarificationExecutives = json["ClarificationExecutivesList"] as List?;
+    List<ClarificationExecutivesList>? clarificationExecutivesLists;
+    if (clarificationExecutives != null && clarificationExecutives.isNotEmpty) {
+      clarificationExecutivesLists = clarificationExecutives.map((i) => ClarificationExecutivesList.fromJson(i)).toList();
+    }
+
+    var clarification = json["ClarificationList"] as List?;
+    List<ClarificationList>? clarificationLists;
+    if (clarification != null && clarification.isNotEmpty) {
+      clarificationLists = clarification.map((i) => ClarificationList.fromJson(i)).toList();
+    }
 
     return CustomerSamplingApprovalDetailsResponse(
-      status: json['Status'] ?? '',
-      requestDetails: RequestDetails,
-      titleDetails: TitleDetails,
-      approvalMatrix: ApprovalMatrix,
-      customerDetails: CustomerDetails,
+      status: json['Status'] as String?,
+      requestDetails: requestDetail,
+      titleDetails: titleDetailsList,
+      approvalMatrix: approvalMatrixList,
+      customerDetails: customerDetail,
+      clarificationExecutivesList: clarificationExecutivesLists,
+      clarificationList: clarificationLists,
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'Status': status,
+      'RequestDetails': requestDetails?.toJson(),
+      'TitleDetails': titleDetails?.map((e) => e.toJson()).toList(),
+      'ApprovalMatrix': approvalMatrix?.map((e) => e.toJson()).toList(),
+      'CustomerDetails': customerDetails?.toJson(),
+      'ClarificationExecutivesList': clarificationExecutivesList?.map((e) => e.toJson()).toList(),
+      'ClarificationList': clarificationList?.map((e) => e.toJson()).toList(),
+    };
   }
 }
 
@@ -49,6 +93,8 @@ class RequestDetails {
   final String customerName;
   final String refCode;
   final String executiveName;
+  final double requestedBudget;
+  final int budget;
 
   RequestDetails({
     required this.requestId,
@@ -65,6 +111,8 @@ class RequestDetails {
     required this.customerName,
     required this.refCode,
     required this.executiveName,
+    required this.requestedBudget,
+    required this.budget,
   });
 
   factory RequestDetails.fromJson(Map<String, dynamic> json) {
@@ -83,7 +131,30 @@ class RequestDetails {
       customerName: json['CustomerName'] ?? '',
       refCode: json['RefCode'] ?? '',
       executiveName: json['ExecutiveName'] ?? '',
+      requestedBudget: json['RequestedBudget'] ?? 0,
+      budget: json['Budget'] ?? 0,
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'RequestId': requestId,
+      'RequestDate': requestDate,
+      'RequestNumber': requestNumber,
+      'RequestStatus': requestStatus,
+      'RequestRemarks': requestRemarks,
+      'ShipmentStatus': shipmentStatus,
+      'ShippingAddress': shippingAddress,
+      'ShippingInstructions': shippingInstructions,
+      'ShipmentMode': shipmentMode,
+      'AreaName': areaName,
+      'WareHouseName': wareHouseName,
+      'CustomerName': customerName,
+      'RefCode': refCode,
+      'ExecutiveName': executiveName,
+      'RequestedBudget': requestedBudget,
+      'Budget': budget,
+    };
   }
 }
 
@@ -99,7 +170,10 @@ class TitleDetails {
   final String previousApprovedQty;
   final String author;
   final String series;
-  final int approvedQty;
+  int approvedQty;
+  final int budget;
+  final double requestedBudget;
+  final double bookMRP;
 
   TitleDetails({
     required this.requestId,
@@ -114,6 +188,9 @@ class TitleDetails {
     required this.author,
     required this.series,
     required this.approvedQty,
+    required this.budget,
+    required this.requestedBudget,
+    required this.bookMRP,
   });
 
   factory TitleDetails.fromJson(Map<String, dynamic> json) {
@@ -130,7 +207,30 @@ class TitleDetails {
       author: json['Author'] ?? '',
       series: json['Series'] ?? '',
       approvedQty: json['ApprovedQty'] ?? 0,
+      budget: json['Budget'] ?? 0,
+      requestedBudget: json['RequestedBudget'] ?? 0,
+      bookMRP: json['BookMRP'] ?? 0,
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'RequestId': requestId,
+      'RequestedQty': requestedQty,
+      'ShippedQty': shippedQty,
+      'ShipmentRejectQty': shipmentRejectQty,
+      'ISBN': isbn,
+      'BookId': bookId,
+      'Title': title,
+      'Price': price,
+      'PreviousApprovedQty': previousApprovedQty,
+      'Author': author,
+      'Series': series,
+      'ApprovedQty': approvedQty,
+      'Budget': budget,
+      'RequestedBudget': requestedBudget,
+      'BookMRP': bookMRP,
+    };
   }
 }
 
@@ -164,6 +264,18 @@ class ApprovalMatrix {
       requestId: json['RequestId'] ?? 0,
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'SequenceNo': sequenceNo,
+      'EntryDate': entryDate,
+      'ExecutiveName': executiveName,
+      'ProfileCode': profileCode,
+      'ApprovalLevel': approvalLevel,
+      'Remarks': remarks,
+      'RequestId': requestId,
+    };
+  }
 }
 
 class CustomerDetails {
@@ -192,5 +304,89 @@ class CustomerDetails {
       emailId: json['EmailId'] ?? '',
       mobile: json['Mobile'] ?? '',
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'CustomerId': customerId,
+      'CustomerName': customerName,
+      'Address': address,
+      'Name': name,
+      'EmailId': emailId,
+      'Mobile': mobile,
+    };
+  }
+}
+
+class ClarificationExecutivesList {
+  final int executiveId;
+  final String executive;
+
+  ClarificationExecutivesList({
+    required this.executiveId,
+    required this.executive,
+  });
+
+  factory ClarificationExecutivesList.fromJson(Map<String, dynamic> json) {
+    return ClarificationExecutivesList(
+      executiveId: json['ExecutiveId'] ?? 0,
+      executive: json['Executive'] ?? '',
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'ExecutiveId': executiveId,
+      'Executive': executive,
+    };
+  }
+}
+
+class ClarificationList {
+  final String queryBy;
+  final String clarificationQuery;
+  final String clarificationQueryTo;
+  final String clarificationQueryDate;
+  final String clarificationResponse;
+  final String responseBy;
+  final String clarificationResponseDate;
+  final String clarificationResponseFileUpload;
+
+  ClarificationList({
+    required this.queryBy,
+    required this.clarificationQuery,
+    required this.clarificationQueryTo,
+    required this.clarificationQueryDate,
+    required this.clarificationResponse,
+    required this.responseBy,
+    required this.clarificationResponseDate,
+    required this.clarificationResponseFileUpload,
+  });
+
+  factory ClarificationList.fromJson(Map<String, dynamic> json) {
+    return ClarificationList(
+      queryBy: json['QueryBy'] ?? '',
+      clarificationQuery: json['ClarificationQuery'] ?? '',
+      clarificationQueryTo: json['ClarificationQueryTo'] ?? '',
+      clarificationQueryDate: json['ClarificationQueryDate'] ?? '',
+      clarificationResponse: json['ClarificationResponse'] ?? '',
+      responseBy: json['responseby'] ?? '',
+      clarificationResponseDate: json['ClarificationResponseDate'] ?? '',
+      clarificationResponseFileUpload:
+          json['ClarificationResponseFileUpload'] ?? '',
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'QueryBy': queryBy,
+      'ClarificationQuery': clarificationQuery,
+      'ClarificationQueryTo': clarificationQueryTo,
+      'ClarificationQueryDate': clarificationQueryDate,
+      'ClarificationResponse': clarificationResponse,
+      'responseby': responseBy,
+      'ClarificationResponseDate': clarificationResponseDate,
+      'ClarificationResponseFileUpload': clarificationResponseFileUpload,
+    };
   }
 }

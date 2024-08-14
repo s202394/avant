@@ -227,7 +227,7 @@ class _DsrEntryPageState extends State<DsrEntry> {
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: TextFormField(
         decoration: InputDecoration(
-          labelText: 'Visit Date',
+          labelText: label,
           border: OutlineInputBorder(),
           suffixIcon: InkWell(
             onTap: () async {
@@ -262,7 +262,7 @@ class _DsrEntryPageState extends State<DsrEntry> {
         enabled: true,
         validator: (value) {
           if (value == null || value.isEmpty) {
-            return 'Please select a visit date';
+            return 'Please select $label';
           }
           return null;
         },

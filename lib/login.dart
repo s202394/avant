@@ -30,6 +30,8 @@ class _LoginPageState extends State<LoginPage> {
   bool _isLoading = false;
   String? token = "";
 
+  String tokenUsername = "imi@gmail.com";
+
   @override
   void initState() {
     super.initState();
@@ -38,12 +40,13 @@ class _LoginPageState extends State<LoginPage> {
 
   void _initialize() async {
     prefs = await SharedPreferences.getInstance();
-    _emailController.text = 'imi@gmail.com';
+    _emailController.text = 'Gaurav@gmail.com';
     _passwordController.text = 'admin@123';
   }
 
   Future<void> _saveData(
       String emailOrPhone, String password, bool value) async {
+    prefs.setString('token_username', tokenUsername);
     prefs.setString('username', emailOrPhone);
     prefs.setString('password', password);
     prefs.setBool('is_already_login', value);
@@ -71,7 +74,7 @@ class _LoginPageState extends State<LoginPage> {
     setState(() => _isLoading = true);
 
     try {
-      await _getToken(emailOrPhone, password);
+      await _getToken(tokenUsername, password);
       print('Get token successful! token: $token');
       if ((token ?? "").isNotEmpty) {
         print('GOING TO LOGIN');
@@ -126,7 +129,7 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<void> _getToken(String emailOrPhone, String password) async {
-    print('Getting Token');
+    print('Getting Token $emailOrPhone $password');
     await TokenService().token(emailOrPhone, password);
     token = prefs.getString('token');
     print('Get token successful! Token: $token');
@@ -154,8 +157,7 @@ class _LoginPageState extends State<LoginPage> {
         builder: (BuildContext context) {
           return SingleAlertDialog(
             title: "Alert",
-            content:
-            "You are not allowed to login. Please contact to admin.",
+            content: "You are not allowed to login. Please contact to admin.",
             onOk: () {
               // Handle ok action
               Navigator.of(context).pop();

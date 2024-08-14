@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:avant/db/application_setup_db.dart';
+import 'package:avant/db/db_helper.dart';
 
 class LoginResponse {
   final String status;
@@ -212,9 +212,7 @@ class UpHierarchy {
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'UpHierarchy': upHierarchy,
-    };
+    return {'UpHierarchy': upHierarchy};
   }
 }
 
@@ -230,9 +228,7 @@ class DownHierarchy {
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'DownHierarchy': downHierarchy,
-    };
+    return {'DownHierarchy': downHierarchy};
   }
 }
 
@@ -248,9 +244,7 @@ class TerritoryAccess {
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'TerritoryAccess': territoryAccess,
-    };
+    return {'TerritoryAccess': territoryAccess};
   }
 }
 
@@ -266,9 +260,7 @@ class CityAccess {
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'CityAccess': cityAccess,
-    };
+    return {'CityAccess': cityAccess};
   }
 }
 
@@ -301,6 +293,22 @@ Future<int?> getProfileId() async {
     final ExecutiveData executiveData =
         ExecutiveData.fromJson(executiveDataJson);
     return executiveData.profileId;
+  } else {
+    return null; // Handle the case where the executiveData is not found
+  }
+}
+
+// Function to retrieve profile id
+Future<String?> getProfileCode() async {
+  final prefs = await SharedPreferences.getInstance();
+  final String? executiveDataString = prefs.getString('executiveData');
+
+  if (executiveDataString != null) {
+    final Map<String, dynamic> executiveDataJson =
+        jsonDecode(executiveDataString);
+    final ExecutiveData executiveData =
+        ExecutiveData.fromJson(executiveDataJson);
+    return executiveData.profileCode;
   } else {
     return null; // Handle the case where the executiveData is not found
   }

@@ -9,7 +9,7 @@ class CustomerSamplingApprovalListResponse {
 
   factory CustomerSamplingApprovalListResponse.fromJson(
       Map<String, dynamic> json) {
-    var listApproval = json["Geography"] as List;
+    var listApproval = json["ApprovalList"] as List;
     List<ApprovalList> approval =
         listApproval.map((i) => ApprovalList.fromJson(i)).toList();
 
@@ -17,6 +17,13 @@ class CustomerSamplingApprovalListResponse {
       status: json['Status'] ?? '',
       approvalList: approval,
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'Status': status,
+      'ApprovalList': approvalList,
+    };
   }
 }
 
@@ -70,5 +77,24 @@ class ApprovalList {
       state: json['State'] ?? '',
       requestStatus: json['RequestStatus'] ?? '',
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'SNo': sNo,
+      'RequestId': requestId,
+      'RequestDate': requestDate,
+      'RequestNumber': requestNumber,
+      'ExecutiveName': executiveName,
+      'CustomerName': customerName,
+      'CustomerId': customerId,
+      'CustomerType': customerType,
+      'CustomerCode': customerCode,
+      'RefCode': refCode,
+      'Address': address,
+      'City': city,
+      'State': state,
+      'RequestStatus': requestStatus,
+    };
   }
 }

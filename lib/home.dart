@@ -1,11 +1,11 @@
 import 'package:avant/api/api_service.dart';
 import 'package:avant/common/common.dart';
-import 'package:avant/db/application_setup_db.dart';
+import 'package:avant/db/db_helper.dart';
 import 'package:avant/login.dart';
 import 'package:avant/model/login_model.dart';
 import 'package:avant/model/menu_model.dart';
 import 'package:avant/model/travel_plan_model.dart';
-import 'package:avant/self_stock_request_approval/self_stock_request_approval_form.dart';
+import 'package:avant/approval/approval_list_form.dart';
 import 'package:avant/visit/customer_search_visit.dart';
 import 'package:avant/visit/dsr_entry.dart';
 import 'package:avant/visit/visit_detail_page.dart';
@@ -14,6 +14,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:avant/dialog/custom_alert_dialog.dart';
 import 'package:avant/new_customer/new_customer_form.dart';
+import 'package:avant/new_customer/new_customer_trade_library_form1.dart';
 
 class HomePage extends StatefulWidget {
   @override
@@ -227,22 +228,37 @@ class _HomePageState extends State<HomePage> {
                                     context,
                                     MaterialPageRoute(
                                         builder: (context) =>
-                                            SelfStockRequestApprovalForm()),
+                                            ApprovalListForm(type: 'Self Stock Request')),
                                   );
-                                } else if (childMenu.menuName == 'Customer' &&
-                                    (childMenu.childMenuName == 'School List' ||
-                                        childMenu.childMenuName ==
-                                            'Institute List' ||
-                                        childMenu.childMenuName ==
-                                            'Trade List' ||
-                                        childMenu.childMenuName ==
-                                            'Library List')) {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                        builder: (context) => NewCustomerForm(
-                                           customerType:  childMenu.childMenuName)),
-                                  );
+                                } else if (childMenu.menuName == 'Customer') {
+                                  if (childMenu.childMenuName ==
+                                      'School List') {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                          builder: (context) => NewCustomerForm(
+                                              customerType:
+                                                  childMenu.childMenuName)),
+                                    );
+                                  } else if (childMenu.childMenuName ==
+                                      'Institute List') {
+                                  } else if (childMenu.childMenuName ==
+                                      'Trade List') {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                          builder: (context) =>
+                                              NewCustomerTradeLibraryForm1(type: 'Trade')),
+                                    );
+                                  } else if (childMenu.childMenuName ==
+                                      'Library List') {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                          builder: (context) =>
+                                              NewCustomerTradeLibraryForm1(type: 'Library')),
+                                    );
+                                  }
                                 } else {
                                   // Handle other menu items or navigate to a web view
                                   Navigator.push(
@@ -258,6 +274,29 @@ class _HomePageState extends State<HomePage> {
                         }).toList(),
                       );
                     }).toList(),
+                    ListTile(
+                      title: Text('Customer Sample Approval'),
+                      onTap: () async {
+                        Navigator.pop(context);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) =>
+                                  ApprovalListForm(type: 'Customer Sample Approval')),
+                        );
+                      },
+                    ),ListTile(
+                      title: Text('Self Stock Request Approval'),
+                      onTap: () async {
+                        Navigator.pop(context);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) =>
+                                  ApprovalListForm(type: 'Self Stock Request Approval')),
+                        );
+                      },
+                    ),
                     ListTile(
                       title: Text('Logout'),
                       onTap: () async {

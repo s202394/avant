@@ -73,6 +73,18 @@ class CustomerSummery {
       refCode: json['RefCode'] ?? '',
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'CustomerId': customerId,
+      'CustomerName': customerName,
+      'CustomerType': customerType,
+      'Address': address,
+      'EmailId': emailId,
+      'Mobile': mobile,
+      'RefCode': refCode,
+    };
+  }
 }
 
 class VisitPurpose {
@@ -89,6 +101,13 @@ class VisitPurpose {
       visitPurpose: json['VisitPurpose'] ?? '',
       id: json['Id'] ?? 0,
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'VisitPurpose': visitPurpose,
+      'Id': id,
+    };
   }
 }
 
@@ -107,6 +126,13 @@ class JoinVisit {
       executiveId: json['ExecutiveId'] ?? 0,
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'ExecutiveName': executiveName,
+      'ExecutiveId': executiveId,
+    };
+  }
 }
 
 class PersonMet {
@@ -124,6 +150,13 @@ class PersonMet {
       customerContactId: json['CustomerContactId'] ?? 0,
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'CustomerContactName': customerContactName,
+      'CustomerContactId': customerContactId,
+    };
+  }
 }
 
 class Department {
@@ -140,5 +173,12 @@ class Department {
       executiveDepartmentName: json['ExecutiveDepartmentName'] ?? '',
       id: json['Id'] ?? 0,
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'ExecutiveDepartmentName': executiveDepartmentName,
+      'Id': id,
+    };
   }
 }

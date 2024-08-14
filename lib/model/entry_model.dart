@@ -1,14 +1,14 @@
-class VisitEntryResponse {
+class EntryResponse {
   final String status;
   final String s;
 
-  VisitEntryResponse({
+  EntryResponse({
     required this.status,
     required this.s,
   });
 
-  factory VisitEntryResponse.fromJson(Map<String, dynamic> json) {
-    return VisitEntryResponse(
+  factory EntryResponse.fromJson(Map<String, dynamic> json) {
+    return EntryResponse(
       status: json['Status'] ?? '',
       s: json['s'] ?? '',
     );
