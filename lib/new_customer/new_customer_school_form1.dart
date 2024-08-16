@@ -83,7 +83,7 @@ class _NewCustomerFormState extends State<NewCustomerForm> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('New Customer'),
+        title: Text('New Customer - ${widget.customerType}'),
         backgroundColor: Color(0xFFFFF8E1),
       ),
       body: SingleChildScrollView(
@@ -95,7 +95,7 @@ class _NewCustomerFormState extends State<NewCustomerForm> {
             children: [
               _buildTextField('Customer Type', _customerTypeController,
                   enabled: false),
-              _buildTextField('Customer Name', _customerNameController),
+              _buildTextField('${widget.customerType} Name', _customerNameController),
               _buildTextField(
                   'Primary Contact Name', _primaryContactNameController),
               _buildTextField('Primary Contact Designation',
