@@ -545,6 +545,17 @@ class _NewCustomerTradeLibraryForm2State
       return [
         FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9@._-]')),
       ];
+    } else if (label == 'PAN') {
+      return [
+        LengthLimitingTextInputFormatter(10),
+        FilteringTextInputFormatter.allow(
+            RegExp(r'^[A-Z]{0,5}[0-9]{0,4}[A-Z]?$')),
+      ];
+    } else if (label == 'GST') {
+      return [
+        FilteringTextInputFormatter.allow(RegExp(
+            r'^[0-9]{0,2}[A-Z]{0,5}[0-9]{0,4}[A-Z]{0,1}[1-9A-Z]{0,1}Z?[0-9A-Z]{0,1}$')),
+      ];
     } else {
       return [];
     }

@@ -13,7 +13,7 @@ import 'package:avant/common/toast.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:avant/dialog/custom_alert_dialog.dart';
-import 'package:avant/new_customer/new_customer_form.dart';
+import 'package:avant/new_customer/new_customer_school_form1.dart';
 import 'package:avant/new_customer/new_customer_trade_library_form1.dart';
 
 class HomePage extends StatefulWidget {
@@ -227,8 +227,8 @@ class _HomePageState extends State<HomePage> {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                        builder: (context) =>
-                                            ApprovalListForm(type: 'Self Stock Request')),
+                                        builder: (context) => ApprovalListForm(
+                                            type: 'Self Stock Request')),
                                   );
                                 } else if (childMenu.menuName == 'Customer') {
                                   if (childMenu.childMenuName ==
@@ -236,9 +236,9 @@ class _HomePageState extends State<HomePage> {
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                          builder: (context) => NewCustomerForm(
-                                              customerType:
-                                                  childMenu.childMenuName)),
+                                          builder: (context) =>
+                                              NewCustomerSchoolForm1(
+                                                  type: 'School')),
                                     );
                                   } else if (childMenu.childMenuName ==
                                       'Institute List') {
@@ -248,7 +248,8 @@ class _HomePageState extends State<HomePage> {
                                       context,
                                       MaterialPageRoute(
                                           builder: (context) =>
-                                              NewCustomerTradeLibraryForm1(type: 'Trade')),
+                                              NewCustomerTradeLibraryForm1(
+                                                  type: 'Trade')),
                                     );
                                   } else if (childMenu.childMenuName ==
                                       'Library List') {
@@ -256,7 +257,8 @@ class _HomePageState extends State<HomePage> {
                                       context,
                                       MaterialPageRoute(
                                           builder: (context) =>
-                                              NewCustomerTradeLibraryForm1(type: 'Library')),
+                                              NewCustomerTradeLibraryForm1(
+                                                  type: 'Library')),
                                     );
                                   }
                                 } else {
@@ -281,19 +283,20 @@ class _HomePageState extends State<HomePage> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                              builder: (context) =>
-                                  ApprovalListForm(type: 'Customer Sample Approval')),
+                              builder: (context) => ApprovalListForm(
+                                  type: 'Customer Sample Approval')),
                         );
                       },
-                    ),ListTile(
+                    ),
+                    ListTile(
                       title: Text('Self Stock Request Approval'),
                       onTap: () async {
                         Navigator.pop(context);
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                              builder: (context) =>
-                                  ApprovalListForm(type: 'Self Stock Request Approval')),
+                              builder: (context) => ApprovalListForm(
+                                  type: 'Self Stock Request Approval')),
                         );
                       },
                     ),

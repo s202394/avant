@@ -1018,4 +1018,252 @@ class CreateNewCustomerService {
           'Username or password is not stored in SharedPreferences');
     }
   }
+
+  Future<EntryResponse> createNewCustomerSchool(
+      String customerType,
+      String customerName,
+      String refCode,
+      String emailId,
+      String mobile,
+      String address,
+      int cityId,
+      int pinCode,
+      String keyCustomer,
+      String customerStatus,
+      String xmlCustomerCategoryId,
+      String xmlAccountTableExecutiveId,
+      String comment,
+      int enteredBy,
+      String firstName,
+      String lastName,
+      String contactEmailId,
+      String contactMobile,
+      String contactStatus,
+      String primaryContact,
+      String resAddress,
+      int resCity,
+      int resPinCode,
+      int salutationId,
+      int contactDesignationId,
+      String latEntry,
+      String longEntry,
+      String ranking,
+      int boardId,
+      int chainSchoolId,
+      int endClassId,
+      int startClassId,
+      String mediumInstruction,
+      String samplingMonth, //Temp String
+      String decisionMonth, ////Temp String
+      String purchaseMode,
+      String xmlSubjectClassDM,
+      String xmlClassName,
+      int dataSourceId,
+      String token) async {
+    final body = jsonEncode(<String, dynamic>{
+      'CustomerType': customerType,
+      'CustomerName': customerName,
+      'RefCode': refCode,
+      'EmailId': emailId,
+      'Mobile': mobile,
+      'Address': address,
+      'CityId': cityId,
+      'Pincode': pinCode,
+      'KeyCustomer': keyCustomer,
+      'CustomerStatus': customerStatus,
+      'xmlCustomerCategoryId': xmlCustomerCategoryId,
+      'xmlAccountTableExecutiveId': xmlAccountTableExecutiveId,
+      'Comment': comment,
+      'EnteredBy': enteredBy,
+      'FirstName': firstName,
+      'LastName': lastName,
+      'ContactEmailId': contactEmailId,
+      'ContactMobile': contactMobile,
+      'ContactStatus': contactStatus,
+      'PrimaryContact': primaryContact,
+      'resAddress': resAddress,
+      'resCity': resCity,
+      'resPincode': resPinCode,
+      'SalutationId': salutationId,
+      'ContactDesignationId': contactDesignationId,
+      'latEntry': latEntry,
+      'longEntry': longEntry,
+      'Ranking': ranking,
+      'BoardId': boardId,
+      'ChainSchoolId': chainSchoolId,
+      'EndClassId': endClassId,
+      'StartClassId': startClassId,
+      'MediumInstruction': mediumInstruction,
+      'SamplingMonth': samplingMonth,
+      'DecisionMonth': decisionMonth,
+      'PurchaseMode': purchaseMode,
+      'xmlSubjectClassDM': xmlSubjectClassDM,
+      'xmlClassName': xmlClassName,
+      'DataSourceId': dataSourceId,
+    });
+
+    final response = await http.post(
+      Uri.parse(CUSTOMER_CREATION_URL),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+        'Authorization': 'Bearer $token',
+      },
+      body: body,
+    );
+
+    print("Request Body: $body");
+
+    print('Response status: ${response.statusCode}');
+    print('Response body: ${response.body}');
+
+    if (response.statusCode == 200) {
+      final jsonResponse = json.decode(response.body);
+      return EntryResponse.fromJson(jsonResponse);
+    } else if (response.statusCode == 401) {
+      // Token is invalid or expired, refresh the token and retry
+      return await refreshAndRetrySchool(
+        customerType,
+        customerName,
+        refCode,
+        emailId,
+        mobile,
+        address,
+        cityId,
+        pinCode,
+        keyCustomer,
+        customerStatus,
+        xmlCustomerCategoryId,
+        xmlAccountTableExecutiveId,
+        comment,
+        enteredBy,
+        firstName,
+        lastName,
+        contactEmailId,
+        contactMobile,
+        contactStatus,
+        primaryContact,
+        resAddress,
+        resCity,
+        resPinCode,
+        salutationId,
+        contactDesignationId,
+        latEntry,
+        longEntry,
+        ranking,
+        boardId,
+        chainSchoolId,
+        endClassId,
+        startClassId,
+        mediumInstruction,
+        samplingMonth,
+        decisionMonth,
+        purchaseMode,
+        xmlSubjectClassDM,
+        xmlClassName,
+        dataSourceId,
+      );
+    } else {
+      throw Exception('Failed to load refreshAndRetrySchool');
+    }
+  }
+
+  Future<EntryResponse> refreshAndRetrySchool(
+    String customerType,
+    String customerName,
+    String refCode,
+    String emailId,
+    String mobile,
+    String address,
+    int cityId,
+    int pinCode,
+    String keyCustomer,
+    String customerStatus,
+    String xmlCustomerCategoryId,
+    String xmlAccountTableExecutiveId,
+    String comment,
+    int enteredBy,
+    String firstName,
+    String lastName,
+    String contactEmailId,
+    String contactMobile,
+    String contactStatus,
+    String primaryContact,
+    String resAddress,
+    int resCity,
+    int resPinCode,
+    int salutationId,
+    int contactDesignationId,
+    String latEntry,
+    String longEntry,
+    String ranking,
+    int boardId,
+    int chainSchoolId,
+    int endClassId,
+    int startClassId,
+    String mediumInstruction,
+    String samplingMonth, //Temp String
+    String decisionMonth, ////Temp String
+    String purchaseMode,
+    String xmlSubjectClassDM,
+    String xmlClassName,
+    int dataSourceId,
+  ) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String username = prefs.getString('token_username') ?? '';
+    String password = prefs.getString('password') ?? '';
+
+    if (username.isNotEmpty && password.isNotEmpty) {
+      await TokenService().token(username, password);
+      String? newToken = prefs.getString('token');
+
+      if (newToken != null && newToken.isNotEmpty) {
+        return await createNewCustomerSchool(
+            customerType,
+            customerName,
+            refCode,
+            emailId,
+            mobile,
+            address,
+            cityId,
+            pinCode,
+            keyCustomer,
+            customerStatus,
+            xmlCustomerCategoryId,
+            xmlAccountTableExecutiveId,
+            comment,
+            enteredBy,
+            firstName,
+            lastName,
+            contactEmailId,
+            contactMobile,
+            contactStatus,
+            primaryContact,
+            resAddress,
+            resCity,
+            resPinCode,
+            salutationId,
+            contactDesignationId,
+            latEntry,
+            longEntry,
+            ranking,
+            boardId,
+            chainSchoolId,
+            endClassId,
+            startClassId,
+            mediumInstruction,
+            samplingMonth,
+            decisionMonth,
+            purchaseMode,
+            xmlSubjectClassDM,
+            xmlClassName,
+            dataSourceId,
+            newToken);
+      } else {
+        throw Exception('Failed to retrieve new token');
+      }
+    } else {
+      throw Exception(
+          'Username or password is not stored in SharedPreferences');
+    }
+  }
 }

@@ -1,67 +1,129 @@
-import 'package:flutter/material.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:avant/model/geography_model.dart';
 import 'package:avant/api/api_service.dart';
-import 'package:avant/new_customer/new_customer_school_form.dart';
-import 'dart:convert';
+import 'package:avant/common/common.dart';
+import 'package:avant/model/request.dart';
+import 'package:avant/common/toast.dart';
+import 'package:avant/db/db_helper.dart';
+import 'package:avant/model/customer_entry_master_model.dart';
+import 'package:avant/model/geography_model.dart';
+import 'package:avant/new_customer/new_customer_school_form2.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-class NewCustomerForm extends StatefulWidget {
-  final String? customerType;
 
-  NewCustomerForm({
-    required this.customerType,
-  });
+class NewCustomerSchoolForm1 extends StatefulWidget {
+  final String type;
+
+  NewCustomerSchoolForm1({required this.type});
 
   @override
-  _NewCustomerFormState createState() => _NewCustomerFormState();
+  _NewCustomerSchoolForm1State createState() => _NewCustomerSchoolForm1State();
 }
 
-class _NewCustomerFormState extends State<NewCustomerForm> {
+class _NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
+  late Future<CustomerEntryMasterResponse> futureData;
+
   final _formKey = GlobalKey<FormState>();
-  final TextEditingController _customerTypeController =
-  TextEditingController(text: '');
+
+  final ToastMessage _toastMessage = ToastMessage();
+
   final TextEditingController _customerNameController = TextEditingController();
-    final TextEditingController _primaryContactNameController =
-    TextEditingController();
-    final TextEditingController _primaryContactDesignationController =
-    TextEditingController();
-    final TextEditingController _addressController = TextEditingController();
-    final TextEditingController _cityController = TextEditingController();
-    final TextEditingController _pinCodeController = TextEditingController();
-    final TextEditingController _phoneNumberController = TextEditingController();
-    final TextEditingController _emailIdController = TextEditingController();
+  final TextEditingController _addressController = TextEditingController();
+  final TextEditingController _cityController = TextEditingController();
+  final TextEditingController _pinCodeController = TextEditingController();
+  final TextEditingController _boardController = TextEditingController();
+  final TextEditingController _chainSchoolController = TextEditingController();
+  final TextEditingController _phoneNumberController = TextEditingController();
+  final TextEditingController _emailIdController = TextEditingController();
+
+  final _customerNameFieldKey = GlobalKey<FormFieldState>();
+  final _boardFieldKey = GlobalKey<FormFieldState>();
+  final _chainSchoolFieldKey = GlobalKey<FormFieldState>();
+  final _addressFieldKey = GlobalKey<FormFieldState>();
+  final _cityFieldKey = GlobalKey<FormFieldState>();
+  final _pinCodeFieldKey = GlobalKey<FormFieldState>();
+  final _phoneNumberFieldKey = GlobalKey<FormFieldState>();
+  final _emailIdFieldKey = GlobalKey<FormFieldState>();
+
+  final FocusNode _customerNameFocusNode = FocusNode();
+  final FocusNode _addressFocusNode = FocusNode();
+  final FocusNode _cityFocusNode = FocusNode();
+  final FocusNode _pinCodeFocusNode = FocusNode();
+  final FocusNode _phoneNumberFocusNode = FocusNode();
+  final FocusNode _emailIdFocusNode = FocusNode();
+  final FocusNode _chainSchoolFocusNode = FocusNode();
+  final FocusNode _boardFocusNode = FocusNode();
+
   String _cityAccess = '';
   List<Geography> _filteredCities = [];
-  String? _selectedCity;
+  Geography? _selectedCity;
+  BoardMaster? _selectedBoard;
+  ChainSchool? _selectedChainSchool;
+  bool? _selectedKeyCustomer;
+  bool? _selectedCustomerStatus;
+
   late SharedPreferences prefs;
+  late String token;
+  late int executiveId;
+
+  @override
+  void dispose() {
+    _customerNameController.dispose();
+    _boardController.dispose();
+    _chainSchoolController.dispose();
+    _addressController.dispose();
+    _cityController.dispose();
+    _pinCodeController.dispose();
+    _phoneNumberController.dispose();
+    _emailIdController.dispose();
+    super.dispose();
+  }
 
   @override
   void initState() {
     super.initState();
-    initializePreferencesAndData();
-  }
-
-  Future<void> initializePreferencesAndData() async {
-    prefs = await SharedPreferences.getInstance();
-    _customerTypeController.text = widget.customerType ?? '';
+    futureData = Future<CustomerEntryMasterResponse>.value(
+      CustomerEntryMasterResponse(
+        status: 'Default',
+        boardMasterList: [],
+        classesList: [],
+        chainSchoolList: [],
+        dataSourceList: [],
+        accountableExecutiveList: [],
+        salutationMasterList: [],
+        contactDesignationList: [],
+        subjectList: [],
+        departmentList: [],
+        adoptionRoleMasterList: [],
+        customerCategoryList: [],
+        monthsList: [],
+        purchaseModeList: [],
+        instituteTypeList: [],
+        instituteLevelList: [],
+        affiliateTypeList: [],
+      ),
+    );
     _fetchCityAccess();
   }
 
   void _fetchCityAccess() async {
+    prefs = await SharedPreferences.getInstance();
     setState(() {
+      token = prefs.getString('token') ?? '';
+      executiveId = prefs.getInt('executiveId') ?? 0;
       _cityAccess = prefs.getString('CityAccess') ?? '';
     });
     _fetchGeographyData();
+    futureData = initializePreferencesAndData();
   }
 
   void _fetchGeographyData() async {
-    String token = prefs.getString('token') ?? '';
-    int executiveId = prefs.getInt('executiveId') ?? 0; // Fetch your executiveId from SharedPreferences or any source
-
     GeographyService geographyService = GeographyService();
     try {
-      GeographyResponse geographyResponse = await geographyService.fetchGeographyData(_cityAccess, executiveId, token);
-      List<int> cityIds = _cityAccess.split(',').map((id) => int.parse(id)).toList();
+      GeographyResponse geographyResponse = await geographyService
+          .fetchGeographyData(_cityAccess, executiveId, token);
+      List<int> cityIds =
+          _cityAccess.split(',').map((id) => int.parse(id)).toList();
       setState(() {
         _filteredCities = geographyResponse.geographyList
             .where((geography) => cityIds.contains(geography.cityId))
@@ -79,124 +141,362 @@ class _NewCustomerFormState extends State<NewCustomerForm> {
     mapController = controller;
   }
 
+  Future<CustomerEntryMasterResponse> initializePreferencesAndData() async {
+    // Create an instance of DatabaseHelper
+    DatabaseHelper dbHelper = DatabaseHelper();
+
+    // Check if data exists in the database
+    CustomerEntryMasterResponse? existingData =
+        await dbHelper.getCustomerEntryMasterResponse();
+
+    if (existingData != null && !isEmptyData(existingData)) {
+      // Data exists in the database, return it
+      print(
+          "CustomerEntryMaster data found in db: ${existingData.salutationMasterList}");
+      return existingData;
+    } else {
+      String downHierarchy = prefs.getString('DownHierarchy') ?? '';
+
+      // Data does not exist in the database, fetch from API
+      print("CustomerEntryMaster data not found in db. Fetching from API...");
+
+      try {
+        CustomerEntryMasterResponse response =
+            await CustomerEntryMasterService()
+                .fetchCustomerEntryMaster(downHierarchy, token);
+        print(
+            "CustomerEntryMaster data fetched from API and saved to db. $response");
+        // Save the fetched data to the database
+        await dbHelper.insertCustomerEntryMasterResponse(response);
+        print(
+            "CustomerEntryMaster data fetched from API and saved to db. $response");
+        return response;
+      } catch (e) {
+        // Handle API fetch error
+        print("Error fetching CustomerEntryMaster data from API: $e");
+        rethrow; // Re-throw the error if needed
+      }
+    }
+  }
+
+// Method to check if data is empty
+  bool isEmptyData(CustomerEntryMasterResponse data) {
+    return data.boardMasterList.isEmpty &&
+        data.classesList.isEmpty &&
+        data.chainSchoolList.isEmpty &&
+        data.dataSourceList.isEmpty &&
+        data.accountableExecutiveList.isEmpty &&
+        data.salutationMasterList.isEmpty &&
+        data.contactDesignationList.isEmpty &&
+        data.subjectList.isEmpty &&
+        data.departmentList.isEmpty &&
+        data.adoptionRoleMasterList.isEmpty &&
+        data.customerCategoryList.isEmpty &&
+        data.monthsList.isEmpty &&
+        data.purchaseModeList.isEmpty &&
+        data.instituteTypeList.isEmpty &&
+        data.instituteLevelList.isEmpty &&
+        data.affiliateTypeList.isEmpty;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('New Customer - ${widget.customerType}'),
+        title: Text('New Customer - ${widget.type}'),
         backgroundColor: Color(0xFFFFF8E1),
       ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildTextField('Customer Type', _customerTypeController,
-                  enabled: false),
-              _buildTextField('${widget.customerType} Name', _customerNameController),
-              _buildTextField(
-                  'Primary Contact Name', _primaryContactNameController),
-              _buildTextField('Primary Contact Designation',
-                  _primaryContactDesignationController),
-              /*SizedBox(height: 16.0),
-              Text('Pin Location', style: TextStyle(fontSize: 16)),
-              SizedBox(height: 8.0),
-              Container(
-                height: 200.0,
-                child: GoogleMap(
-                  onMapCreated: _onMapCreated,
-                  initialCameraPosition: CameraPosition(
-                    target: _center,
-                    zoom: 15.0,
-                  ),
-                  markers: {
-                    Marker(
-                      markerId: MarkerId('location'),
-                      position: _center,
-                    ),
-                  },
-                ),
-              ),
-              SizedBox(height: 16.0),*/
-              _buildTextField('Address', _addressController),
-              _buildDropdownField('City', _cityController),
-              _buildTextField('Pin Code', _pinCodeController),
-              _buildTextField('Phone Number', _phoneNumberController),
-              _buildTextField('Email Id', _emailIdController),
-              SizedBox(height: 16.0),
-              GestureDetector(
-                onTap: () {
-                  if (_formKey.currentState!.validate()) {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => NewCustomerSchoolEntryForm()),
-                    );
-                  }
-                },
-                child: Container(
-                  width: double.infinity,
-                  color: Colors.blue,
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(vertical: 8.0, horizontal: 16),
-                    child: Text(
-                      'Add Customer',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTextField(String label, TextEditingController controller,
-      {bool enabled = true, int maxLines = 1}) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: TextFormField(
-        controller: controller,
-        decoration: InputDecoration(
-          labelText: label,
-          border: OutlineInputBorder(),
-        ),
-        enabled: enabled,
-        maxLines: maxLines,
-        validator: (value) {
-          if (value == null || value.isEmpty) {
-            return 'Please enter $label';
+      body: FutureBuilder<CustomerEntryMasterResponse>(
+        future: futureData,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
+          } else if (snapshot.hasData) {
+            return buildForm(snapshot.data!);
+          } else {
+            return Center(child: Text('No data found'));
           }
-          return null;
         },
       ),
     );
   }
 
-  Widget _buildDropdownField(String label, TextEditingController controller) {
+  Widget buildForm(CustomerEntryMasterResponse data) {
+    return SingleChildScrollView(
+      padding: EdgeInsets.all(16.0),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildTextField('${widget.type} Name', _customerNameController,
+                _customerNameFieldKey, _customerNameFocusNode),
+            _buildTextField('Address', _addressController, _addressFieldKey,
+                _addressFocusNode,
+                maxLines: 5),
+            _buildDropdownFieldCity(
+                'City', _cityController, _cityFieldKey, _cityFocusNode),
+            _buildTextField('Pin Code', _pinCodeController, _pinCodeFieldKey,
+                _pinCodeFocusNode),
+            _buildTextField('Phone Number', _phoneNumberController,
+                _phoneNumberFieldKey, _phoneNumberFocusNode),
+            _buildTextField('Email Id', _emailIdController, _emailIdFieldKey,
+                _emailIdFocusNode),
+            _buildDropdownFieldBoard('Board', _boardController, _boardFieldKey,
+                data.boardMasterList, _boardFocusNode),
+            _buildDropdownFieldChainSchool(
+                'Chain School',
+                _chainSchoolController,
+                _chainSchoolFieldKey,
+                data.chainSchoolList,
+                _chainSchoolFocusNode),
+            SizedBox(height: 16.0),
+            Text('Key Customer:'),
+            Row(
+              children: [
+                Expanded(
+                  child: RadioListTile<bool>(
+                    title: Text('Yes'),
+                    value: true,
+                    groupValue: _selectedKeyCustomer,
+                    onChanged: (newValue) {
+                      setState(() {
+                        _selectedKeyCustomer = newValue;
+                        print("_selectedKeyCustomer:$_selectedKeyCustomer");
+                      });
+                    },
+                  ),
+                ),
+                Expanded(
+                  child: RadioListTile<bool>(
+                    title: Text('No'),
+                    value: false,
+                    groupValue: _selectedKeyCustomer,
+                    onChanged: (newValue) {
+                      setState(() {
+                        _selectedKeyCustomer = newValue;
+                        print("_selectedKeyCustomer:$_selectedKeyCustomer");
+                      });
+                    },
+                  ),
+                ),
+              ],
+            ),
+            Text('Customer Status:'),
+            Row(
+              children: [
+                Expanded(
+                  child: RadioListTile<bool>(
+                    title: Text('Active'),
+                    value: true,
+                    groupValue: _selectedCustomerStatus,
+                    onChanged: (newValue) {
+                      setState(() {
+                        _selectedCustomerStatus = newValue;
+                        print(
+                            "_selectedCustomerStatus:$_selectedCustomerStatus");
+                      });
+                    },
+                  ),
+                ),
+                Expanded(
+                  child: RadioListTile<bool>(
+                    title: Text('Inactive'),
+                    value: false,
+                    groupValue: _selectedCustomerStatus,
+                    onChanged: (newValue) {
+                      setState(() {
+                        _selectedCustomerStatus = newValue;
+                        print(
+                            "_selectedCustomerStatus:$_selectedCustomerStatus");
+                      });
+                    },
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 16.0),
+            GestureDetector(
+              onTap: () {
+                _submitForm();
+              },
+              child: Container(
+                width: double.infinity,
+                color: Colors.blue,
+                child: Padding(
+                  padding: EdgeInsets.symmetric(vertical: 8.0, horizontal: 16),
+                  child: Text(
+                    'Next',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _submitForm() {
+    FocusScope.of(context).unfocus();
+
+    if (_formKey.currentState!.validate()) {
+      if (_selectedKeyCustomer == null) {
+        _toastMessage.showToastMessage("Please select Key Customer");
+      } else if (_selectedCustomerStatus == null) {
+        _toastMessage.showToastMessage("Please select Customer Status");
+      } else {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => NewCustomerSchoolForm2(
+              type: widget.type,
+              customerName: _customerNameController.text,
+              address: _addressController.text,
+              cityId: _selectedCity?.cityId ?? 0,
+              cityName: _selectedCity?.city ?? '',
+              pinCode: _pinCodeController.text,
+              phoneNumber: _phoneNumberController.text,
+              emailId: _emailIdController.text,
+              boardId: _selectedBoard?.boardId ?? 0,
+              chainSchoolId: _selectedChainSchool?.chainSchoolId ?? 0,
+              keyCustomer: (_selectedKeyCustomer ?? false) ? "Y" : "N",
+              customerStatus:
+                  (_selectedCustomerStatus ?? false) ? "Active" : "Inactive",
+            ),
+          ),
+        );
+      }
+    } else {
+      // Focus on the first field with an error
+      List<FocusNode> focusNodes = [
+        _customerNameFocusNode,
+        _addressFocusNode,
+        _cityFocusNode,
+        _pinCodeFocusNode,
+        _phoneNumberFocusNode,
+        _emailIdFocusNode,
+        _boardFocusNode,
+        _chainSchoolFocusNode,
+      ];
+
+      for (FocusNode focusNode in focusNodes) {
+        if (focusNode.hasFocus) {
+          focusNode.requestFocus();
+          break;
+        }
+      }
+    }
+  }
+
+  List<TextInputFormatter> _getInputFormatters(String label) {
+    if (label == 'Phone Number' || label == 'Mobile') {
+      return [
+        LengthLimitingTextInputFormatter(10),
+        FilteringTextInputFormatter.digitsOnly,
+      ];
+    } else if (label == 'Pin Code') {
+      return [
+        LengthLimitingTextInputFormatter(6),
+        FilteringTextInputFormatter.digitsOnly,
+      ];
+    } else if (label == 'Email Id') {
+      return [
+        FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9@._-]')),
+      ];
+    } else {
+      return [];
+    }
+  }
+
+  Widget _buildTextField(String label, TextEditingController controller,
+      GlobalKey<FormFieldState> fieldKey, FocusNode focusNode,
+      {bool enabled = true, int maxLines = 1}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: DropdownButtonFormField<String>(
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          minWidth: label == 'Address' ? 100.0 : 0.0,
+        ),
+        child: TextFormField(
+          key: fieldKey,
+          controller: controller,
+          focusNode: focusNode,
+          decoration: InputDecoration(
+              labelText: label,
+              border: OutlineInputBorder(),
+              alignLabelWithHint: true),
+          enabled: enabled,
+          maxLines: maxLines,
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return 'Please enter $label';
+            }
+            if (label == 'Pin Code' && value.length < 6) {
+              return 'Please enter valid $label';
+            }
+            if (label == 'Phone Number' && !Validator.isValidMobile(value)) {
+              return 'Please enter valid $label';
+            }
+            if (label == 'Email Id' && !Validator.isValidEmail(value)) {
+              return 'Please enter valid $label';
+            }
+            return null;
+          },
+          onChanged: (value) {
+            if (value.isNotEmpty) {
+              setState(() {
+                fieldKey.currentState?.validate();
+              });
+            }
+          },
+          textAlign: TextAlign.start,
+          keyboardType: (label == 'Phone Number' || label == 'Pin Code')
+              ? TextInputType.phone
+              : TextInputType.text,
+          inputFormatters: _getInputFormatters(label),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDropdownFieldCity(
+    String label,
+    TextEditingController controller,
+    GlobalKey<FormFieldState> fieldKey,
+    FocusNode focusNode,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: DropdownButtonFormField<Geography>(
+        key: fieldKey,
         value: _selectedCity,
+        focusNode: focusNode,
         items: _filteredCities
-            .map((geography) => DropdownMenuItem<String>(
-          value: geography.city,
-          child: Text(geography.city),
-        ))
+            .map(
+              (geography) => DropdownMenuItem<Geography>(
+                value: geography,
+                child: Text(geography.city),
+              ),
+            )
             .toList(),
-        onChanged: (value) {
+        onChanged: (Geography? value) {
           setState(() {
             _selectedCity = value;
-            controller.text = value ?? '';
+
+            // Update the text controller with the selected city name
+            controller.text = value?.city ?? '';
+
+            // Validate the field
+            fieldKey.currentState?.validate();
           });
         },
         decoration: InputDecoration(
@@ -204,7 +504,95 @@ class _NewCustomerFormState extends State<NewCustomerForm> {
           border: OutlineInputBorder(),
         ),
         validator: (value) {
-          if (value == null || value.isEmpty) {
+          if (value == null || value.city.isEmpty) {
+            return 'Please select $label';
+          }
+          return null;
+        },
+      ),
+    );
+  }
+
+  Widget _buildDropdownFieldBoard(
+    String label,
+    TextEditingController controller,
+    GlobalKey<FormFieldState> fieldKey,
+    List<BoardMaster> boardList,
+    FocusNode focusNode,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: DropdownButtonFormField<BoardMaster>(
+        key: fieldKey,
+        value: _selectedBoard,
+        focusNode: focusNode,
+        items: boardList
+            .map((board) => DropdownMenuItem<BoardMaster>(
+                  value: board,
+                  child: Text(board.boardName),
+                ))
+            .toList(),
+        onChanged: (BoardMaster? value) {
+          setState(() {
+            _selectedBoard = value;
+
+            // Update the text controller with the selected category name
+            controller.text = value?.boardName ?? '';
+
+            // Validate the field
+            fieldKey.currentState?.validate();
+          });
+        },
+        decoration: InputDecoration(
+          labelText: label,
+          border: OutlineInputBorder(),
+        ),
+        validator: (value) {
+          if (value == null || value.boardName.isEmpty) {
+            return 'Please select $label';
+          }
+          return null;
+        },
+      ),
+    );
+  }
+
+  Widget _buildDropdownFieldChainSchool(
+    String label,
+    TextEditingController controller,
+    GlobalKey<FormFieldState> fieldKey,
+    List<ChainSchool> chainSchoolList,
+    FocusNode focusNode,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: DropdownButtonFormField<ChainSchool>(
+        key: fieldKey,
+        value: _selectedChainSchool,
+        focusNode: focusNode,
+        items: chainSchoolList
+            .map((chainSchool) => DropdownMenuItem<ChainSchool>(
+                  value: chainSchool,
+                  child: Text(chainSchool.chainSchoolName),
+                ))
+            .toList(),
+        onChanged: (ChainSchool? value) {
+          setState(() {
+            _selectedChainSchool = value;
+
+            // Update the text controller with the selected category name
+            controller.text = value?.chainSchoolName ?? '';
+
+            // Validate the field
+            fieldKey.currentState?.validate();
+          });
+        },
+        decoration: InputDecoration(
+          labelText: label,
+          border: OutlineInputBorder(),
+        ),
+        validator: (value) {
+          if (value == null || value.chainSchoolName.isEmpty) {
             return 'Please select $label';
           }
           return null;
