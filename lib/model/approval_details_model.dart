@@ -1,4 +1,4 @@
-class CustomerSamplingApprovalDetailsResponse {
+class ApprovalDetailsResponse {
   final String? status;
   final RequestDetails? requestDetails;
   final List<TitleDetails>? titleDetails;
@@ -7,7 +7,7 @@ class CustomerSamplingApprovalDetailsResponse {
   final List<ClarificationExecutivesList>? clarificationExecutivesList;
   final List<ClarificationList>? clarificationList;
 
-  CustomerSamplingApprovalDetailsResponse({
+  ApprovalDetailsResponse({
     this.status,
     this.requestDetails,
     this.titleDetails,
@@ -17,7 +17,7 @@ class CustomerSamplingApprovalDetailsResponse {
     this.clarificationList,
   });
 
-  factory CustomerSamplingApprovalDetailsResponse.fromJson(Map<String, dynamic> json) {
+  factory ApprovalDetailsResponse.fromJson(Map<String, dynamic> json) {
     var requestDetailsData = json["RequestDetails"] as List?;
     RequestDetails? requestDetail;
     if (requestDetailsData != null && requestDetailsData.isNotEmpty) {
@@ -54,7 +54,7 @@ class CustomerSamplingApprovalDetailsResponse {
       clarificationLists = clarification.map((i) => ClarificationList.fromJson(i)).toList();
     }
 
-    return CustomerSamplingApprovalDetailsResponse(
+    return ApprovalDetailsResponse(
       status: json['Status'] as String?,
       requestDetails: requestDetail,
       titleDetails: titleDetailsList,
@@ -95,6 +95,15 @@ class RequestDetails {
   final String executiveName;
   final double requestedBudget;
   final int budget;
+  final int executiveId;
+  final String executiveCode;
+  final int shipmentModeId;
+  final String shipTo;
+  final int booksellerId;
+  final String booksellerName;
+  final String booksellerCode;
+  final int areaId;
+  final String approvalStatus;
 
   RequestDetails({
     required this.requestId,
@@ -113,6 +122,15 @@ class RequestDetails {
     required this.executiveName,
     required this.requestedBudget,
     required this.budget,
+    required this.executiveId,
+    required this.executiveCode,
+    required this.shipTo,
+    required this.shipmentModeId,
+    required this.booksellerId,
+    required this.booksellerName,
+    required this.booksellerCode,
+    required this.areaId,
+    required this.approvalStatus,
   });
 
   factory RequestDetails.fromJson(Map<String, dynamic> json) {
@@ -133,6 +151,15 @@ class RequestDetails {
       executiveName: json['ExecutiveName'] ?? '',
       requestedBudget: json['RequestedBudget'] ?? 0,
       budget: json['Budget'] ?? 0,
+      executiveId: json['ExecutiveId'] ?? 0,
+      executiveCode: json['ExecutiveCode'] ?? '',
+      shipmentModeId: json['ShipmentModeId'] ?? 0,
+      shipTo: json['ShipTo'] ?? '',
+      booksellerId: json['BooksellerId'] ?? 0,
+      booksellerName: json['BooksellerName'] ?? '',
+      booksellerCode: json['BooksellerCode'] ?? '',
+      areaId: json['AreaId'] ?? 0,
+      approvalStatus: json['ApprovalStatus'] ?? '',
     );
   }
 
@@ -154,6 +181,16 @@ class RequestDetails {
       'ExecutiveName': executiveName,
       'RequestedBudget': requestedBudget,
       'Budget': budget,
+      'ExecutiveId': executiveId,
+      'ExecutiveCode': executiveCode,
+      'ShipmentModeId': shipmentModeId,
+      'ShipTo': shipTo,
+      'ShipTo': booksellerId,
+      'BooksellerId': booksellerId,
+      'BooksellerName': booksellerName,
+      'BooksellerCode': booksellerCode,
+      'AreaId': areaId,
+      'ApprovalStatus': approvalStatus,
     };
   }
 }
@@ -174,6 +211,15 @@ class TitleDetails {
   final int budget;
   final double requestedBudget;
   final double bookMRP;
+  final int recId;
+  final String requestNumber;
+  final String bookTypeName;
+  final String bookNum;
+  final int subjectId;
+  final String subjectName;
+  final String bookTypeName1;
+  final int seriesId;
+  final String seriesName;
 
   TitleDetails({
     required this.requestId,
@@ -191,6 +237,15 @@ class TitleDetails {
     required this.budget,
     required this.requestedBudget,
     required this.bookMRP,
+    required this.recId,
+    required this.requestNumber,
+    required this.bookTypeName,
+    required this.bookNum,
+    required this.subjectId,
+    required this.subjectName,
+    required this.bookTypeName1,
+    required this.seriesId,
+    required this.seriesName,
   });
 
   factory TitleDetails.fromJson(Map<String, dynamic> json) {
@@ -210,6 +265,15 @@ class TitleDetails {
       budget: json['Budget'] ?? 0,
       requestedBudget: json['RequestedBudget'] ?? 0,
       bookMRP: json['BookMRP'] ?? 0,
+      recId: json['RecId'] ?? 0,
+      requestNumber: json['RequestNumber'] ?? '',
+      bookTypeName: json['BookTypeName'] ?? '',
+      bookNum: json['BookNum'] ?? '',
+      subjectId: json['subjectId'] ?? 0,
+      subjectName: json['SubjectName'] ?? '',
+      bookTypeName1: json['BookTypeName1'] ?? '',
+      seriesId: json['SeriesId'] ?? 0,
+      seriesName: json['SeriesName'] ?? '',
     );
   }
 
@@ -230,6 +294,15 @@ class TitleDetails {
       'Budget': budget,
       'RequestedBudget': requestedBudget,
       'BookMRP': bookMRP,
+      'RecId': recId,
+      'RequestNumber': requestNumber,
+      'BookTypeName': bookTypeName,
+      'BookNum': bookNum,
+      'subjectId': subjectId,
+      'SubjectName': subjectName,
+      'BookTypeName1': bookTypeName1,
+      'SeriesId': seriesId,
+      'SeriesName': seriesName,
     };
   }
 }

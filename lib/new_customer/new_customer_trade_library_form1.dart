@@ -29,6 +29,8 @@ class _NewCustomerTradeLibraryForm1State
 
   final ToastMessage _toastMessage = ToastMessage();
 
+  DatabaseHelper dbHelper = DatabaseHelper();
+
   final TextEditingController _customerNameController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
   final TextEditingController _cityController = TextEditingController();
@@ -119,8 +121,22 @@ class _NewCustomerTradeLibraryForm1State
       executiveId = prefs.getInt('executiveId') ?? 0;
       _cityAccess = prefs.getString('CityAccess') ?? '';
     });
-    _fetchGeographyData();
+    _loadGeographyData();
     futureData = initializePreferencesAndData();
+  }
+
+  void _loadGeographyData() async {
+    // Retrieve geography data from the database
+    List<Geography> dbData = await dbHelper.getGeographyDataFromDB();
+    if (dbData.isNotEmpty) {
+      setState(() {
+        _filteredCities = dbData;
+      });
+      print("Loaded geography data from the database.");
+    } else {
+      print("No data in DB, fetching from API.");
+      _fetchGeographyData();
+    }
   }
 
   void _fetchGeographyData() async {
@@ -147,16 +163,7 @@ class _NewCustomerTradeLibraryForm1State
     mapController = controller;
   }
 
-  /*Future<CustomerEntryMasterResponse> initializePreferencesAndData() async {
-    String downHierarchy = prefs.getString('DownHierarchy') ?? '';
-    return CustomerEntryMasterService()
-        .fetchCustomerEntryMaster(downHierarchy, token);
-  }*/
-
   Future<CustomerEntryMasterResponse> initializePreferencesAndData() async {
-    // Create an instance of DatabaseHelper
-    DatabaseHelper dbHelper = DatabaseHelper();
-
     // Check if data exists in the database
     CustomerEntryMasterResponse? existingData =
         await dbHelper.getCustomerEntryMasterResponse();
@@ -181,77 +188,12 @@ class _NewCustomerTradeLibraryForm1State
         // Save the fetched data to the database
         await dbHelper.insertCustomerEntryMasterResponse(response);
 
-        /* for (var boardMaster in response.boardMasterList) {
-        await dbHelper.insertBoardMaster(boardMaster);
-      }
-
-      for (var data in response.classesList) {
-        await dbHelper.insertClasses(data);
-      }
-
-      for (var chainSchool in response.chainSchoolList) {
-        await dbHelper.insertChainSchools(chainSchool);
-      }
-
-      for (var dataSource in response.dataSourceList) {
-        await dbHelper.insertDataSource(dataSource);
-      }
-
-      for (var salutationMaster in response.salutationMasterList) {
-        await dbHelper.insertSalutationMaster(salutationMaster);
-      }
-
-      for (var accountableExecutive in response.accountableExecutiveList) {
-        await dbHelper.insertAccountableExecutive(accountableExecutive);
-      }
-
-      for (var contactDesignation in response.contactDesignationList) {
-        await dbHelper.insertContactDesignation(contactDesignation);
-      }
-
-      for (var subject in response.subjectList) {
-        await dbHelper.insertSubject(subject);
-      }
-
-      for (var department in response.departmentList) {
-        await dbHelper.insertDepartment(department);
-      }
-
-      for (var adoptionRole in response.adoptionRoleMasterList) {
-        await dbHelper.insertAdoptionRoleMaster(adoptionRole);
-      }
-
-      for (var customerCategory in response.customerCategoryList) {
-        await dbHelper.insertCustomerCategory(customerCategory);
-      }
-
-      for (var month in response.monthsList) {
-        await dbHelper.insertMonths(month);
-      }
-
-      for (var purchaseMode in response.purchaseModeList) {
-        await dbHelper.insertPurchaseMode(purchaseMode);
-      }
-
-      for (var instituteType in response.instituteTypeList) {
-        await dbHelper.insertInstituteType(instituteType);
-      }
-
-      for (var instituteLevel in response.instituteLevelList) {
-        await dbHelper.insertInstituteLevel(instituteLevel);
-      }
-
-      for (var affiliateType in response.affiliateTypeList) {
-        await dbHelper.insertAffiliateType(affiliateType);
-      }*/
-
         print(
             "CustomerEntryMaster data fetched from API and saved to db. $response");
         return response;
       } catch (e) {
-        // Handle API fetch error
         print("Error fetching CustomerEntryMaster data from API: $e");
-        rethrow; // Re-throw the error if needed
+        rethrow;
       }
     }
   }

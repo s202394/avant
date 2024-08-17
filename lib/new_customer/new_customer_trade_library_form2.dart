@@ -50,6 +50,8 @@ class _NewCustomerTradeLibraryForm2State
   final _formKey = GlobalKey<FormState>();
   late Future<CustomerEntryMasterResponse> futureData;
 
+  DatabaseHelper dbHelper = DatabaseHelper();
+
   DateFormat dateFormat = DateFormat('dd MMM yyyy');
 
   final TextEditingController _contactFirstNameController =
@@ -131,11 +133,22 @@ class _NewCustomerTradeLibraryForm2State
       token = prefs.getString('token') ?? '';
       _cityAccess = prefs.getString('CityAccess') ?? '';
     });
-    _fetchGeographyData();
+    _loadGeographyData();
     futureData = initializePreferencesAndData();
+  }
 
-    // final response = CustomerEntryMasterResponse.fromJson(jsonData);
-    // await DatabaseHelper().insertCustomerEntryMasterResponse(response);
+  void _loadGeographyData() async {
+    // Retrieve geography data from the database
+    List<Geography> dbData = await dbHelper.getGeographyDataFromDB();
+    if (dbData.isNotEmpty) {
+      setState(() {
+        _filteredCities = dbData;
+      });
+      print("Loaded geography data from the database.");
+    } else {
+      print("No data in DB, fetching from API.");
+      _fetchGeographyData();
+    }
   }
 
   void _fetchGeographyData() async {
@@ -156,9 +169,6 @@ class _NewCustomerTradeLibraryForm2State
   }
 
   Future<CustomerEntryMasterResponse> initializePreferencesAndData() async {
-    // Create an instance of DatabaseHelper
-    DatabaseHelper dbHelper = DatabaseHelper();
-
     // Check if data exists in the database
     CustomerEntryMasterResponse? existingData =
         await dbHelper.getCustomerEntryMasterResponse();

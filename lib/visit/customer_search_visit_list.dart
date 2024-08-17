@@ -9,12 +9,15 @@ class CustomerSearchVisitList extends StatefulWidget {
   final String? customerCode;
   final String? principalName;
   final String? city;
+  final int? cityId;
 
   CustomerSearchVisitList(
       {required this.customerName,
         required this.customerCode,
         required this.principalName,
-        required this.city});
+        required this.city,
+        required this.cityId,
+      });
 
   @override
   _CustomerSearchVisitListPageState createState() =>

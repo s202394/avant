@@ -3,7 +3,7 @@ import 'package:avant/api/api_service.dart';
 import 'package:avant/model/request.dart';
 import 'package:avant/home.dart';
 import 'package:avant/common/common.dart';
-import 'package:avant/model/customer_sampling_approval_list_model.dart';
+import 'package:avant/model/approval_list_model.dart';
 import 'package:avant/common/no_data_layout.dart';
 import 'package:avant/common/error_layout.dart';
 import 'package:avant/model/login_model.dart';
@@ -83,7 +83,7 @@ class _ApprovalListFormState extends State<ApprovalListForm> {
 
         futureRequests = CustomerSamplingApprovalListService()
             .fetchCustomerSamplingApprovalList(
-                executiveId ?? 0, "Approval", token)
+                widget.type, executiveId ?? 0, "Approval", token)
             .then((response) {
           setState(() {
             if (response.approvalList.isEmpty) {
@@ -115,10 +115,10 @@ class _ApprovalListFormState extends State<ApprovalListForm> {
         child: isLoading
             ? CircularProgressIndicator()
             : isConnected
-                ? Column(
-                    children: [
-                      Expanded(
-                        child: FutureBuilder<List<ApprovalList>>(
+                ? SingleChildScrollView(
+                    child: Column(
+                      children: [
+                        FutureBuilder<List<ApprovalList>>(
                           future: futureRequests,
                           builder: (context, snapshot) {
                             if (snapshot.connectionState ==
@@ -126,75 +126,74 @@ class _ApprovalListFormState extends State<ApprovalListForm> {
                               return CircularProgressIndicator();
                             } else if (snapshot.hasError) {
                               return ErrorLayout();
-                            } else if (!hasData) {
+                            } else if (!hasData || !snapshot.hasData) {
                               return NoDataLayout();
-                            } else if (snapshot.hasData) {
-                              return ListView.builder(
-                                itemCount: snapshot.data!.length,
-                                itemBuilder: (context, index) {
-                                  return RequestCard(
-                                    type: widget.type,
-                                    request: snapshot.data![index],
-                                    onChecked: (bool isChecked) {
-                                      setState(() {
-                                        if (isChecked) {
-                                          checkedRequests
-                                              .add(snapshot.data![index]);
-                                        } else {
-                                          checkedRequests
-                                              .remove(snapshot.data![index]);
-                                        }
+                            } else {
+                              return Column(
+                                children: [
+                                  ListView.builder(
+                                    shrinkWrap: true,
+                                    physics: NeverScrollableScrollPhysics(),
+                                    itemCount: snapshot.data!.length,
+                                    itemBuilder: (context, index) {
+                                      return RequestCard(
+                                        type: widget.type,
+                                        request: snapshot.data![index],
+                                        onChecked: (bool isChecked) {
+                                          setState(() {
+                                            if (isChecked) {
+                                              checkedRequests
+                                                  .add(snapshot.data![index]);
+                                            } else {
+                                              checkedRequests.remove(
+                                                  snapshot.data![index]);
+                                            }
 
-                                        // Clear selection error when an item is selected/deselected
-                                        if (checkedRequests.isNotEmpty) {
-                                          _selectionError = null;
-                                        }
-                                      });
+                                            // Clear selection error when an item is selected/deselected
+                                            if (checkedRequests.isNotEmpty) {
+                                              _selectionError = null;
+                                            }
+                                          });
+                                        },
+                                      );
                                     },
-                                  );
-                                },
+                                  ),
+                                  Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: TextField(
+                                      key: _commentFieldKey,
+                                      controller: _commentController,
+                                      maxLines: 3,
+                                      decoration: InputDecoration(
+                                        border: OutlineInputBorder(),
+                                        alignLabelWithHint: true,
+                                        labelText: 'Add your comments here',
+                                        errorText: _commentError,
+                                      ),
+                                      onChanged: (value) {
+                                        if (value.isNotEmpty) {
+                                          setState(() {
+                                            _commentError = null;
+                                          });
+                                        }
+                                      },
+                                    ),
+                                  ),
+                                  if (_selectionError != null)
+                                    Padding(
+                                      padding: const EdgeInsets.all(8.0),
+                                      child: Text(
+                                        _selectionError!,
+                                        style: TextStyle(color: Colors.red),
+                                      ),
+                                    ),
+                                ],
                               );
                             }
-                            return Text("Unexpected state");
                           },
                         ),
-                      ),
-                      if (_selectionError != null)
-                        Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Text(
-                            _selectionError!,
-                            style: TextStyle(color: Colors.red),
-                          ),
-                        ),
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            TextField(
-                              key: _commentFieldKey,
-                              controller: _commentController,
-                              maxLines: 3,
-                              decoration: InputDecoration(
-                                border: OutlineInputBorder(),
-                                alignLabelWithHint: true,
-                                labelText: 'Add your comments here',
-                                errorText: _commentError,
-                              ),
-                              onChanged: (value) {
-                                if (value.isNotEmpty) {
-                                  setState(() {
-                                    _commentError =
-                                        null; // Clear error when text is added
-                                  });
-                                }
-                              },
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
+                      ],
+                    ),
                   )
                 : NoInternetLayout(),
       ),
@@ -292,22 +291,37 @@ class _ApprovalListFormState extends State<ApprovalListForm> {
           requestIds = "${request.requestId}";
       }
 
-      // Call the method and pass necessary parameters
-      final response = await SubmitCustomerSamplingRequestApprovalService()
-          .submitCustomerSamplingRequestApproved(
-        "List",
-        action,
-        profileCode ?? "",
-        "$executiveId",
-        "$userId",
-        requestIds,
-        "",
-        _commentController.text,
-        token,
-      );
+      final response;
+      if (widget.type == 'Customer Sample Approval') {
+        response = await SubmitRequestApprovalService()
+            .submitCustomerSamplingRequestApproved(
+          "List",
+          action,
+          profileCode ?? "",
+          "$executiveId",
+          "$userId",
+          requestIds,
+          "",
+          _commentController.text,
+          token,
+        );
+      } else {
+        response =
+            await SubmitRequestApprovalService().submitSelfStockRequestApproved(
+          "List",
+          action,
+          profileCode ?? "",
+          "$executiveId",
+          "$userId",
+          requestIds,
+          "",
+          _commentController.text,
+          token,
+        );
+      }
+
       Navigator.of(context).pop();
-      // Handle the response (e.g., show success message, navigate, etc.)
-      print('Approval successful: ${response.returnMessage.msgText}');
+      print('Approval ${widget.type} successful: ${response.returnMessage.msgText}');
       if (response.status == 'Success') {
         String s = response.returnMessage.msgText;
         if (s.isNotEmpty) {
@@ -318,21 +332,21 @@ class _ApprovalListFormState extends State<ApprovalListForm> {
             (Route<dynamic> route) => false,
           );
         } else {
-          print('$action Customer Sample Approval Error s empty');
+          print('$action ${widget.type} Error s empty');
           _toastMessage.showToastMessage(
-              "An error occurred while $action customer sampling request.");
+              "An error occurred while $action ${widget.type}.");
         }
       } else {
-        print('Add Customer Sample Approval Error ${response.status}');
+        print('Add  ${widget.type} Error ${response.status}');
         _toastMessage.showToastMessage(
-            "An error occurred while $action customer sampling request.");
+            "An error occurred while $action  ${widget.type}.");
       }
     } catch (error) {
       Navigator.of(context).pop();
       // Handle the error (e.g., show error message)
-      print('Failed to approve: $error');
-      _toastMessage.showToastMessage(
-          "An error occurred while $action customer sampling request.");
+      print('Failed to  ${widget.type} $action: $error');
+      _toastMessage
+          .showToastMessage("An error occurred while $action  ${widget.type}.");
     }
   }
 

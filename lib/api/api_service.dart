@@ -3,14 +3,14 @@ import 'dart:convert';
 import 'package:avant/api/api_constants.dart';
 import 'package:avant/db/db_helper.dart';
 import 'package:avant/model/customer_entry_master_model.dart';
-import 'package:avant/model/customer_sampling_approval_details_model.dart';
-import 'package:avant/model/customer_sampling_approval_list_model.dart';
+import 'package:avant/model/approval_details_model.dart';
+import 'package:avant/model/approval_list_model.dart';
 import 'package:avant/model/followup_action_model.dart';
 import 'package:avant/model/geography_model.dart';
 import 'package:avant/model/get_visit_dsr_model.dart';
 import 'package:avant/model/login_model.dart';
 import 'package:avant/model/menu_model.dart';
-import 'package:avant/model/submit_customer_sampling_request_approval_model.dart';
+import 'package:avant/model/submit_approval_model.dart';
 import 'package:avant/model/travel_plan_model.dart';
 import 'package:avant/model/entry_model.dart';
 import 'package:http/http.dart' as http;
@@ -530,7 +530,16 @@ class GeographyService {
 
     if (response.statusCode == 200) {
       final jsonResponse = json.decode(response.body);
-      return GeographyResponse.fromJson(jsonResponse);
+      final geographyResponse = GeographyResponse.fromJson(jsonResponse);
+      // Create an instance of DatabaseHelper
+      DatabaseHelper dbHelper = DatabaseHelper();
+
+      // Insert each Geography data into the database
+      for (var data in geographyResponse.geographyList) {
+        await dbHelper.insertGeographyData(data);
+      }
+
+      return geographyResponse;
     } else if (response.statusCode == 401) {
       // Token is invalid or expired, refresh the token and retry
       return await refreshAndRetry(cityAccess, executiveId);
@@ -613,37 +622,43 @@ class CustomerEntryMasterService {
 }
 
 class CustomerSamplingApprovalListService {
-  Future<CustomerSamplingApprovalListResponse>
-      fetchCustomerSamplingApprovalList(
-          int executiveId, String listFor, String token) async {
+  Future<ApprovalListResponse> fetchCustomerSamplingApprovalList(
+      String type, int executiveId, String listFor, String token) async {
+    final body = jsonEncode(<String, dynamic>{
+      'ExecutiveId': executiveId,
+      'ListFor': listFor,
+    });
+
     final response = await http.post(
-      Uri.parse(CUSTOMER_SAMPLING_APPROVAL_LIST_URL),
+      Uri.parse(type == 'Customer Sample Approval'
+          ? CUSTOMER_SAMPLING_APPROVAL_LIST_URL
+          : SELF_STOCK_APPROVAL_LIST_URL),
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
         'Authorization': 'Bearer $token',
       },
-      body: jsonEncode(<String, dynamic>{
-        'ExecutiveId': executiveId,
-        'ListFor': listFor,
-      }),
+      body: body,
     );
 
+    print('type: $type');
     print('Response status: ${response.statusCode}');
     print('Response body: ${response.body}');
+    print('Request: ${response.request}');
+    print('Request body: ${body}');
 
     if (response.statusCode == 200) {
       final jsonResponse = json.decode(response.body);
-      return CustomerSamplingApprovalListResponse.fromJson(jsonResponse);
+      return ApprovalListResponse.fromJson(jsonResponse);
     } else if (response.statusCode == 401) {
       // Token is invalid or expired, refresh the token and retry
-      return await refreshAndRetry(executiveId, listFor);
+      return await refreshAndRetry(type, executiveId, listFor);
     } else {
       throw Exception('Failed to load plans');
     }
   }
 
-  Future<CustomerSamplingApprovalListResponse> refreshAndRetry(
-      int executiveId, String listFor) async {
+  Future<ApprovalListResponse> refreshAndRetry(
+      String type, int executiveId, String listFor) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String username = prefs.getString('token_username') ?? '';
     String password = prefs.getString('password') ?? '';
@@ -654,7 +669,7 @@ class CustomerSamplingApprovalListService {
 
       if (newToken != null && newToken.isNotEmpty) {
         return await fetchCustomerSamplingApprovalList(
-            executiveId, listFor, newToken);
+            type, executiveId, listFor, newToken);
       } else {
         throw Exception('Failed to retrieve new token');
       }
@@ -665,10 +680,13 @@ class CustomerSamplingApprovalListService {
   }
 }
 
-class CustomerSamplingApprovalDetailsService {
-  Future<CustomerSamplingApprovalDetailsResponse>
-      fetchCustomerSamplingApprovalDetails(int customerId, String customerType,
-          int requestId, String module, String token) async {
+class ApprovalDetailsService {
+  Future<ApprovalDetailsResponse> fetchCustomerSamplingApprovalDetails(
+      int customerId,
+      String customerType,
+      int requestId,
+      String module,
+      String token) async {
     final body = jsonEncode(<String, dynamic>{
       'CustomerId': customerId,
       'CustomerType': customerType,
@@ -690,7 +708,7 @@ class CustomerSamplingApprovalDetailsService {
 
     if (response.statusCode == 200) {
       final jsonResponse = json.decode(response.body);
-      return CustomerSamplingApprovalDetailsResponse.fromJson(jsonResponse);
+      return ApprovalDetailsResponse.fromJson(jsonResponse);
     } else if (response.statusCode == 401) {
       // Token is invalid or expired, refresh the token and retry
       return await refreshAndRetry(customerId, customerType, requestId, module);
@@ -699,7 +717,7 @@ class CustomerSamplingApprovalDetailsService {
     }
   }
 
-  Future<CustomerSamplingApprovalDetailsResponse> refreshAndRetry(
+  Future<ApprovalDetailsResponse> refreshAndRetry(
       int customerId, String customerType, int requestId, String module) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String username = prefs.getString('token_username') ?? '';
@@ -722,18 +740,17 @@ class CustomerSamplingApprovalDetailsService {
   }
 }
 
-class SubmitCustomerSamplingRequestApprovalService {
-  Future<SubmitCustomerSamplingRequestApprovalResponse>
-      submitCustomerSamplingRequestApproved(
-          String type,
-          String approvalFor,
-          String executiveProfile,
-          String loggedInExecutiveId,
-          String enteredBy,
-          String requestId,
-          String approvedBooksAndQtyXML,
-          String approvalRemarks,
-          String token) async {
+class SubmitRequestApprovalService {
+  Future<SubmitRequestApprovalResponse> submitCustomerSamplingRequestApproved(
+      String type,
+      String approvalFor,
+      String executiveProfile,
+      String loggedInExecutiveId,
+      String enteredBy,
+      String requestId,
+      String approvedBooksAndQtyXML,
+      String approvalRemarks,
+      String token) async {
     final body = (type == "List")
         ? jsonEncode(<String, dynamic>{
             'ApprovalFor': approvalFor,
@@ -773,12 +790,11 @@ class SubmitCustomerSamplingRequestApprovalService {
     if (response.statusCode == 200) {
       print('Request: success');
       final jsonResponse = json.decode(response.body);
-      return SubmitCustomerSamplingRequestApprovalResponse.fromJson(
-          jsonResponse);
+      return SubmitRequestApprovalResponse.fromJson(jsonResponse);
     } else if (response.statusCode == 401) {
       print('Request: 401 going to take new token');
       // Token is invalid or expired, refresh the token and retry
-      return await refreshAndRetryApprove(
+      return await refreshAndRetrySamplingRequestApprove(
           type,
           approvalFor,
           executiveProfile,
@@ -792,7 +808,7 @@ class SubmitCustomerSamplingRequestApprovalService {
     }
   }
 
-  Future<SubmitCustomerSamplingRequestApprovalResponse> refreshAndRetryApprove(
+  Future<SubmitRequestApprovalResponse> refreshAndRetrySamplingRequestApprove(
       String type,
       String approvalFor,
       String executiveProfile,
@@ -818,8 +834,113 @@ class SubmitCustomerSamplingRequestApprovalService {
             loggedInExecutiveId,
             enteredBy,
             requestId,
-            approvalRemarks,
             approvedBooksAndQtyXML,
+            approvalRemarks,
+            newToken);
+      } else {
+        throw Exception('Failed to retrieve new token');
+      }
+    } else {
+      throw Exception(
+          'Username or password is not stored in SharedPreferences');
+    }
+  }
+
+  submitSelfStockRequestApproved(
+      String type,
+      String requestFor,
+      String profileCode,
+      String loggedInExecutiveId,
+      String enteredBy,
+      String requestId,
+      String selfStockDetailsXml,
+      String remarks,
+      String token) async {
+    final body = (type == "List")
+        ? jsonEncode(<String, dynamic>{
+            'RequestFor': requestFor,
+            'ProfileCode': profileCode,
+            'LoggedInExecutiveId': loggedInExecutiveId,
+            'EnteredBy': enteredBy,
+            'SelfStockRequestIds': requestId,
+            'Remarks': remarks,
+          })
+        : jsonEncode(<String, dynamic>{
+            'RequestFor': requestFor,
+            'ProfileCode': profileCode,
+            'LoggedInExecutiveId': loggedInExecutiveId,
+            'EnteredBy': enteredBy,
+            'SelfStockRequestIds': requestId,
+            'SelfStockDetailsxml': selfStockDetailsXml,
+            'Remarks': remarks,
+          });
+
+    final url = (type == "List")
+        ? SELF_STOCK_BULK_APPROVAL_SUBMIT_URL
+        : SELF_STOCK_APPROVAL_SUBMIT_URL;
+    final response = await http.post(
+      Uri.parse(url),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+        'Authorization': 'Bearer $token',
+      },
+      body: body,
+    );
+
+    print(' url: ${url}');
+    print(' body: ${body}');
+    print('Response status: ${response.statusCode}');
+    print('Response body: ${response.body}');
+
+    if (response.statusCode == 200) {
+      print('Request: success');
+      final jsonResponse = json.decode(response.body);
+      return SubmitRequestApprovalResponse.fromJson(jsonResponse);
+    } else if (response.statusCode == 401) {
+      print('Request: 401 going to take new token');
+      // Token is invalid or expired, refresh the token and retry
+      return await refreshAndRetrySelfStockApprove(
+          type,
+          requestFor,
+          profileCode,
+          loggedInExecutiveId,
+          enteredBy,
+          requestId,
+          selfStockDetailsXml,
+          remarks);
+    } else {
+      throw Exception('Failed to submitCustomerSamplingRequestApproved');
+    }
+  }
+
+  Future<SubmitRequestApprovalResponse> refreshAndRetrySelfStockApprove(
+      String type,
+      String requestFor,
+      String profileCode,
+      String loggedInExecutiveId,
+      String enteredBy,
+      String requestId,
+      String selfStockDetailsXml,
+      String remarks) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String username = prefs.getString('token_username') ?? '';
+    String password = prefs.getString('password') ?? '';
+
+    if (username.isNotEmpty && password.isNotEmpty) {
+      await TokenService().token(username, password);
+      String? newToken = prefs.getString('token');
+      print('re request newToken : $newToken');
+      if (newToken != null && newToken.isNotEmpty) {
+        print('re request again with new token');
+        return await submitSelfStockRequestApproved(
+            type,
+            requestFor,
+            profileCode,
+            loggedInExecutiveId,
+            enteredBy,
+            requestId,
+            selfStockDetailsXml,
+            remarks,
             newToken);
       } else {
         throw Exception('Failed to retrieve new token');

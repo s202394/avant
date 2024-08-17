@@ -65,16 +65,6 @@ class _NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
   late Future<CustomerEntryMasterResponse> futureData;
   final _formKey = GlobalKey<FormState>();
 
-  String? _selectedStartClass;
-  String? _selectedEndClass;
-  String? _selectedSamplingMonth;
-  String? _selectedDecisionMonth;
-  String? _selectedMedium;
-  String? _selectedRanking;
-  String? _selectedPurchaseMode;
-
-  DateFormat dateFormat = DateFormat('dd MMM yyyy');
-
   final TextEditingController _contactFirstNameController =
       TextEditingController();
   final TextEditingController _contactLastNameController =
@@ -88,6 +78,7 @@ class _NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
   final TextEditingController _contactCityController = TextEditingController();
   final TextEditingController _contactPinCodeController =
       TextEditingController();
+  final TextEditingController _dataSourceController = TextEditingController();
 
   final _contactFirstNameFieldKey = GlobalKey<FormFieldState>();
   final _contactLastNameFieldKey = GlobalKey<FormFieldState>();
@@ -100,8 +91,11 @@ class _NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
   final _contactAddressFieldKey = GlobalKey<FormFieldState>();
   final _contactCityFieldKey = GlobalKey<FormFieldState>();
   final _contactPinCodeFieldKey = GlobalKey<FormFieldState>();
+  final _dataSourceFieldKey = GlobalKey<FormFieldState>();
 
   final ToastMessage _toastMessage = ToastMessage();
+
+  DatabaseHelper dbHelper = DatabaseHelper();
 
   int? executiveId;
   int? userId;
@@ -110,6 +104,8 @@ class _NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
   int? _selectedContactDesignationId;
   String? _selectedSalutation;
   int? _selectedSalutationId;
+  String? _selectedDataSource;
+  int? _selectedDataSourceId;
   String _cityAccess = '';
   List<Geography> _filteredCities = [];
   Geography? _selectedCity;
@@ -118,6 +114,8 @@ class _NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
   late String token;
 
   bool _isLoading = false;
+
+  Map<int, String> _classValues = {};
 
   @override
   void initState() {
@@ -147,9 +145,6 @@ class _NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
   }
 
   Future<CustomerEntryMasterResponse> initializePreferencesAndData() async {
-    // Create an instance of DatabaseHelper
-    DatabaseHelper dbHelper = DatabaseHelper();
-
     // Check if data exists in the database
     CustomerEntryMasterResponse? existingData =
         await dbHelper.getCustomerEntryMasterResponse();
@@ -227,8 +222,22 @@ class _NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
       token = prefs.getString('token') ?? '';
       _cityAccess = prefs.getString('CityAccess') ?? '';
     });
-    _fetchGeographyData();
+    _loadGeographyData();
     futureData = initializePreferencesAndData();
+  }
+
+  void _loadGeographyData() async {
+    // Retrieve geography data from the database
+    List<Geography> dbData = await dbHelper.getGeographyDataFromDB();
+    if (dbData.isNotEmpty) {
+      setState(() {
+        _filteredCities = dbData;
+      });
+      print("Loaded geography data from the database.");
+    } else {
+      print("No data in DB, fetching from API.");
+      _fetchGeographyData();
+    }
   }
 
   void _fetchGeographyData() async {
@@ -280,6 +289,10 @@ class _NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
     Map<String, int> salutationMap = {
       for (var item in data.salutationMasterList)
         item.salutationName: item.salutationId,
+    };
+    Map<String, int> dataSourceMap = {
+      for (var item in data.dataSourceList)
+        item.dataSourceName: item.dataSourceId,
     };
     return Stack(
       children: [
@@ -339,6 +352,7 @@ class _NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
                   itemCount: data.classesList.length,
                   itemBuilder: (context, index) {
                     final classItem = data.classesList[index];
+                    final isEnabled = _isClassInRange(classItem);
                     return Row(
                       children: [
                         Container(
@@ -363,23 +377,34 @@ class _NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
                               borderRadius: BorderRadius.circular(5.0),
                               border: Border.all(color: Colors.grey),
                             ),
-                            child: Center(
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(5.0),
                               child: TextField(
+                                enabled: isEnabled,
                                 keyboardType: TextInputType.number,
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
-                                    fontSize: 15, fontWeight: FontWeight.bold),
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.bold,
+                                  color: isEnabled ? Colors.black : Colors.grey,
+                                ),
                                 decoration: InputDecoration(
                                   border: InputBorder.none,
                                   counterText: "",
                                   contentPadding: EdgeInsets.zero,
+                                  filled: true,
+                                  fillColor: isEnabled
+                                      ? Colors.white
+                                      : Colors.grey[200],
                                 ),
                                 inputFormatters: [
                                   FilteringTextInputFormatter.digitsOnly,
                                   LengthLimitingTextInputFormatter(3),
                                 ],
                                 onChanged: (value) {
-                                  // Handle the value change here
+                                  setState(() {
+                                    _classValues[classItem.classNumId] = value;
+                                  });
                                 },
                               ),
                             ),
@@ -447,6 +472,18 @@ class _NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
                     'City', _contactCityController, _contactCityFieldKey),
                 _buildTextField('Pin Code', _contactPinCodeController,
                     _contactPinCodeFieldKey),
+                buildDropdownField(
+                  label: 'Data Source',
+                  value: _selectedDataSource,
+                  items: dataSourceMap.keys.toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedDataSource = value;
+                      _selectedDataSourceId = dataSourceMap[value];
+                    });
+                  },
+                  fieldKey: _dataSourceFieldKey,
+                ),
                 SizedBox(height: 20),
                 GestureDetector(
                   onTap: () {
@@ -485,6 +522,14 @@ class _NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
     );
   }
 
+  bool _isClassInRange(Classes classItem) {
+    if (widget.startClassId == 0 || widget.endClassId == 0) {
+      return false;
+    }
+    return classItem.classNumId >= widget.startClassId &&
+        classItem.classNumId <= widget.endClassId;
+  }
+
   void _submitForm() async {
     FocusScope.of(context).unfocus();
 
@@ -494,51 +539,54 @@ class _NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
       _isLoading = true;
     });
     try {
-      final responseData = await CreateNewCustomerService()
-          .createNewCustomerSchool(
-              widget.type,
-              widget.customerName,
-              "",
-              widget.emailId,
-              widget.phoneNumber,
-              widget.address,
-              widget.cityId,
-              int.parse(widget.pinCode),
-              widget.keyCustomer,
-              widget.customerStatus,
-              "",
-              "",
-              "<CustomerComment/>",
-              userId ?? 0,
-              _contactFirstNameController.text,
-              _contactLastNameController.text,
-              _emailIdController.text,
-              _phoneNumberController.text,
-              "Active",
-              "Y",
-              _contactAddressController.text,
-              _selectedCity?.cityId ?? 0,
-              int.parse(_contactPinCodeController.text),
-              _selectedSalutationId ?? 0,
-              _selectedContactDesignationId ?? 0,
-              "28.535517",
-              "77.391029",
-              widget.ranking,
-              widget.boardId,
-              widget.chainSchoolId,
-              widget.endClassId,
-              widget.startClassId,
-              widget.medium,
-              widget.samplingMonthId,
-              widget.decisionMonthId,
-              widget.purchaseMode,
-              "xmlSubjectClassDM",
-              "xmlClassName",
-              0,
-              token ?? "");
+      print("${widget.type} _submitForm clicked");
+      String xmlClassName = _generateXmlFromClassValues();
+
+      final responseData = await CreateNewCustomerService().createNewCustomerSchool(
+          widget.type,
+          widget.customerName,
+          "",
+          widget.emailId,
+          widget.phoneNumber,
+          widget.address,
+          widget.cityId,
+          int.parse(widget.pinCode),
+          widget.keyCustomer,
+          widget.customerStatus,
+          "",
+          "<CustomerExecutive_Data><CustomerExecutive><AccountTableExecutiveId>${executiveId ?? 0}</AccountTableExecutiveId></CustomerExecutive></CustomerExecutive_Data>",
+          "<CustomerComment/>",
+          userId ?? 0,
+          _contactFirstNameController.text,
+          _contactLastNameController.text,
+          _emailIdController.text,
+          _phoneNumberController.text,
+          "Active",
+          "Y",
+          _contactAddressController.text,
+          _selectedCity?.cityId ?? 0,
+          int.parse(_contactPinCodeController.text),
+          _selectedSalutationId ?? 0,
+          _selectedContactDesignationId ?? 0,
+          "28.535517",
+          "77.391029",
+          widget.ranking,
+          widget.boardId,
+          widget.chainSchoolId,
+          widget.endClassId,
+          widget.startClassId,
+          widget.medium,
+          widget.samplingMonthId,
+          widget.decisionMonthId,
+          widget.purchaseMode,
+          "",
+          xmlClassName,
+          _selectedDataSourceId ?? 0,
+          token ?? "");
 
       if (responseData.status == 'Success') {
         String s = responseData.s;
+        print(s);
         if (s.isNotEmpty) {
           _toastMessage.showInfoToastMessage(s);
           Navigator.pushAndRemoveUntil(
@@ -547,24 +595,37 @@ class _NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
             (Route<dynamic> route) => false,
           );
         } else {
-          print('Add New Customer Error s empty');
-          _toastMessage
-              .showToastMessage("An error occurred while adding new customer.");
+          print('Add New ${widget.type} Error s empty');
+          _toastMessage.showToastMessage(
+              "An error occurred while adding new ${widget.type}.");
         }
       } else {
         print('Add New Customer Error ${responseData.status}');
-        _toastMessage
-            .showToastMessage("An error occurred while adding new customer.");
+        _toastMessage.showToastMessage(
+            "An error occurred while adding new ${widget.type}.");
       }
     } catch (e) {
       print('Add New Customer Error $e');
-      _toastMessage
-          .showToastMessage("An error occurred while adding new customer.");
+      _toastMessage.showToastMessage(
+          "An error occurred while adding new ${widget.type}.");
     } finally {
       setState(() {
         _isLoading = false;
       });
     }
+  }
+
+  String _generateXmlFromClassValues() {
+    StringBuffer xmlBuffer = StringBuffer();
+    xmlBuffer.write("<row_ClassName>");
+    _classValues.forEach((classId, qty) {
+      xmlBuffer.write("<ClassName>");
+      xmlBuffer.write("<ClassId>$classId</ClassId>");
+      xmlBuffer.write("<Enrolment>${qty.isEmpty ? '0' : qty}</Enrolment>");
+      xmlBuffer.write("</ClassName>");
+    });
+    xmlBuffer.write("</ClassNameList>");
+    return xmlBuffer.toString();
   }
 
   Widget buildDropdownField({
@@ -619,8 +680,12 @@ class _NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
                 final DateTime? picked = await showDatePicker(
                   context: context,
                   initialDate: DateTime.now(),
-                  firstDate: DateTime(2000),
-                  lastDate: DateTime(2100),
+                  firstDate: DateTime(1970, 1, 1),
+                  lastDate: DateTime.now(),
+                  selectableDayPredicate: (DateTime date) {
+                    return date.isAfter(DateTime(1969, 12, 31)) &&
+                        date.isBefore(DateTime.now().add(Duration(days: 1)));
+                  },
                   builder: (BuildContext context, Widget? child) {
                     return Theme(
                       data: ThemeData.light(),

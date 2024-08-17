@@ -1,19 +1,19 @@
-class CustomerSamplingApprovalListResponse {
+class ApprovalListResponse {
   final String status;
   final List<ApprovalList> approvalList;
 
-  CustomerSamplingApprovalListResponse({
+  ApprovalListResponse({
     required this.status,
     required this.approvalList,
   });
 
-  factory CustomerSamplingApprovalListResponse.fromJson(
+  factory ApprovalListResponse.fromJson(
       Map<String, dynamic> json) {
     var listApproval = json["ApprovalList"] as List;
     List<ApprovalList> approval =
         listApproval.map((i) => ApprovalList.fromJson(i)).toList();
 
-    return CustomerSamplingApprovalListResponse(
+    return ApprovalListResponse(
       status: json['Status'] ?? '',
       approvalList: approval,
     );
@@ -42,6 +42,10 @@ class ApprovalList {
   final String city;
   final String state;
   final String requestStatus;
+  final String executiveCode;
+  final String mobile;
+  final String emailId;
+  final String column1;
 
   ApprovalList({
     required this.sNo,
@@ -58,6 +62,10 @@ class ApprovalList {
     required this.city,
     required this.state,
     required this.requestStatus,
+    required this.executiveCode,
+    required this.mobile,
+    required this.emailId,
+    required this.column1,
   });
 
   factory ApprovalList.fromJson(Map<String, dynamic> json) {
@@ -76,6 +84,10 @@ class ApprovalList {
       city: json['City'] ?? '',
       state: json['State'] ?? '',
       requestStatus: json['RequestStatus'] ?? '',
+      executiveCode: json['ExecutiveCode'] ?? '',
+      mobile: json['Mobile'] ?? '',
+      emailId: json['EmailId'] ?? '',
+      column1: json['Column1'] ?? '',
     );
   }
 
@@ -95,6 +107,10 @@ class ApprovalList {
       'City': city,
       'State': state,
       'RequestStatus': requestStatus,
+      'ExecutiveCode': executiveCode,
+      'Mobile': mobile,
+      'EmailId': emailId,
+      'Column1': column1,
     };
   }
 }

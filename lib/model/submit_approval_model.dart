@@ -1,17 +1,17 @@
-class SubmitCustomerSamplingRequestApprovalResponse{
+class SubmitRequestApprovalResponse{
   final String status;
   final ReturnMessage returnMessage;
 
-  SubmitCustomerSamplingRequestApprovalResponse({
+  SubmitRequestApprovalResponse({
     required this.status,
     required this.returnMessage,
   });
 
-  factory SubmitCustomerSamplingRequestApprovalResponse.fromJson(Map<String, dynamic> json) {
+  factory SubmitRequestApprovalResponse.fromJson(Map<String, dynamic> json) {
     var returnMessageData = json["ReturnMessage"][0];
     final ReturnMessageData = ReturnMessage.fromJson(returnMessageData);
 
-    return SubmitCustomerSamplingRequestApprovalResponse(
+    return SubmitRequestApprovalResponse(
       status: json['Status'] ?? '',
       returnMessage: ReturnMessageData,
     );

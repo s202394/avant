@@ -27,6 +27,8 @@ class _NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
 
   final ToastMessage _toastMessage = ToastMessage();
 
+  DatabaseHelper dbHelper = DatabaseHelper();
+
   final TextEditingController _customerNameController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
   final TextEditingController _cityController = TextEditingController();
@@ -113,8 +115,22 @@ class _NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
       executiveId = prefs.getInt('executiveId') ?? 0;
       _cityAccess = prefs.getString('CityAccess') ?? '';
     });
-    _fetchGeographyData();
+    _loadGeographyData();
     futureData = initializePreferencesAndData();
+  }
+
+  void _loadGeographyData() async {
+    // Retrieve geography data from the database
+    List<Geography> dbData = await dbHelper.getGeographyDataFromDB();
+    if (dbData.isNotEmpty) {
+      setState(() {
+        _filteredCities = dbData;
+      });
+      print("Loaded geography data from the database.");
+    } else {
+      print("No data in DB, fetching from API.");
+      _fetchGeographyData();
+    }
   }
 
   void _fetchGeographyData() async {
@@ -142,9 +158,6 @@ class _NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
   }
 
   Future<CustomerEntryMasterResponse> initializePreferencesAndData() async {
-    // Create an instance of DatabaseHelper
-    DatabaseHelper dbHelper = DatabaseHelper();
-
     // Check if data exists in the database
     CustomerEntryMasterResponse? existingData =
         await dbHelper.getCustomerEntryMasterResponse();

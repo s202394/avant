@@ -594,37 +594,6 @@ class DatabaseHelper {
       await insertAffiliateType(affiliateType);
     }
   }
-  /*Future<void> insertCustomerEntryMasterResponse(
-      CustomerEntryMasterResponse data) async {
-    final db = await database;
-    print("CustomerEntryMaster inserting");
-    // Insert data into respective tables
-    await _insertList<BoardMaster>(db, 'BoardMaster', data.boardMasterList);
-    await _insertList<Classes>(db, 'Classes', data.classesList);
-    await _insertList<ChainSchool>(db, 'ChainSchool', data.chainSchoolList);
-    await _insertList<DataSource>(db, 'DataSource', data.dataSourceList);
-    await _insertList<AccountableExecutive>(
-        db, 'AccountableExecutive', data.accountableExecutiveList);
-    await _insertList<SalutationMaster>(
-        db, 'SalutationMaster', data.salutationMasterList);
-    await _insertList<ContactDesignation>(
-        db, 'ContactDesignation', data.contactDesignationList);
-    await _insertList<Subject>(db, 'Subject', data.subjectList);
-    await _insertList<Department>(db, 'Department', data.departmentList);
-    await _insertList<AdoptionRoleMaster>(
-        db, 'AdoptionRoleMaster', data.adoptionRoleMasterList);
-    await _insertList<CustomerCategory>(
-        db, 'CustomerCategory', data.customerCategoryList);
-    await _insertList<Months>(db, 'Months', data.monthsList);
-    await _insertList<PurchaseMode>(db, 'PurchaseMode', data.purchaseModeList);
-    await _insertList<InstituteType>(
-        db, 'InstituteType', data.instituteTypeList);
-    await _insertList<InstituteLevel>(
-        db, 'InstituteLevel', data.instituteLevelList);
-    await _insertList<AffiliateType>(
-        db, 'AffiliateType', data.affiliateTypeList);
-    print("CustomerEntryMaster insert success");
-  }*/
 
   Future<void> _insertList<T extends JsonSerializable>(
       Database db, String tableName, List<T> list) async {

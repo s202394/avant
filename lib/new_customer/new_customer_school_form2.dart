@@ -233,9 +233,11 @@ class _NewCustomerSchoolForm2State extends State<NewCustomerSchoolForm2> {
             ),
             SizedBox(height: 10),
             _buildDropdownClassesField('Start Class', startClassController,
-                _startClassFieldKey, data.classesList, _startClassFocusNode),
+                _startClassFieldKey, data.classesList, _startClassFocusNode,
+                isStartClass: true),
             _buildDropdownClassesField('End Class', endClassController,
-                _endClassFieldKey, data.classesList, _endClassFocusNode),
+                _endClassFieldKey, data.classesList, _endClassFocusNode,
+                isStartClass: false),
             _buildDropdownMonthField(
                 'Sampling Month',
                 samplingMonthController,
@@ -422,14 +424,14 @@ class _NewCustomerSchoolForm2State extends State<NewCustomerSchoolForm2> {
     TextEditingController controller,
     GlobalKey<FormFieldState> fieldKey,
     List<Classes> classesList,
-    FocusNode focusNode,
-  ) {
+    FocusNode focusNode, {
+    required bool isStartClass,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: DropdownButtonFormField<Classes>(
         key: fieldKey,
-        value:
-            (label == "Start Class") ? _selectedStartClass : _selectedEndClass,
+        value: isStartClass ? _selectedStartClass : _selectedEndClass,
         focusNode: focusNode,
         items: classesList
             .map((classes) => DropdownMenuItem<Classes>(
@@ -439,15 +441,14 @@ class _NewCustomerSchoolForm2State extends State<NewCustomerSchoolForm2> {
             .toList(),
         onChanged: (Classes? value) {
           setState(() {
-            if (label == "Start Class")
+            if (isStartClass) {
               _selectedStartClass = value;
-            else
+              startClassController.text = value?.className ?? '';
+              _validateEndClass();
+            } else {
               _selectedEndClass = value;
-
-            // Update the text controller with the selected category name
-            controller.text = value?.className ?? '';
-
-            // Validate the field
+              endClassController.text = value?.className ?? '';
+            }
             fieldKey.currentState?.validate();
           });
         },
@@ -459,10 +460,25 @@ class _NewCustomerSchoolForm2State extends State<NewCustomerSchoolForm2> {
           if (value == null || value.className.isEmpty) {
             return 'Please select $label';
           }
+          if (!isStartClass &&
+              _selectedStartClass != null &&
+              _selectedEndClass != null) {
+            if (_selectedEndClass!.classNumId <
+                _selectedStartClass!.classNumId) {
+              return 'End Class must be greater than or equal to Start Class';
+            }
+          }
           return null;
         },
       ),
     );
+  }
+
+  void _validateEndClass() {
+    // Trigger validation for end class if start class is selected
+    if (_selectedStartClass != null) {
+      _endClassFieldKey.currentState?.validate();
+    }
   }
 
   Widget _buildDropdownMonthField(

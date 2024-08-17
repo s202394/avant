@@ -3,7 +3,7 @@ import 'package:avant/common/error_layout.dart';
 import 'package:avant/common/no_data_layout.dart';
 import 'package:avant/common/toast.dart';
 import 'package:avant/home.dart';
-import 'package:avant/model/customer_sampling_approval_details_model.dart';
+import 'package:avant/model/approval_details_model.dart';
 import 'package:avant/model/login_model.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
@@ -28,7 +28,7 @@ class ApprovalDetailForm extends StatefulWidget {
 }
 
 class _ApprovalDetailFormState extends State<ApprovalDetailForm> {
-  late Future<CustomerSamplingApprovalDetailsResponse> futureRequestDetails;
+  late Future<ApprovalDetailsResponse> futureRequestDetails;
 
   List<TitleDetails> _titleDetails = [];
 
@@ -72,7 +72,7 @@ class _ApprovalDetailFormState extends State<ApprovalDetailForm> {
       setState(() {
         isConnected = true;
         isLoading = true;
-        futureRequestDetails = CustomerSamplingApprovalDetailsService()
+        futureRequestDetails = ApprovalDetailsService()
             .fetchCustomerSamplingApprovalDetails(
                 widget.customerId,
                 widget.customerType,
@@ -86,20 +86,20 @@ class _ApprovalDetailFormState extends State<ApprovalDetailForm> {
             print('_titleDetails size:${_titleDetails.length}');
             isLoading = false;
           });
-          return response ?? CustomerSamplingApprovalDetailsResponse();
+          return response ?? ApprovalDetailsResponse();
         }).catchError((error) {
           setState(() {
             isLoading = false;
             hasData = false;
           });
           print("Error occurred: $error");
-          return CustomerSamplingApprovalDetailsResponse();
+          return ApprovalDetailsResponse();
         });
       });
     }
   }
 
-  void _handleRequest(BuildContext context, String type,
+  void _handleRequest(BuildContext context, String approvalFor,
       List<TitleDetails> titleDetailsList) async {
     // Show loading indicator
     showDialog(
@@ -113,24 +113,40 @@ class _ApprovalDetailFormState extends State<ApprovalDetailForm> {
     print('titleDetailsList size:${titleDetailsList.length}');
 
     try {
-      // Call the method and pass necessary parameters
-      final response = await SubmitCustomerSamplingRequestApprovalService()
-          .submitCustomerSamplingRequestApproved(
-        "Single",
-        type,
-        profileCode ?? "",
-        "${executiveId ?? 0}",
-        "$userId",
-        "${widget.requestId}",
-        generateTitleDetailsXML(titleDetailsList),
-        "",
-        token,
-      );
+      final response;
+      if (widget.type == 'Customer Sample Approval') {
+        response = await SubmitRequestApprovalService()
+            .submitCustomerSamplingRequestApproved(
+          "Single",
+          approvalFor,
+          profileCode ?? "",
+          "${executiveId ?? 0}",
+          "$userId",
+          "${widget.requestId}",
+          generateTitleDetailsXML(titleDetailsList),
+          "",
+          token,
+        );
+      } else {
+        response =
+            await SubmitRequestApprovalService().submitSelfStockRequestApproved(
+          "Single",
+          approvalFor,
+          profileCode ?? "",
+          "${executiveId ?? 0}",
+          "$userId",
+          "${widget.requestId}",
+          generateTitleDetailsXML(titleDetailsList),
+          "",
+          token,
+        );
+      }
 
       // Close the loading indicator
       Navigator.of(context).pop();
 
-      print('Approval successful: ${response.returnMessage.msgText}');
+      print(
+          'Approval ${widget.type} successful: ${response.returnMessage.msgText}');
       if (response.status == 'Success') {
         String s = response.returnMessage.msgText;
         if (s.isNotEmpty) {
@@ -138,17 +154,17 @@ class _ApprovalDetailFormState extends State<ApprovalDetailForm> {
           Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(builder: (context) => HomePage()),
-                (Route<dynamic> route) => false,
+            (Route<dynamic> route) => false,
           );
         } else {
-          print('$type Customer Sample Approval Error s empty');
+          print('$approvalFor ${widget.type} Error s empty');
           _toastMessage.showToastMessage(
-              "An error occurred while $type customer sampling request.");
+              "An error occurred while $approvalFor ${widget.type}.");
         }
       } else {
-        print('Add Customer Sample Approval Error ${response.status}');
+        print('Add ${widget.type} Error ${response.status}');
         _toastMessage.showToastMessage(
-            "An error occurred while $type customer sampling request.");
+            "An error occurred while $approvalFor ${widget.type}.");
       }
     } catch (error) {
       // Close the loading indicator
@@ -157,7 +173,7 @@ class _ApprovalDetailFormState extends State<ApprovalDetailForm> {
       // Handle the error (e.g., show error message)
       print('Failed to approve: $error');
       _toastMessage.showToastMessage(
-          "An error occurred while $type customer sampling request.");
+          "An error occurred while $approvalFor ${widget.type}.");
     }
   }
 
@@ -172,7 +188,7 @@ class _ApprovalDetailFormState extends State<ApprovalDetailForm> {
         child: isLoading
             ? CircularProgressIndicator()
             : isConnected
-                ? FutureBuilder<CustomerSamplingApprovalDetailsResponse>(
+                ? FutureBuilder<ApprovalDetailsResponse>(
                     future: futureRequestDetails,
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) {
