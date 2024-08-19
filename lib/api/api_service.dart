@@ -182,36 +182,38 @@ class LoginService {
     }
   }
 
-  Future<ChangePasswordModel> changePassword(
-      String userId,
+  Future<ChangePasswordResponse> changePassword(
+      int userId,
       String password,
       String newPassword,
       String ipAddress,
       String browserInformation,
-      String enteredBy,
+      int enteredBy,
       String token) async {
+    final body= jsonEncode(<String, dynamic>{
+      'UserId': userId,
+      'Password': password,
+      'NewPassword': newPassword,
+      'IPAddress': ipAddress,
+      'BrowserInformation': browserInformation,
+      'EnteredBy': enteredBy,
+    });
     final response = await http.post(
       Uri.parse(FORGOT_PASSWORD_URL),
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
         'Authorization': 'Bearer $token',
       },
-      body: jsonEncode(<String, dynamic>{
-        'UserId': userId,
-        'Password': password,
-        'NewPassword': newPassword,
-        'IPAddress': ipAddress,
-        'BrowserInformation': browserInformation,
-        'EnteredBy': enteredBy,
-      }),
+      body: body,
     );
 
     print('Response status: ${response.statusCode}');
     print('Response body: ${response.body}');
+    print('Request body: ${body}');
 
     if (response.statusCode == 200) {
       final jsonResponse = json.decode(response.body);
-      return ChangePasswordModel.fromJson(jsonResponse);
+      return ChangePasswordResponse.fromJson(jsonResponse);
     } else if (response.statusCode == 401) {
       // Token is invalid or expired, refresh the token and retry
       return await refreshAndRetryChangePassword(userId, password, newPassword,
@@ -221,16 +223,16 @@ class LoginService {
     }
   }
 
-  Future<ChangePasswordModel> refreshAndRetryChangePassword(
-      String userId,
+  Future<ChangePasswordResponse> refreshAndRetryChangePassword(
+      int userId,
       String password,
       String newPassword,
       String ipAddress,
       String browserInformation,
-      String enteredBy) async {
+      int enteredBy) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    String username = prefs.getString('token_username') ?? 'imi@gmail.com';
-    String password = prefs.getString('password') ?? 'admin@123';
+    String username = TOKEN_USERNAME;
+    String password = TOKEN_PASSWORD;
 
     if (username.isNotEmpty && password.isNotEmpty) {
       await TokenService().token(username, password);

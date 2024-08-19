@@ -1,26 +1,36 @@
 import 'package:animate_do/animate_do.dart';
 import 'package:avant/api/api_service.dart';
-import 'package:avant/change_password.dart';
 import 'package:avant/common/common.dart';
 import 'package:avant/common/toast.dart';
+import 'package:avant/dialog/custom_alert_dialog.dart';
+import 'package:avant/home.dart';
+import 'package:avant/model/change_password_model.dart';
 import 'package:avant/model/forgot_password_model.dart';
+import 'package:avant/model/login_model.dart';
+import 'package:avant/login.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class ForgotPasswordPage extends StatefulWidget {
-  ForgotPasswordPage({super.key});
+class ChangePasswordScreen extends StatefulWidget {
+  final Password password;
+
+  ChangePasswordScreen({required this.password});
 
   @override
-  _ForgotPasswordPageState createState() => _ForgotPasswordPageState();
+  _ChangePasswordScreenState createState() => _ChangePasswordScreenState();
 }
 
-class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
+class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   late SharedPreferences prefs;
 
-  final _emailController = TextEditingController();
-  final _emailFocusNode = FocusNode();
+  final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
+  final _passwordFocusNode = FocusNode();
+  final _confirmPasswordFocusNode = FocusNode();
 
   final ToastMessage _toastMessage = ToastMessage();
+
+  ChangePasswordModel? changePasswordResponse;
 
   bool _isLoading = false;
   String? token = "";
@@ -37,39 +47,47 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
 
   @override
   void dispose() {
-    _emailController.dispose();
-    _emailFocusNode.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    _passwordFocusNode.dispose();
+    _confirmPasswordFocusNode.dispose();
     super.dispose();
   }
 
-  Future<void> _forgotPasswordLoad() async {
-    final String email = _emailController.text.trim();
+  Future<void> _loadChangePassword() async {
+    final String password = _passwordController.text.trim();
+    final String confirmPassword = _confirmPasswordController.text.trim();
 
-    if (!_validateInput(email)) return;
+    if (!_validateInput(password, confirmPassword)) return;
 
     if (!await _checkInternetConnection()) return;
 
     setState(() => _isLoading = true);
 
     try {
-      await _forgotPassword(email);
-      print('GOING TO Change Password Page');
+      await _changePassword(password);
+      print('GOING TO Login Page');
     } catch (e) {
-      print('Forgot Password Error $e');
+      print('Change Password Error $e');
       _toastMessage
-          .showToastMessage("An error occurred while forgot password.");
+          .showToastMessage("An error occurred while change password.");
     } finally {
       setState(() => _isLoading = false);
     }
   }
 
-  bool _validateInput(String email) {
-    if (email.isEmpty) {
-      _showErrorMessage("Please enter your email ", _emailFocusNode);
+  bool _validateInput(String password, String confirmPassword) {
+    if (password.isEmpty) {
+      _showErrorMessage("Please enter password.", _passwordFocusNode);
       return false;
     }
-    if (!Validator.isValidEmail(email)) {
-      _showErrorMessage("Please enter a valid email id.", _emailFocusNode);
+    if (confirmPassword.isEmpty) {
+      _showErrorMessage("Please enter confirm password.", _confirmPasswordFocusNode);
+      return false;
+    }
+    if (password != confirmPassword) {
+      _showErrorMessage("Password didn't matched with confirm password.",
+          _passwordFocusNode);
       return false;
     }
     return true;
@@ -89,31 +107,39 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
     return true;
   }
 
-  Future<void> _forgotPassword(String email) async {
-    print('Forgot Password');
+  Future<void> _changePassword(String newPassword) async {
+    print('Change Password');
 
-    final responseData =
-        await LoginService().forgotPassword(email, token ?? "");
-    if (responseData != null &&
-        responseData.password != null &&
-        responseData.password!.userName.isNotEmpty) {
+    final String ipAddress = await getIpAddress();
+    final String deviceInfo = await getDeviceInfo();
+
+    final responseData = await LoginService().changePassword(
+        widget.password.id,
+        widget.password.password,
+        newPassword,
+        ipAddress,
+        deviceInfo,
+        widget.password.id,
+        token ?? "");
+    if (responseData != null && responseData.changePasswordModel != null) {
       print(
-          'Forgot password successful! Username: ${responseData?.password?.userName}');
-      if (responseData != null && responseData.password != null) {
-        _navigateToChangePasswordPage(responseData.password!);
+          'Forgot password successful! Username: ${responseData?.changePasswordModel?.msgText}');
+      if (responseData != null && responseData?.changePasswordModel?.msgText != null) {
+        _navigateToHomePage();
       }
     } else {
-      print('Forgot password error! User ID: ${responseData?.password}');
+      print('Forgot password error! User ID: ${responseData?.changePasswordModel?.msgText}');
       _toastMessage
           .showToastMessage("There are any issue while forgot your password.");
     }
   }
 
-  void _navigateToChangePasswordPage(Password model) {
-    Navigator.push(
-        context,
-        MaterialPageRoute(
-            builder: (context) => ChangePasswordScreen(password: model)));
+  void _navigateToHomePage() {
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (context) => LoginPage()),
+      (Route<dynamic> route) => false, // Remove all previous routes
+    );
   }
 
   @override
@@ -132,8 +158,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                     children: <Widget>[
                       _buildInputFields(),
                       const SizedBox(height: 30),
-                      _buildForgotPasswordButton(),
-                      const SizedBox(height: 70),
+                      _buildChangePasswordButton(),
                     ],
                   ),
                 ),
@@ -209,7 +234,13 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
             )
           ],
         ),
-        child: _buildTextField(_emailController, _emailFocusNode, "Email Id"),
+        child: Column(
+          children: <Widget>[
+            _buildTextField(_passwordController, _passwordFocusNode, "Password",
+                applyDecoration: true),
+            _buildTextField(_confirmPasswordController, _confirmPasswordFocusNode, "Confirm Password"),
+          ],
+        ),
       ),
     );
   }
@@ -241,11 +272,11 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
     );
   }
 
-  Widget _buildForgotPasswordButton() {
+  Widget _buildChangePasswordButton() {
     return GestureDetector(
       onTap: () {
         FocusScope.of(context).unfocus();
-        _forgotPasswordLoad();
+        _loadChangePassword();
       },
       child: FadeInUp(
         duration: const Duration(milliseconds: 1900),
@@ -262,7 +293,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
           ),
           child: Center(
             child: const Text(
-              "Forgot Password",
+              "Change Password",
               style:
                   TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
             ),
