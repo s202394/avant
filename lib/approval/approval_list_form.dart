@@ -1,19 +1,15 @@
-import 'package:avant/api/api_request.dart';
 import 'package:avant/api/api_service.dart';
-import 'package:avant/model/request.dart';
-import 'package:avant/home.dart';
+import 'package:avant/approval/approval_detail_form.dart';
 import 'package:avant/common/common.dart';
-import 'package:avant/model/approval_list_model.dart';
-import 'package:avant/common/no_data_layout.dart';
 import 'package:avant/common/error_layout.dart';
+import 'package:avant/common/no_data_layout.dart';
+import 'package:avant/common/toast.dart';
+import 'package:avant/home.dart';
+import 'package:avant/model/approval_list_model.dart';
 import 'package:avant/model/login_model.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:flutter/services.dart';
-import 'package:avant/common/toast.dart';
-import 'package:avant/approval/approval_detail_form.dart';
-import 'package:intl/intl.dart';
 
 class ApprovalListForm extends StatefulWidget {
   final String type;
@@ -321,7 +317,8 @@ class _ApprovalListFormState extends State<ApprovalListForm> {
       }
 
       Navigator.of(context).pop();
-      print('Approval ${widget.type} successful: ${response.returnMessage.msgText}');
+      print(
+          'Approval ${widget.type} successful: ${response.returnMessage.msgText}');
       if (response.status == 'Success') {
         String s = response.returnMessage.msgText;
         if (s.isNotEmpty) {

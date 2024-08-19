@@ -1,12 +1,12 @@
 import 'package:avant/api/api_service.dart';
 import 'package:avant/common/common.dart';
 import 'package:avant/common/toast.dart';
-import 'package:avant/model/customer_entry_master_model.dart';
 import 'package:avant/db/db_helper.dart';
+import 'package:avant/model/customer_entry_master_model.dart';
+import 'package:avant/new_customer/new_customer_school_form3.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:avant/new_customer/new_customer_school_form3.dart';
 
 class NewCustomerSchoolForm2 extends StatefulWidget {
   final String type;

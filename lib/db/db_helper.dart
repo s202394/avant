@@ -2,6 +2,7 @@ import 'package:avant/model/login_model.dart';
 import 'package:avant/model/menu_model.dart';
 import 'package:avant/model/geography_model.dart';
 import 'package:avant/model/customer_entry_master_model.dart';
+import 'package:avant/model/setup_values.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 import 'dart:convert';
@@ -131,6 +132,12 @@ class DatabaseHelper {
           "CREATE TABLE Geography(CountryId Int, Country TEXT, StateId Int, State TEXT, CityId Int, City TEXT)",
         );
         print("Geography table successfully created.");
+
+        //Create table for SetupValues
+        await database.execute(
+          "CREATE TABLE SetupValues (Id INTEGER PRIMARY KEY, KeyName TEXT NOT NULL, KeyValue TEXT NOT NULL, KeyStatus INTEGER NOT NULL, KeyDescription TEXT)",
+        );
+        print("SetupValues table successfully created.");
       },
       version: 1,
     );
@@ -734,15 +741,12 @@ class DatabaseHelper {
     }
   }
 
-
   //Save Geography Data to the Database
   Future<void> insertGeographyData(Geography data) async {
     final db = await database;
     await db.insert('Geography', data.toJson(),
         conflictAlgorithm: ConflictAlgorithm.replace);
     print('Inserting into DB: ${data.toJson()}');
-    print(
-        "${data.city}:${data.state}:${data.country} successfully inserted into db.");
   }
 
   //Retrieve Geography Data from the Database
@@ -750,13 +754,27 @@ class DatabaseHelper {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query('Geography');
     print("Getting Geography data from db.");
-    for (var map in maps) {
-      print('Raw data from DB: ${map}');
-    }
     return List.generate(maps.length, (i) {
-      final geography = Geography.fromJson(maps[i]);
-      print('Parsed Geography: ${geography.toJson()}');
-      return geography;
+      return Geography.fromJson(maps[i]);
+    });
+  }
+
+  //Save SetupValues Data to the Database
+  Future<void> insertSetupValueData(SetupValues data) async {
+    final db = await database;
+    await db.insert('SetupValues', data.toJson(),
+        conflictAlgorithm: ConflictAlgorithm.replace);
+    print('Inserting into DB: ${data.toJson()}');
+    print("${data.keyName}:${data.keyValue} successfully inserted into db.");
+  }
+
+  //Retrieve SetupValues Data from the Database
+  Future<List<SetupValues>> getSetupValuesDataFromDB() async {
+    final db = await database;
+    final List<Map<String, dynamic>> maps = await db.query('SetupValues');
+    print("Getting SetupValues data from db.");
+    return List.generate(maps.length, (i) {
+      return SetupValues.fromJson(maps[i]);
     });
   }
 }

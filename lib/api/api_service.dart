@@ -2,17 +2,21 @@ import 'dart:convert';
 
 import 'package:avant/api/api_constants.dart';
 import 'package:avant/db/db_helper.dart';
-import 'package:avant/model/customer_entry_master_model.dart';
+import 'package:avant/common/constants.dart';
 import 'package:avant/model/approval_details_model.dart';
 import 'package:avant/model/approval_list_model.dart';
+import 'package:avant/model/change_password_model.dart';
+import 'package:avant/model/customer_entry_master_model.dart';
+import 'package:avant/model/entry_model.dart';
 import 'package:avant/model/followup_action_model.dart';
+import 'package:avant/model/forgot_password_model.dart';
 import 'package:avant/model/geography_model.dart';
 import 'package:avant/model/get_visit_dsr_model.dart';
 import 'package:avant/model/login_model.dart';
 import 'package:avant/model/menu_model.dart';
+import 'package:avant/model/setup_values.dart';
 import 'package:avant/model/submit_approval_model.dart';
 import 'package:avant/model/travel_plan_model.dart';
-import 'package:avant/model/entry_model.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -101,14 +105,14 @@ class LoginService {
       }
     } else if (response.statusCode == 401) {
       // Token is invalid or expired, refresh the token and retry
-      return await refreshAndRetry(userId);
+      return await refreshAndRetryLogin(userId);
     } else {
       print('logout failure!! responseData: ${response.statusCode}');
       throw Exception('Failed to log out: ${response.reasonPhrase}');
     }
   }
 
-  Future<Map<String, dynamic>> refreshAndRetry(int userId) async {
+  Future<Map<String, dynamic>> refreshAndRetryLogin(int userId) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String username = prefs.getString('token_username') ?? '';
     String password = prefs.getString('password') ?? '';
@@ -119,6 +123,122 @@ class LoginService {
 
       if (newToken != null && newToken.isNotEmpty) {
         return await logout(userId, newToken);
+      } else {
+        throw Exception('Failed to retrieve new token');
+      }
+    } else {
+      throw Exception(
+          'Username or password is not stored in SharedPreferences');
+    }
+  }
+
+  Future<ForgotPasswordResponse> forgotPassword(
+      String emailId, String token) async {
+    final body = jsonEncode(<String, dynamic>{
+      'EmailId': emailId,
+    });
+    final response = await http.post(
+      Uri.parse(FORGOT_PASSWORD_URL),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+        'Authorization': 'Bearer $token',
+      },
+      body: body,
+    );
+
+    print('Response status: ${response.statusCode}');
+    print('Response body: ${response.body}');
+    print('Request body: ${body}');
+
+    if (response.statusCode == 200) {
+      final jsonResponse = json.decode(response.body);
+      return ForgotPasswordResponse.fromJson(jsonResponse);
+    } else if (response.statusCode == 401) {
+      // Token is invalid or expired, refresh the token and retry
+      return await refreshAndRetryForgotPassword(emailId);
+    } else {
+      throw Exception('Failed to forgot password');
+    }
+  }
+
+  Future<ForgotPasswordResponse> refreshAndRetryForgotPassword(
+      String emailId) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String username = TOKEN_USERNAME;
+    String password = TOKEN_PASSWORD;
+
+    if (username.isNotEmpty && password.isNotEmpty) {
+      await TokenService().token(username, password);
+      String? newToken = prefs.getString('token');
+
+      if (newToken != null && newToken.isNotEmpty) {
+        return await forgotPassword(emailId, newToken);
+      } else {
+        throw Exception('Failed to retrieve new token');
+      }
+    } else {
+      throw Exception(
+          'Username or password is not stored in SharedPreferences');
+    }
+  }
+
+  Future<ChangePasswordModel> changePassword(
+      String userId,
+      String password,
+      String newPassword,
+      String ipAddress,
+      String browserInformation,
+      String enteredBy,
+      String token) async {
+    final response = await http.post(
+      Uri.parse(FORGOT_PASSWORD_URL),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode(<String, dynamic>{
+        'UserId': userId,
+        'Password': password,
+        'NewPassword': newPassword,
+        'IPAddress': ipAddress,
+        'BrowserInformation': browserInformation,
+        'EnteredBy': enteredBy,
+      }),
+    );
+
+    print('Response status: ${response.statusCode}');
+    print('Response body: ${response.body}');
+
+    if (response.statusCode == 200) {
+      final jsonResponse = json.decode(response.body);
+      return ChangePasswordModel.fromJson(jsonResponse);
+    } else if (response.statusCode == 401) {
+      // Token is invalid or expired, refresh the token and retry
+      return await refreshAndRetryChangePassword(userId, password, newPassword,
+          ipAddress, browserInformation, enteredBy);
+    } else {
+      throw Exception('Failed to change password');
+    }
+  }
+
+  Future<ChangePasswordModel> refreshAndRetryChangePassword(
+      String userId,
+      String password,
+      String newPassword,
+      String ipAddress,
+      String browserInformation,
+      String enteredBy) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String username = prefs.getString('token_username') ?? 'imi@gmail.com';
+    String password = prefs.getString('password') ?? 'admin@123';
+
+    if (username.isNotEmpty && password.isNotEmpty) {
+      await TokenService().token(username, password);
+      String? newToken = prefs.getString('token');
+
+      if (newToken != null && newToken.isNotEmpty) {
+        return await changePassword(userId, password, newPassword, ipAddress,
+            browserInformation, enteredBy, newToken);
       } else {
         throw Exception('Failed to retrieve new token');
       }
@@ -198,6 +318,76 @@ class MenuService {
 
   Future<List<MenuData>> getMenuDataFromDB() async {
     return await DatabaseHelper().getMenuDataFromDB();
+  }
+}
+
+class SetupValuesService {
+  Future<List<SetupValues>> setupValues(String token) async {
+    final response = await http.post(
+      Uri.parse(SETUP_VALUES_URL),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode(<String, dynamic>{
+        'setupKey': 'False',
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      final responseData = json.decode(response.body);
+      print('Get setup values successful! responseData: $responseData');
+      if (responseData['Status'] == 'Success') {
+        if (responseData['SetupValue'] != null &&
+            responseData['SetupValue'] is List) {
+          final List<dynamic> setupList = responseData['SetupValue'];
+          final setupData =
+              setupList.map((data) => SetupValues.fromJson(data)).toList();
+
+          // Save the fetched menu data to the database
+          for (var setup in setupData) {
+            await DatabaseHelper().insertSetupValueData(setup);
+          }
+
+          return setupData;
+        } else {
+          print('SetupValue data is null or not a list');
+          return await getSetupValuesDataFromDB();
+        }
+      } else {
+        print('SetupValue Status is not Success');
+        return await getSetupValuesDataFromDB();
+      }
+    } else if (response.statusCode == 401) {
+      // Token is invalid or expired, refresh the token and retry
+      return await refreshAndRetry();
+    } else {
+      return await getSetupValuesDataFromDB();
+    }
+  }
+
+  Future<List<SetupValues>> refreshAndRetry() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String username = prefs.getString('token_username') ?? '';
+    String password = prefs.getString('password') ?? '';
+
+    if (username.isNotEmpty && password.isNotEmpty) {
+      await TokenService().token(username, password);
+      String? newToken = prefs.getString('token');
+
+      if (newToken != null && newToken.isNotEmpty) {
+        return await setupValues(newToken);
+      } else {
+        throw Exception('Failed to retrieve new token');
+      }
+    } else {
+      throw Exception(
+          'Username or password is not stored in SharedPreferences');
+    }
+  }
+
+  Future<List<SetupValues>> getSetupValuesDataFromDB() async {
+    return await DatabaseHelper().getSetupValuesDataFromDB();
   }
 }
 

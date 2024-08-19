@@ -2,36 +2,33 @@ import 'package:animate_do/animate_do.dart';
 import 'package:avant/api/api_service.dart';
 import 'package:avant/common/common.dart';
 import 'package:avant/common/toast.dart';
-import 'package:avant/model/login_model.dart';
 import 'package:avant/dialog/custom_alert_dialog.dart';
-import 'package:avant/forgot_password.dart';
 import 'package:avant/home.dart';
+import 'package:avant/model/change_password_model.dart';
+import 'package:avant/model/forgot_password_model.dart';
+import 'package:avant/model/login_model.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class LoginPage extends StatefulWidget {
-  LoginPage({super.key});
+class ForgotPasswordPage extends StatefulWidget {
+  ForgotPasswordPage({super.key});
 
   @override
-  _LoginPageState createState() => _LoginPageState();
+  _ForgotPasswordPageState createState() => _ForgotPasswordPageState();
 }
 
-class _LoginPageState extends State<LoginPage> {
+class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   late SharedPreferences prefs;
 
   final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
-  final _emailMobileFocusNode = FocusNode();
-  final _passwordFocusNode = FocusNode();
+  final _emailFocusNode = FocusNode();
 
   final ToastMessage _toastMessage = ToastMessage();
 
-  LoginResponse? loginResponse;
+  ChangePasswordModel? changePasswordResponse;
 
   bool _isLoading = false;
   String? token = "";
-
-  String tokenUsername = "imi@gmail.com";
 
   @override
   void initState() {
@@ -41,77 +38,45 @@ class _LoginPageState extends State<LoginPage> {
 
   void _initialize() async {
     prefs = await SharedPreferences.getInstance();
-    _emailController.text = 'Gaurav@gmail.com';
-    _passwordController.text = 'admin@123';
-  }
-
-  Future<void> _saveData(
-      String emailOrPhone, String password, bool value) async {
-    prefs.setString('token_username', tokenUsername);
-    prefs.setString('username', emailOrPhone);
-    prefs.setString('password', password);
-    prefs.setBool('is_already_login', value);
-
-    _navigateToHomePage();
   }
 
   @override
   void dispose() {
     _emailController.dispose();
-    _passwordController.dispose();
-    _emailMobileFocusNode.dispose();
-    _passwordFocusNode.dispose();
+    _emailFocusNode.dispose();
     super.dispose();
   }
 
-  Future<void> _login() async {
-    final String emailOrPhone = _emailController.text.trim();
-    final String password = _passwordController.text.trim();
+  Future<void> _forgotPasswordLoad() async {
+    final String email = _emailController.text.trim();
 
-    if (!_validateInput(emailOrPhone, password)) return;
+    if (!_validateInput(email)) return;
 
     if (!await _checkInternetConnection()) return;
 
     setState(() => _isLoading = true);
 
     try {
-      await _getToken(tokenUsername, password);
-      print('Get token successful! token: $token');
-      if ((token ?? "").isNotEmpty) {
-        print('GOING TO LOGIN');
-        await _loginUser(emailOrPhone, password);
-        print('GOING TO Home Page');
-      } else {
-        print('Token Error');
-        _toastMessage.showToastMessage("An error occurred while logging in.");
-      }
+      await _forgotPassword(email);
+      print('GOING TO Login Page');
     } catch (e) {
       print('Token Error $e');
-      _toastMessage.showToastMessage("An error occurred while logging in.");
+      _toastMessage
+          .showToastMessage("An error occurred while forgot password.");
     } finally {
       setState(() => _isLoading = false);
     }
   }
 
-  bool _validateInput(String emailOrPhone, String password) {
-    if (emailOrPhone.isEmpty) {
-      _showErrorMessage(
-          "Please enter your email/phone number", _emailMobileFocusNode);
+  bool _validateInput(String email) {
+    if (email.isEmpty) {
+      _showErrorMessage("Please enter your email ", _emailFocusNode);
       return false;
     }
-
-    if (!Validator.isValidEmail(emailOrPhone) &&
-        !Validator.isValidMobile(emailOrPhone)) {
-      _showErrorMessage(
-          "Please enter a valid email or phone number.", _emailMobileFocusNode);
+    if (!Validator.isValidEmail(email)) {
+      _showErrorMessage("Please enter a valid email id.", _emailFocusNode);
       return false;
     }
-
-    if (password.isEmpty) {
-      _showErrorMessage("Please enter your password", _passwordFocusNode);
-      return false;
-    }
-
     return true;
   }
 
@@ -129,49 +94,26 @@ class _LoginPageState extends State<LoginPage> {
     return true;
   }
 
-  Future<void> _getToken(String emailOrPhone, String password) async {
-    print('Getting Token $emailOrPhone $password');
-    await TokenService().token(emailOrPhone, password);
-    token = prefs.getString('token');
-    print('Get token successful! Token: $token');
-  }
+  Future<void> _forgotPassword(String email) async {
+    print('Forgot Password');
 
-  Future<void> _loginUser(String emailOrPhone, String password) async {
-    final String ipAddress = await getIpAddress();
-    final String deviceInfo = await getDeviceInfo();
-    final String deviceId = await getDeviceId();
-
-    print(
-        'Login details ipAddress : $ipAddress , deviceInfo : $deviceInfo , deviceId : $deviceId');
-
-    final responseData = await LoginService().login(
-        emailOrPhone, password, ipAddress, deviceId, deviceInfo, token ?? "");
-    final loginResponse = await LoginResponse.fromJson(responseData);
-    if (loginResponse!.executiveData.loginBlocked == 'N') {
-      final String? userId = prefs.getString('userId');
-
-      print('Login successful! User ID: $userId');
-      _saveData(emailOrPhone, password, true);
+    final responseData =
+        await LoginService().forgotPassword(email, token ?? "");
+    if (responseData != null && responseData.password != null && responseData.password!.userName.isNotEmpty) {
+      print('Forgot password successful! Username: ${responseData?.password?.userName}');
+      if (responseData != null && responseData.password != null) {
+        _navigateToChangePasswordPage(responseData.password!);
+      }
     } else {
-      showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return SingleAlertDialog(
-            title: "Alert",
-            content: "You are not allowed to login. Please contact to admin.",
-            onOk: () {
-              // Handle ok action
-              Navigator.of(context).pop();
-            },
-          );
-        },
-      );
+      print('Forgot password error! User ID: ${responseData?.password}');
+      _toastMessage
+          .showToastMessage("There are any issue while forgot your password.");
     }
   }
 
-  void _navigateToHomePage() {
-    Navigator.push(
-        context, MaterialPageRoute(builder: (context) => HomePage()));
+  void _navigateToChangePasswordPage(Password model) {
+    // Navigator.push(
+    //     context, MaterialPageRoute(builder: (context) => ChnagePa()));
   }
 
   @override
@@ -190,9 +132,8 @@ class _LoginPageState extends State<LoginPage> {
                     children: <Widget>[
                       _buildInputFields(),
                       const SizedBox(height: 30),
-                      _buildLoginButton(),
+                      _buildForgotPasswordButton(),
                       const SizedBox(height: 70),
-                      _buildForgotPasswordText(),
                     ],
                   ),
                 ),
@@ -255,7 +196,7 @@ class _LoginPageState extends State<LoginPage> {
     return FadeInUp(
       duration: const Duration(milliseconds: 1800),
       child: Container(
-        padding: const EdgeInsets.all(5),
+        padding: const EdgeInsets.only(left: 5, right: 5),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(10),
@@ -270,11 +211,7 @@ class _LoginPageState extends State<LoginPage> {
         ),
         child: Column(
           children: <Widget>[
-            _buildTextField(_emailController, _emailMobileFocusNode,
-                "Email or Phone number",
-                applyDecoration: true),
-            _buildTextField(_passwordController, _passwordFocusNode, "Password",
-                obscureText: true),
+            _buildTextField(_emailController, _emailFocusNode, "Email Id"),
           ],
         ),
       ),
@@ -289,8 +226,10 @@ class _LoginPageState extends State<LoginPage> {
       decoration: applyDecoration
           ? BoxDecoration(
               border: Border(
-                  bottom:
-                      BorderSide(color: const Color.fromRGBO(244, 155, 32, 1))),
+                bottom: BorderSide(
+                  color: const Color.fromRGBO(244, 155, 32, 1),
+                ),
+              ),
             )
           : null,
       child: TextField(
@@ -306,11 +245,11 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  Widget _buildLoginButton() {
+  Widget _buildForgotPasswordButton() {
     return GestureDetector(
       onTap: () {
         FocusScope.of(context).unfocus();
-        _login();
+        _forgotPasswordLoad();
       },
       child: FadeInUp(
         duration: const Duration(milliseconds: 1900),
@@ -327,7 +266,7 @@ class _LoginPageState extends State<LoginPage> {
           ),
           child: Center(
             child: const Text(
-              "Login",
+              "Forgot Password",
               style:
                   TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
             ),
@@ -335,26 +274,5 @@ class _LoginPageState extends State<LoginPage> {
         ),
       ),
     );
-  }
-
-  Widget _buildForgotPasswordText() {
-    return GestureDetector(
-      onTap: () {
-        FocusScope.of(context).unfocus();
-        _navigateToForgotPasswordPage();
-      },
-      child: FadeInUp(
-        duration: const Duration(milliseconds: 2000),
-        child: const Text(
-          "Forgot Password?",
-          style: TextStyle(color: Color.fromRGBO(244, 155, 32, 1)),
-        ),
-      ),
-    );
-  }
-
-  void _navigateToForgotPasswordPage() {
-    Navigator.push(
-        context, MaterialPageRoute(builder: (context) => ForgotPasswordPage()));
   }
 }

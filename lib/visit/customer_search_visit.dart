@@ -1,10 +1,9 @@
-import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
-import 'package:avant/visit/customer_search_visit.dart';
-import 'package:avant/visit/customer_search_visit_list.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:avant/model/geography_model.dart';
 import 'package:avant/api/api_service.dart';
+import 'package:avant/db/db_helper.dart';
+import 'package:avant/model/geography_model.dart';
+import 'package:avant/visit/customer_search_visit_list.dart';
+import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class CustomerSearchVisit extends StatefulWidget {
   @override
