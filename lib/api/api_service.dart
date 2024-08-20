@@ -190,7 +190,7 @@ class LoginService {
       String browserInformation,
       int enteredBy,
       String token) async {
-    final body= jsonEncode(<String, dynamic>{
+    final body = jsonEncode(<String, dynamic>{
       'UserId': userId,
       'Password': password,
       'NewPassword': newPassword,
@@ -199,7 +199,7 @@ class LoginService {
       'EnteredBy': enteredBy,
     });
     final response = await http.post(
-      Uri.parse(FORGOT_PASSWORD_URL),
+      Uri.parse(CHANGE_PASSWORD_URL),
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
         'Authorization': 'Bearer $token',
@@ -231,22 +231,14 @@ class LoginService {
       String browserInformation,
       int enteredBy) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    String username = TOKEN_USERNAME;
-    String password = TOKEN_PASSWORD;
+    await TokenService().token(TOKEN_USERNAME, TOKEN_PASSWORD);
+    String? newToken = prefs.getString('token');
 
-    if (username.isNotEmpty && password.isNotEmpty) {
-      await TokenService().token(username, password);
-      String? newToken = prefs.getString('token');
-
-      if (newToken != null && newToken.isNotEmpty) {
-        return await changePassword(userId, password, newPassword, ipAddress,
-            browserInformation, enteredBy, newToken);
-      } else {
-        throw Exception('Failed to retrieve new token');
-      }
+    if (newToken != null && newToken.isNotEmpty) {
+      return await changePassword(userId, password, newPassword, ipAddress,
+          browserInformation, enteredBy, newToken);
     } else {
-      throw Exception(
-          'Username or password is not stored in SharedPreferences');
+      throw Exception('Failed to retrieve new token');
     }
   }
 }

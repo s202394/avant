@@ -82,12 +82,13 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
       return false;
     }
     if (confirmPassword.isEmpty) {
-      _showErrorMessage("Please enter confirm password.", _confirmPasswordFocusNode);
+      _showErrorMessage(
+          "Please enter confirm password.", _confirmPasswordFocusNode);
       return false;
     }
     if (password != confirmPassword) {
-      _showErrorMessage("Password didn't matched with confirm password.",
-          _passwordFocusNode);
+      _showErrorMessage(
+          "Password didn't matched with confirm password.", _passwordFocusNode);
       return false;
     }
     return true;
@@ -109,6 +110,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
 
   Future<void> _changePassword(String newPassword) async {
     print('Change Password');
+    print('Change Password ${widget.password.toJson()}');
 
     final String ipAddress = await getIpAddress();
     final String deviceInfo = await getDeviceInfo();
@@ -122,13 +124,31 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
         widget.password.id,
         token ?? "");
     if (responseData != null && responseData.changePasswordModel != null) {
-      print(
-          'Forgot password successful! Username: ${responseData?.changePasswordModel?.msgText}');
-      if (responseData != null && responseData?.changePasswordModel?.msgText != null) {
-        _navigateToHomePage();
+      if (responseData?.changePasswordModel?.msgText != null &&
+          responseData?.changePasswordModel?.msgType != null) {
+        if (responseData.changePasswordModel?.msgType == 's') {
+          print(
+              'Forgot password successful! ${responseData?.changePasswordModel?.msgText}');
+          _toastMessage.showToastMessage(
+              responseData?.changePasswordModel?.msgText ??
+                  'Password changed successfully.');
+          _navigateToHomePage();
+        } else {
+          print(
+              'Forgot password unsuccessful! ${responseData?.changePasswordModel?.msgText}');
+          _toastMessage.showToastMessage(
+              responseData?.changePasswordModel?.msgText ??
+                  'There are any issue while forgot your password.');
+        }
+      } else {
+        print(
+            'Forgot password error! ${responseData?.changePasswordModel?.msgType} ${responseData?.changePasswordModel?.msgText}');
+        _toastMessage.showToastMessage(
+            "There are any issue while forgot your password.");
       }
     } else {
-      print('Forgot password error! User ID: ${responseData?.changePasswordModel?.msgText}');
+      print(
+          'Forgot password error! ${responseData?.changePasswordModel?.msgText}');
       _toastMessage
           .showToastMessage("There are any issue while forgot your password.");
     }
@@ -138,7 +158,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
     Navigator.pushAndRemoveUntil(
       context,
       MaterialPageRoute(builder: (context) => LoginPage()),
-      (Route<dynamic> route) => false, // Remove all previous routes
+      (Route<dynamic> route) => false,
     );
   }
 
@@ -238,7 +258,8 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
           children: <Widget>[
             _buildTextField(_passwordController, _passwordFocusNode, "Password",
                 applyDecoration: true),
-            _buildTextField(_confirmPasswordController, _confirmPasswordFocusNode, "Confirm Password"),
+            _buildTextField(_confirmPasswordController,
+                _confirmPasswordFocusNode, "Confirm Password"),
           ],
         ),
       ),
