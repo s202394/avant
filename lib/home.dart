@@ -1,20 +1,22 @@
 import 'package:avant/api/api_service.dart';
+import 'package:avant/approval/approval_list_form.dart';
 import 'package:avant/common/common.dart';
+import 'package:avant/common/toast.dart';
 import 'package:avant/db/db_helper.dart';
+import 'package:avant/dialog/custom_alert_dialog.dart';
 import 'package:avant/login.dart';
 import 'package:avant/model/login_model.dart';
 import 'package:avant/model/menu_model.dart';
 import 'package:avant/model/travel_plan_model.dart';
-import 'package:avant/approval/approval_list_form.dart';
+import 'package:avant/new_customer/new_customer_school_form1.dart';
+import 'package:avant/new_customer/new_customer_trade_library_form1.dart';
 import 'package:avant/visit/customer_search_visit.dart';
 import 'package:avant/visit/dsr_entry.dart';
 import 'package:avant/visit/visit_detail_page.dart';
-import 'package:avant/common/toast.dart';
+import 'package:avant/checked_in.dart';
+import 'package:avant/common/constants.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:avant/dialog/custom_alert_dialog.dart';
-import 'package:avant/new_customer/new_customer_school_form1.dart';
-import 'package:avant/new_customer/new_customer_trade_library_form1.dart';
 
 class HomePage extends StatefulWidget {
   @override
@@ -59,22 +61,32 @@ class _HomePageState extends State<HomePage> {
     _hasInternet = await checkInternetConnection();
 
     if (_hasInternet) {
-      setState(() {
-        if (profileId != null) {
-          futureMenuData = MenuService().getMenus(profileId!, token!);
-        }
-        if (executiveId != null) {
-          futurePlanResponse =
-              TravelPlanService().fetchTravelPlans(executiveId!, token!);
-        }
-      });
+      // Load the menu data from the database
+      List<MenuData> menuDataList = await DatabaseHelper().getMenuDataFromDB();
+
+      if (menuDataList.isEmpty) {
+        print('No menu data in DB, fetching from API.');
+        // Fetch data from API if no data in DB
+        futureMenuData = MenuService().getMenus(profileId!, token!);
+      } else {
+        print('Menu data found in DB.');
+        futureMenuData = Future.value(menuDataList);
+      }
+
+      if (executiveId != null) {
+        futurePlanResponse =
+            TravelPlanService().fetchTravelPlans(executiveId!, token!);
+      }
     } else {
-      setState(() {
-        futureMenuData = DatabaseHelper().getMenuDataFromDB();
-        futurePlanResponse = Future.value(
-            PlanResponse(status: "Success", todayPlan: [], tomorrowPlan: []));
-      });
+      futureMenuData = DatabaseHelper().getMenuDataFromDB();
+      futurePlanResponse = Future.value(
+          PlanResponse(status: "Success", todayPlan: [], tomorrowPlan: []));
     }
+
+    // Update the state after the asynchronous operations are completed
+    setState(() {
+      // Assign any necessary state variables here
+    });
   }
 
   Future<void> _logout() async {
@@ -191,15 +203,26 @@ class _HomePageState extends State<HomePage> {
                   padding: EdgeInsets.zero,
                   children: <Widget>[
                     UserAccountsDrawerHeader(
-                      accountName: Text(executiveName ?? ""),
-                      accountEmail: Text(mobileNumber ?? ""),
+                      accountName: Text(
+                        executiveName ?? "",
+                        style: TextStyle(color: Colors.white),
+                      ),
+                      accountEmail: Text(
+                        mobileNumber ?? "",
+                        style: TextStyle(color: Colors.white),
+                      ),
                       currentAccountPicture: CircleAvatar(
-                        backgroundImage: AssetImage('images/clock.png'),
+                        backgroundColor: Colors.white,
+                        child: Text(
+                          (executiveName?.isNotEmpty == true)
+                              ? executiveName![0]
+                              : '',
+                          style: TextStyle(fontSize: 40.0, color: Colors.blue),
+                        ),
                       ),
-                      decoration: BoxDecoration(
-                        color: Colors.blue,
-                      ),
+                      decoration: BoxDecoration(color: Colors.blue),
                     ),
+                    PunchInToggleSwitch(),
                     ...groupedMenuData.keys.map((menuName) {
                       return ExpansionTile(
                         title: Text(menuName),
@@ -277,14 +300,14 @@ class _HomePageState extends State<HomePage> {
                       );
                     }).toList(),
                     ListTile(
-                      title: Text('Customer Sample Approval'),
+                      title: Text(CUSTOMER_SAMPLE_APPROVAL),
                       onTap: () async {
                         Navigator.pop(context);
                         Navigator.push(
                           context,
                           MaterialPageRoute(
                               builder: (context) => ApprovalListForm(
-                                  type: 'Customer Sample Approval')),
+                                  type: CUSTOMER_SAMPLE_APPROVAL)),
                         );
                       },
                     ),
@@ -439,35 +462,9 @@ class TodayPlanList extends StatelessWidget {
                         context,
                         MaterialPageRoute(
                           builder: (context) => VisitDetailsPage(
-                            schoolName:
-                                '${plan.customerName} (${plan.customerCode})',
-                            address:
-                                '${plan.address}, ${plan.city} - ${plan.state}',
-                            visitDate: '16-Jun 2024',
-                            visitBy: 'Sanjay Chawla',
-                            visitPurpose: plan.visitPurpose,
-                            jointVisit: 'Abhishek Srivastava',
-                            personMet: 'Mrs. Sonal Verma',
-                            samples: [
-                              {
-                                'name': 'Mrs. S. Banerjee',
-                                'subject': 'English',
-                                'type': 'Promotional Copy',
-                                'quantity': '1'
-                              },
-                              {
-                                'name': 'Mr. Sanjeev Singh',
-                                'subject': 'Maths',
-                                'type': 'Promotional Copy',
-                                'quantity': '1'
-                              },
-                            ],
-                            followUpAction:
-                                'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
-                            followUpDate: '30 Jun 24',
-                            visitFeedback:
-                                'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut elit tellus, luctus nec ullamcorper mattis, pulvinar dapibus leo.',
-                          ),
+                              customerId: plan.customerId,
+                              visitId: 0,
+                              isTodayPlan: true),
                         ),
                       );
                     },
@@ -521,35 +518,9 @@ class TomorrowPlanList extends StatelessWidget {
                         context,
                         MaterialPageRoute(
                           builder: (context) => VisitDetailsPage(
-                            schoolName:
-                                '${plan.customerName} (${plan.customerCode})',
-                            address:
-                                '${plan.address}, ${plan.city} - ${plan.state}',
-                            visitDate: '17-Jun 2024',
-                            visitBy: 'Sanjay Chawla',
-                            visitPurpose: plan.visitPurpose,
-                            jointVisit: 'Abhishek Srivastava',
-                            personMet: 'Mrs. Sonal Verma',
-                            samples: [
-                              {
-                                'name': 'Mrs. S. Banerjee',
-                                'subject': 'English',
-                                'type': 'Promotional Copy',
-                                'quantity': '1'
-                              },
-                              {
-                                'name': 'Mr. Sanjeev Singh',
-                                'subject': 'Maths',
-                                'type': 'Promotional Copy',
-                                'quantity': '1'
-                              },
-                            ],
-                            followUpAction:
-                                'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
-                            followUpDate: '01 Jul 24',
-                            visitFeedback:
-                                'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut elit tellus, luctus nec ullamcorper mattis, pulvinar dapibus leo.',
-                          ),
+                              customerId: plan.customerId,
+                              visitId: 0,
+                              isTodayPlan: false),
                         ),
                       );
                     },

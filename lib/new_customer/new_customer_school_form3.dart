@@ -26,8 +26,8 @@ class NewCustomerSchoolForm3 extends StatefulWidget {
   final String customerStatus;
   final int startClassId;
   final int endClassId;
-  final String samplingMonthId;
-  final String decisionMonthId;
+  final int samplingMonthId;
+  final int decisionMonthId;
   final String medium;
   final String ranking;
   final String pan;
@@ -348,20 +348,32 @@ class _NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
                   gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2, // Number of columns
                     childAspectRatio: 2.0, // Adjust this for aspect ratio
+                    crossAxisSpacing: 0.0, // Adjust spacing between columns
+                    mainAxisSpacing: 0.0, // Adjust spacing between rows
                   ),
                   itemCount: data.classesList.length,
                   itemBuilder: (context, index) {
                     final classItem = data.classesList[index];
                     final isEnabled = _isClassInRange(classItem);
+
+                    // Controller for the TextField
+                    final TextEditingController controller =
+                        TextEditingController(
+                      text: isEnabled
+                          ? _classValues[classItem.classNumId] ?? ''
+                          : '0',
+                    );
                     return Row(
                       children: [
                         Container(
-                          width: 40,
+                          width: 60,
                           height: 40,
                           child: Center(
                             child: Text(
                               textAlign: TextAlign.center,
-                              classItem.className,
+                              classItem.classNumId >= 0
+                                  ? 'Class ${classItem.className}'
+                                  : classItem.className,
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                               ),
@@ -371,7 +383,6 @@ class _NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
                         SizedBox(width: 8.0),
                         Expanded(
                           child: Container(
-                            height: 40,
                             decoration: BoxDecoration(
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(5.0),
@@ -380,6 +391,7 @@ class _NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(5.0),
                               child: TextField(
+                                controller: controller,
                                 enabled: isEnabled,
                                 keyboardType: TextInputType.number,
                                 textAlign: TextAlign.center,
@@ -489,7 +501,7 @@ class _NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
                   onTap: () {
                     if (_formKey.currentState!.validate()) {
                       print("Add ${widget.type} data API");
-                      _submitForm();
+                      _submitForm(data.classesList);
                     }
                   },
                   child: Container(
@@ -530,7 +542,7 @@ class _NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
         classItem.classNumId <= widget.endClassId;
   }
 
-  void _submitForm() async {
+  void _submitForm(List<Classes> classesList) async {
     FocusScope.of(context).unfocus();
 
     if (!await _checkInternetConnection()) return;
@@ -540,8 +552,8 @@ class _NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
     });
     try {
       print("${widget.type} _submitForm clicked");
-      String xmlClassName = _generateXmlFromClassValues();
-
+      String xmlClassName = _generateXmlFromClassValues(classesList);
+      print(xmlClassName);
       final responseData = await CreateNewCustomerService().createNewCustomerSchool(
           widget.type,
           widget.customerName,
@@ -615,16 +627,25 @@ class _NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
     }
   }
 
-  String _generateXmlFromClassValues() {
+  String _generateXmlFromClassValues(List<Classes> classesList) {
     StringBuffer xmlBuffer = StringBuffer();
     xmlBuffer.write("<row_ClassName>");
-    _classValues.forEach((classId, qty) {
+
+    // Iterate over the classesList
+    for (var classItem in classesList) {
+      int classId = classItem.classNumId;
+
+      // Get the quantity from _classValues or default to '0'
+      String qty =
+          _classValues.containsKey(classId) ? _classValues[classId]! : '0';
+
       xmlBuffer.write("<ClassName>");
       xmlBuffer.write("<ClassId>$classId</ClassId>");
       xmlBuffer.write("<Enrolment>${qty.isEmpty ? '0' : qty}</Enrolment>");
       xmlBuffer.write("</ClassName>");
-    });
-    xmlBuffer.write("</ClassNameList>");
+    }
+
+    xmlBuffer.write("</row_ClassName>");
     return xmlBuffer.toString();
   }
 

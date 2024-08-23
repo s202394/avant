@@ -102,7 +102,7 @@ class DatabaseHelper {
         print("CustomerCategory table successfully created.");
 
         await database.execute(
-          "CREATE TABLE Months(ID TEXT PRIMARY KEY, Name TEXT)",
+          "CREATE TABLE Months(ID INTEGER PRIMARY KEY, Name TEXT)",
         );
         print("Months table successfully created.");
 
@@ -207,10 +207,13 @@ class DatabaseHelper {
   Future<List<MenuData>> getMenuDataFromDB() async {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query('menuData');
+
     print("Getting menu data from db.");
-    for (var map in maps) {
-      print('Raw data from DB: ${map}');
+    if (maps.isEmpty) {
+      print('No data found in DB.');
+      return []; // Return an empty list instead of null
     }
+
     return List.generate(maps.length, (i) {
       final menuData = MenuData.fromJson(maps[i]);
       print('Parsed MenuData: ${menuData.toJson()}');

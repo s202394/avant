@@ -8,10 +8,14 @@ const String CHANGE_PASSWORD_URL = URL + 'ChangePassword';
 const String MENU_URL = URL + 'getMenus';
 const String SETUP_VALUES_URL = URL + 'getsetupValues';
 const String GEOGRAPHY_URL = URL + 'GeographyAPI';
+const String CHECK_IN_CHECK_OUT_URL = URL + 'CheckincheckOut';
+const String EXECUTIVE_LOCATION_URL = URL + 'ExecutiveLocationAPI';
 const String TRAVEL_PLAN_URL = URL + 'apiPlanList';
+const String VISIT_DETAILS_URL = URL + 'VisitDetails';
 const String GET_DSR_ENTRY_URL = URL + 'DSREntryApi';
 const String FOLLOWUP_ACTION_EXECUTIVE_URL = URL + 'apifollowupAction';
 const String VISIT_ENTRY_URL = URL + 'ApiVisitEntry';
+const String FETCH_TITLES_URL = URL + 'FetchTitles';
 
 const String CUSTOMER_ENTRY_MASTER_URL = URL + 'CustomerEntryMasterAPI';
 const String CUSTOMER_CREATION_URL = URL + 'CustomerCreationAPI';
@@ -25,13 +29,18 @@ const String CUSTOMER_SAMPLING_REQUEST_APPROVAL_SUBMIT_URL =
     URL + 'SubmitCustomerSamplingRequestApproval';
 const String CUSTOMER_SAMPLING_REQUEST_BULK_APPROVAL_SUBMIT_URL =
     URL + 'SubmitCustomerSamplingRequestBulkApproval';
+const String BOOKSELLER_SEARCH_URL = URL + 'BookSellerSearchAPI';
 
 //SELF STOCK REQUEST
 const String SELF_STOCK_APPROVAL_LIST_URL = URL + 'SelfstockApprovalList';
+const String SELF_STOCK_APPROVAL_DETAILS_URL =
+    URL + 'SelfStockSamplingApprovalDetails';
 const String SELF_STOCK_APPROVAL_SUBMIT_URL =
     URL + 'SubmitSelfStockSamplingApproval';
 const String SELF_STOCK_BULK_APPROVAL_SUBMIT_URL =
     URL + 'SubmitSelfStockSamplingBulkApproval';
+
+const String SEND_CLARIFICATION_QUERY_URL = URL + 'SendClarificationQuery';
 
 //WORKSHOP REQUEST APPROVAL
 const String WORKSHOP_REQUEST_APPROVAL_LIST_URL =

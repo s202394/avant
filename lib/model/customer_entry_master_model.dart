@@ -190,7 +190,7 @@ class Classes implements JsonSerializable {
   factory Classes.fromJson(Map<String, dynamic> json) {
     return Classes(
       classNumId: json['ClassNumId'] ?? 0,
-      className: json['ClassName'] ?? 0,
+      className: json['ClassName'] ?? '',
     );
   }
 
@@ -419,7 +419,7 @@ class CustomerCategory implements JsonSerializable {
 }
 
 class Months implements JsonSerializable {
-  final String id;
+  final int id;
   final String name;
 
   Months({
@@ -429,7 +429,7 @@ class Months implements JsonSerializable {
 
   factory Months.fromJson(Map<String, dynamic> json) {
     return Months(
-      id: json['ID'] ?? '',
+      id: json['ID'] ?? 0,
       name: json['Name'] ?? '',
     );
   }

@@ -10,7 +10,7 @@ import 'package:avant/model/login_model.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
+import 'package:avant/common/constants.dart';
 class ApprovalListForm extends StatefulWidget {
   final String type;
 
@@ -107,132 +107,135 @@ class _ApprovalListFormState extends State<ApprovalListForm> {
         title: Text('${widget.type} Approval'),
         backgroundColor: Color(0xFFFFF8E1),
       ),
-      body: Center(
-        child: isLoading
-            ? CircularProgressIndicator()
-            : isConnected
-                ? SingleChildScrollView(
-                    child: Column(
-                      children: [
-                        FutureBuilder<List<ApprovalList>>(
-                          future: futureRequests,
-                          builder: (context, snapshot) {
-                            if (snapshot.connectionState ==
-                                ConnectionState.waiting) {
-                              return CircularProgressIndicator();
-                            } else if (snapshot.hasError) {
-                              return ErrorLayout();
-                            } else if (!hasData || !snapshot.hasData) {
-                              return NoDataLayout();
-                            } else {
-                              return Column(
-                                children: [
-                                  ListView.builder(
-                                    shrinkWrap: true,
-                                    physics: NeverScrollableScrollPhysics(),
-                                    itemCount: snapshot.data!.length,
-                                    itemBuilder: (context, index) {
-                                      return RequestCard(
-                                        type: widget.type,
-                                        request: snapshot.data![index],
-                                        onChecked: (bool isChecked) {
-                                          setState(() {
-                                            if (isChecked) {
-                                              checkedRequests
-                                                  .add(snapshot.data![index]);
-                                            } else {
-                                              checkedRequests.remove(
-                                                  snapshot.data![index]);
-                                            }
-
-                                            // Clear selection error when an item is selected/deselected
-                                            if (checkedRequests.isNotEmpty) {
-                                              _selectionError = null;
-                                            }
-                                          });
-                                        },
-                                      );
-                                    },
-                                  ),
-                                  Padding(
-                                    padding: const EdgeInsets.all(8.0),
-                                    child: TextField(
-                                      key: _commentFieldKey,
-                                      controller: _commentController,
-                                      maxLines: 3,
-                                      decoration: InputDecoration(
-                                        border: OutlineInputBorder(),
-                                        alignLabelWithHint: true,
-                                        labelText: 'Add your comments here',
-                                        errorText: _commentError,
-                                      ),
-                                      onChanged: (value) {
-                                        if (value.isNotEmpty) {
-                                          setState(() {
-                                            _commentError = null;
-                                          });
-                                        }
-                                      },
-                                    ),
-                                  ),
-                                  if (_selectionError != null)
-                                    Padding(
-                                      padding: const EdgeInsets.all(8.0),
-                                      child: Text(
-                                        _selectionError!,
-                                        style: TextStyle(color: Colors.red),
-                                      ),
-                                    ),
-                                ],
-                              );
+      body: isLoading
+          ? Center(child: CircularProgressIndicator())
+          : isConnected
+          ? SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            FutureBuilder<List<ApprovalList>>(
+              future: futureRequests,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState ==
+                    ConnectionState.waiting) {
+                  return Center(child: CircularProgressIndicator());
+                } else if (snapshot.hasError) {
+                  return ErrorLayout();
+                } else if (!snapshot.hasData ||
+                    snapshot.data!.isEmpty) {
+                  return NoDataLayout();
+                } else {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      ListView.builder(
+                        shrinkWrap: true,
+                        physics: NeverScrollableScrollPhysics(),
+                        itemCount: snapshot.data!.length,
+                        itemBuilder: (context, index) {
+                          return RequestCard(
+                            type: widget.type,
+                            request: snapshot.data![index],
+                            onChecked: (bool isChecked) {
+                              setState(() {
+                                if (isChecked) {
+                                  checkedRequests
+                                      .add(snapshot.data![index]);
+                                } else {
+                                  checkedRequests.remove(
+                                      snapshot.data![index]);
+                                }
+                                if (checkedRequests.isNotEmpty) {
+                                  _selectionError = null;
+                                }
+                              });
+                            },
+                          );
+                        },
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: TextField(
+                          key: _commentFieldKey,
+                          controller: _commentController,
+                          maxLines: 3,
+                          decoration: InputDecoration(
+                            border: OutlineInputBorder(),
+                            alignLabelWithHint: true,
+                            labelText: 'Add your comments here',
+                            errorText: _commentError,
+                          ),
+                          onChanged: (value) {
+                            if (value.isNotEmpty) {
+                              setState(() {
+                                _commentError = null;
+                              });
                             }
                           },
                         ),
-                      ],
-                    ),
-                  )
-                : NoInternetLayout(),
-      ),
-      bottomNavigationBar: Visibility(
-        visible: hasData,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            ElevatedButton(
-              onPressed: () => _handleRequest(context, "Approve"),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green,
-                textStyle: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              child: Text(
-                'Approve',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-            ElevatedButton(
-              onPressed: () => _handleRequest(context, "Reject"),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-                textStyle: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              child: Text(
-                'Reject',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+                      ),
+                      if (_selectionError != null)
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Text(
+                            _selectionError!,
+                            style: TextStyle(color: Colors.red),
+                          ),
+                        ),
+                    ],
+                  );
+                }
+              },
             ),
           ],
+        ),
+      )
+          : NoInternetLayout(type: widget.type),
+      bottomNavigationBar: Visibility(
+        visible: hasData,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () => _handleRequest(context, "Approve"),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    padding: EdgeInsets.symmetric(vertical: 16.0),
+                  ),
+                  child: Text(
+                    'Approve',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () => _handleRequest(context, "Reject"),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                    padding: EdgeInsets.symmetric(vertical: 16.0),
+                  ),
+                  child: Text(
+                    'Reject',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -288,10 +291,11 @@ class _ApprovalListFormState extends State<ApprovalListForm> {
       }
 
       final response;
-      if (widget.type == 'Customer Sample Approval') {
+      if (widget.type == CUSTOMER_SAMPLE_APPROVAL) {
         response = await SubmitRequestApprovalService()
             .submitCustomerSamplingRequestApproved(
-          "List",
+          widget.type,
+          true,
           action,
           profileCode ?? "",
           "$executiveId",
@@ -304,7 +308,8 @@ class _ApprovalListFormState extends State<ApprovalListForm> {
       } else {
         response =
             await SubmitRequestApprovalService().submitSelfStockRequestApproved(
-          "List",
+              widget.type,
+          true,
           action,
           profileCode ?? "",
           "$executiveId",
@@ -474,7 +479,16 @@ class _RequestCardState extends State<RequestCard> {
   }
 }
 
-class NoInternetLayout extends StatelessWidget {
+class NoInternetLayout extends StatefulWidget {
+  final String type;
+
+  NoInternetLayout({required this.type});
+
+  @override
+  _NoInternetLayoutState createState() => _NoInternetLayoutState();
+}
+
+class _NoInternetLayoutState extends State<NoInternetLayout> {
   @override
   Widget build(BuildContext context) {
     return Center(
@@ -493,8 +507,8 @@ class NoInternetLayout extends StatelessWidget {
               // Retry connection check
               Navigator.of(context).pushReplacement(
                 MaterialPageRoute(
-                    builder: (context) =>
-                        ApprovalListForm(type: 'Customer Sampling Request')),
+                  builder: (context) => ApprovalListForm(type: widget.type),
+                ),
               );
             },
             child: Text('Retry'),

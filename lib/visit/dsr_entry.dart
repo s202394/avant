@@ -34,7 +34,6 @@ class _DsrEntryPageState extends State<DsrEntry> {
   String? selectedPersonMet;
   bool? samplingDone;
   bool? followUpAction;
-  TextEditingController _dateController = TextEditingController();
   DateFormat dateFormat = DateFormat('dd/MM/yyyy');
   GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
@@ -43,6 +42,24 @@ class _DsrEntryPageState extends State<DsrEntry> {
   late String? executiveName;
 
   late Future<GetVisitDsrResponse> _visitDsrData;
+
+  TextEditingController _dateController = TextEditingController();
+  TextEditingController _visitPurposeController = TextEditingController();
+  TextEditingController _jointVisitController = TextEditingController();
+  TextEditingController _personMetController = TextEditingController();
+  TextEditingController _visitFeedbackController = TextEditingController();
+
+  final _dateFieldKey = GlobalKey<FormFieldState>();
+  final _visitPurposeFieldKey = GlobalKey<FormFieldState>();
+  final _jointVisitFieldKey = GlobalKey<FormFieldState>();
+  final _personMetFieldKey = GlobalKey<FormFieldState>();
+  final _visitFeedbackFieldKey = GlobalKey<FormFieldState>();
+
+  final FocusNode _dateFocusNode = FocusNode();
+  final FocusNode _visitPurposeFocusNode = FocusNode();
+  final FocusNode _jointVisitFocusNode = FocusNode();
+  final FocusNode _personMetFocusNode = FocusNode();
+  final FocusNode _visitFeedbackFocusNode = FocusNode();
 
   @override
   void initState() {
@@ -61,7 +78,7 @@ class _DsrEntryPageState extends State<DsrEntry> {
     String downHierarchy = prefs.getString('DownHierarchy') ?? '';
 
     return await GetVisitDsrService().getVisitDsr(
-      executiveId!,
+      executiveId??0,
       customerId,
       customerType,
       upHierarchy,
@@ -382,6 +399,10 @@ class _DsrEntryPageState extends State<DsrEntry> {
   @override
   void dispose() {
     _dateController.dispose();
+    _visitPurposeController.dispose();
+    _jointVisitController.dispose();
+    _personMetController.dispose();
+    _visitFeedbackController.dispose();
     super.dispose();
   }
 }

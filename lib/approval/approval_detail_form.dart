@@ -9,7 +9,7 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
+import 'package:avant/common/constants.dart';
 class ApprovalDetailForm extends StatefulWidget {
   final String type;
   final int requestId;
@@ -73,11 +73,14 @@ class _ApprovalDetailFormState extends State<ApprovalDetailForm> {
         isConnected = true;
         isLoading = true;
         futureRequestDetails = ApprovalDetailsService()
-            .fetchCustomerSamplingApprovalDetails(
+            .fetchApprovalDetails(
+                widget.type,
                 widget.customerId,
                 widget.customerType,
                 widget.requestId,
-                "CustomerSampling",
+                widget.type == CUSTOMER_SAMPLE_APPROVAL
+                    ? 'CustomerSampling'
+                    : 'Approval',
                 token)
             .then((response) {
           setState(() {
@@ -114,10 +117,11 @@ class _ApprovalDetailFormState extends State<ApprovalDetailForm> {
 
     try {
       final response;
-      if (widget.type == 'Customer Sample Approval') {
+      if (widget.type == CUSTOMER_SAMPLE_APPROVAL) {
         response = await SubmitRequestApprovalService()
             .submitCustomerSamplingRequestApproved(
-          "Single",
+          widget.type,
+          false,
           approvalFor,
           profileCode ?? "",
           "${executiveId ?? 0}",
@@ -130,7 +134,8 @@ class _ApprovalDetailFormState extends State<ApprovalDetailForm> {
       } else {
         response =
             await SubmitRequestApprovalService().submitSelfStockRequestApproved(
-          "Single",
+          widget.type,
+          false,
           approvalFor,
           profileCode ?? "",
           "${executiveId ?? 0}",
@@ -252,205 +257,185 @@ class _ApprovalDetailFormState extends State<ApprovalDetailForm> {
                               ),
                             ),
                             SizedBox(height: 8.0),
-                            _buildSectionTitle('Title Details'),
-                            Container(
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
+                            Visibility(
+                              visible: (response.titleDetails?.length ?? 0) > 0,
+                              child: Column(
                                 children: [
-                                  Expanded(
-                                    child: ListTile(
-                                      leading: Text(
-                                        'SNo.',
-                                        style: TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 14),
-                                      ),
-                                      title: Text(
-                                        'Title Details',
-                                        style: TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 14),
-                                      ),
+                                  _buildSectionTitle('Title Details'),
+                                  Container(
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Expanded(
+                                          child: ListTile(
+                                            leading: Text(
+                                              'SNo.',
+                                              style: TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 14),
+                                            ),
+                                            title: Text(
+                                              'Title Details',
+                                              style: TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 14),
+                                            ),
+                                          ),
+                                        ),
+                                        Row(
+                                          children: [
+                                            Container(
+                                              child: Center(
+                                                child: Text(
+                                                  textAlign: TextAlign.center,
+                                                  'Req Qty',
+                                                  style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      fontSize: 14),
+                                                ),
+                                              ),
+                                            ),
+                                            SizedBox(width: 8.0),
+                                            Container(
+                                              child: Center(
+                                                child: Text(
+                                                  textAlign: TextAlign.center,
+                                                  'Appr Qty',
+                                                  style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      fontSize: 14),
+                                                ),
+                                              ),
+                                            ),
+                                            SizedBox(width: 5.0),
+                                            Container(
+                                              child: Center(
+                                                child: Text(
+                                                  textAlign: TextAlign.center,
+                                                  'Reject',
+                                                  style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      fontSize: 14),
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
                                     ),
                                   ),
-                                  Row(
-                                    children: [
-                                      Container(
-                                        child: Center(
-                                          child: Text(
-                                            textAlign: TextAlign.center,
-                                            'Req Qty',
-                                            style: TextStyle(
-                                                fontWeight: FontWeight.bold,
-                                                fontSize: 14),
-                                          ),
-                                        ),
-                                      ),
-                                      SizedBox(width: 8.0),
-                                      Container(
-                                        child: Center(
-                                          child: Text(
-                                            textAlign: TextAlign.center,
-                                            'Appr Qty',
-                                            style: TextStyle(
-                                                fontWeight: FontWeight.bold,
-                                                fontSize: 14),
-                                          ),
-                                        ),
-                                      ),
-                                      SizedBox(width: 5.0),
-                                      Container(
-                                        child: Center(
-                                          child: Text(
-                                            textAlign: TextAlign.center,
-                                            'Reject',
-                                            style: TextStyle(
-                                                fontWeight: FontWeight.bold,
-                                                fontSize: 14),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
+                                  ListView.builder(
+                                    shrinkWrap: true,
+                                    physics: NeverScrollableScrollPhysics(),
+                                    itemCount:
+                                        response.titleDetails?.length ?? 0,
+                                    itemBuilder: (context, index) {
+                                      return buildTitleListItem(
+                                          response.titleDetails![index], index);
+                                    },
                                   ),
                                 ],
                               ),
                             ),
-                            ListView.builder(
-                              shrinkWrap: true,
-                              physics: NeverScrollableScrollPhysics(),
-                              itemCount: response.titleDetails?.length ?? 0,
-                              itemBuilder: (context, index) {
-                                return buildTitleListItem(
-                                    response.titleDetails![index], index);
-                              },
-                            ),
-                            SizedBox(height: 8.0),
-                            _buildSectionTitle('Approval Matrix'),
-                            SizedBox(height: 8.0),
-                            Container(
-                              child: Table(
-                                columnWidths: const <int, TableColumnWidth>{
-                                  0: FixedColumnWidth(40.0),
-                                  // Fixed width for the first column
-                                  1: FlexColumnWidth(),
-                                  // Flex the rest
-                                  2: FlexColumnWidth(),
-                                  3: FlexColumnWidth(),
-                                },
-                                border: TableBorder.all(color: Colors.grey),
-                                // Table border
+                            Visibility(
+                              visible:
+                                  (response.approvalMatrix?.length ?? 0) > 0,
+                              child: Column(
                                 children: [
-                                  TableRow(
-                                    decoration: BoxDecoration(
-                                      color: Colors.grey[200],
-                                    ),
-                                    children: [
-                                      Padding(
-                                        padding: const EdgeInsets.only(
-                                            top: 8.0,
-                                            bottom: 8,
-                                            left: 5,
-                                            right: 5),
-                                        child: Text(
-                                          'SNo.',
-                                          style: TextStyle(
-                                              fontWeight: FontWeight.bold),
+                                  SizedBox(height: 8.0),
+                                  _buildSectionTitle('Approval Matrix'),
+                                  SizedBox(height: 8.0),
+                                  Container(
+                                    child: Table(
+                                      columnWidths: const <int,
+                                          TableColumnWidth>{
+                                        0: FixedColumnWidth(40.0),
+                                        // Fixed width for the first column
+                                        1: FlexColumnWidth(),
+                                        // Flex the rest
+                                        2: FlexColumnWidth(),
+                                        3: FlexColumnWidth(),
+                                      },
+                                      border:
+                                          TableBorder.all(color: Colors.grey),
+                                      // Table border
+                                      children: [
+                                        TableRow(
+                                          decoration: BoxDecoration(
+                                            color: Colors.grey[200],
+                                          ),
+                                          children: [
+                                            Padding(
+                                              padding: const EdgeInsets.only(
+                                                  top: 8.0,
+                                                  bottom: 8,
+                                                  left: 5,
+                                                  right: 5),
+                                              child: Text(
+                                                'SNo.',
+                                                style: TextStyle(
+                                                    fontWeight:
+                                                        FontWeight.bold),
+                                              ),
+                                            ),
+                                            Padding(
+                                              padding: const EdgeInsets.only(
+                                                  top: 8.0,
+                                                  bottom: 8,
+                                                  left: 5,
+                                                  right: 5),
+                                              child: Text(
+                                                'Entry/Approval By',
+                                                style: TextStyle(
+                                                    fontWeight:
+                                                        FontWeight.bold),
+                                              ),
+                                            ),
+                                            Padding(
+                                              padding: const EdgeInsets.only(
+                                                  top: 8.0,
+                                                  bottom: 8,
+                                                  left: 5,
+                                                  right: 5),
+                                              child: Text(
+                                                'Entry Type',
+                                                style: TextStyle(
+                                                    fontWeight:
+                                                        FontWeight.bold),
+                                              ),
+                                            ),
+                                            Padding(
+                                              padding: const EdgeInsets.only(
+                                                  top: 8.0,
+                                                  bottom: 8,
+                                                  left: 5,
+                                                  right: 5),
+                                              child: Text(
+                                                'Remarks',
+                                                style: TextStyle(
+                                                    fontWeight:
+                                                        FontWeight.bold),
+                                              ),
+                                            ),
+                                          ],
                                         ),
-                                      ),
-                                      Padding(
-                                        padding: const EdgeInsets.only(
-                                            top: 8.0,
-                                            bottom: 8,
-                                            left: 5,
-                                            right: 5),
-                                        child: Text(
-                                          'Entry/Approval By',
-                                          style: TextStyle(
-                                              fontWeight: FontWeight.bold),
+                                        // Table rows
+                                        ...List.generate(
+                                          response.approvalMatrix?.length ?? 0,
+                                          (index) => buildMatrixTableRow(
+                                              response.approvalMatrix![index],
+                                              index),
                                         ),
-                                      ),
-                                      Padding(
-                                        padding: const EdgeInsets.only(
-                                            top: 8.0,
-                                            bottom: 8,
-                                            left: 5,
-                                            right: 5),
-                                        child: Text(
-                                          'Entry Type',
-                                          style: TextStyle(
-                                              fontWeight: FontWeight.bold),
-                                        ),
-                                      ),
-                                      Padding(
-                                        padding: const EdgeInsets.only(
-                                            top: 8.0,
-                                            bottom: 8,
-                                            left: 5,
-                                            right: 5),
-                                        child: Text(
-                                          'Remarks',
-                                          style: TextStyle(
-                                              fontWeight: FontWeight.bold),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  // Table rows
-                                  ...List.generate(
-                                    response.approvalMatrix?.length ?? 0,
-                                    (index) => buildMatrixTableRow(
-                                        response.approvalMatrix![index], index),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            /*Container(
-                              margin: const EdgeInsets.all(8.0),
-                              padding: const EdgeInsets.all(8.0),
-                              child: Row(
-                                children: [
-                                  // Sequence Number
-                                  Text(
-                                    'SNo.',
-                                    style:
-                                        TextStyle(fontWeight: FontWeight.bold),
-                                  ),
-                                  SizedBox(width: 16), // Spacer
-                                  // Executive Name and Details
-                                  Text(
-                                    'Entry/Approval By',
-                                    style:
-                                        TextStyle(fontWeight: FontWeight.bold),
-                                  ),
-                                  SizedBox(width: 16), // Spacer
-                                  // Approval Level
-                                  Text(
-                                    'Entry Type',
-                                    style:
-                                        TextStyle(fontWeight: FontWeight.bold),
-                                  ),
-                                  SizedBox(width: 16), // Spacer
-                                  // Remarks
-                                  Expanded(
-                                    child: Text(
-                                      'Remarks',
-                                      textAlign: TextAlign
-                                          .end, // Align remarks to the right
+                                      ],
                                     ),
                                   ),
                                 ],
                               ),
                             ),
-                            ListView.builder(
-                              shrinkWrap: true,
-                              physics: NeverScrollableScrollPhysics(),
-                              itemCount: response.approvalMatrix?.length ?? 0,
-                              itemBuilder: (context, index) {
-                                return buildMatrixListItem(
-                                    response.approvalMatrix![index], index);
-                              },
-                            ),*/
                             SizedBox(height: 16.0),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -641,7 +626,7 @@ class _ApprovalDetailFormState extends State<ApprovalDetailForm> {
                     style: TextStyle(fontWeight: FontWeight.bold),
                   ),
                   Text(
-                    '${titleDetails.price}',
+                    '₹ ${titleDetails.price}',
                     style: TextStyle(fontWeight: FontWeight.bold),
                   ),
                 ],

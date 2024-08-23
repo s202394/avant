@@ -85,30 +85,7 @@ class _CustomerSearchVisitListPageState extends State<CustomerSearchVisitList> {
                           context,
                           MaterialPageRoute(
                             builder: (context) => VisitDetailsPage(
-                              schoolName: 'ASN Sr. Secondary School (SCH654)',
-                              address: 'Mayur Vihar Phase 1, New Delhi - 110001, Delhi',
-                              visitDate: '16-Jun 2024',
-                              visitBy: 'Sanjay Chawla',
-                              visitPurpose: 'Sampling',
-                              jointVisit: 'Abhishek Srivastava',
-                              personMet: 'Mrs. Sonal Verma',
-                              samples: [
-                                {
-                                  'name': 'Mrs. S. Banerjee',
-                                  'subject': 'English',
-                                  'type': 'Promotional Copy',
-                                  'quantity': '1'
-                                },
-                                {
-                                  'name': 'Mr. Sanjeev Singh',
-                                  'subject': 'Maths',
-                                  'type': 'Promotional Copy',
-                                  'quantity': '1'
-                                },
-                              ],
-                              followUpAction: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
-                              followUpDate: '30 Jun 24',
-                              visitFeedback: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut elit tellus, luctus nec ullamcorper mattis, pulvinar dapibus leo.',
+                              customerId: 0,visitId: 0,isTodayPlan: false,
                             ),
                           ),
                         );
