@@ -11,6 +11,7 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:avant/common/constants.dart';
+
 class ApprovalListForm extends StatefulWidget {
   final String type;
 
@@ -101,6 +102,7 @@ class _ApprovalListFormState extends State<ApprovalListForm> {
   }
 
   @override
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -110,88 +112,81 @@ class _ApprovalListFormState extends State<ApprovalListForm> {
       body: isLoading
           ? Center(child: CircularProgressIndicator())
           : isConnected
-          ? SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            FutureBuilder<List<ApprovalList>>(
-              future: futureRequests,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState ==
-                    ConnectionState.waiting) {
-                  return Center(child: CircularProgressIndicator());
-                } else if (snapshot.hasError) {
-                  return ErrorLayout();
-                } else if (!snapshot.hasData ||
-                    snapshot.data!.isEmpty) {
-                  return NoDataLayout();
-                } else {
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      ListView.builder(
-                        shrinkWrap: true,
-                        physics: NeverScrollableScrollPhysics(),
-                        itemCount: snapshot.data!.length,
-                        itemBuilder: (context, index) {
-                          return RequestCard(
-                            type: widget.type,
-                            request: snapshot.data![index],
-                            onChecked: (bool isChecked) {
-                              setState(() {
-                                if (isChecked) {
-                                  checkedRequests
-                                      .add(snapshot.data![index]);
-                                } else {
-                                  checkedRequests.remove(
-                                      snapshot.data![index]);
-                                }
-                                if (checkedRequests.isNotEmpty) {
-                                  _selectionError = null;
-                                }
-                              });
-                            },
-                          );
-                        },
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: TextField(
-                          key: _commentFieldKey,
-                          controller: _commentController,
-                          maxLines: 3,
-                          decoration: InputDecoration(
-                            border: OutlineInputBorder(),
-                            alignLabelWithHint: true,
-                            labelText: 'Add your comments here',
-                            errorText: _commentError,
-                          ),
-                          onChanged: (value) {
-                            if (value.isNotEmpty) {
-                              setState(() {
-                                _commentError = null;
-                              });
-                            }
-                          },
+              ? FutureBuilder<List<ApprovalList>>(
+                  future: futureRequests,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return Center(child: CircularProgressIndicator());
+                    } else if (snapshot.hasError) {
+                      return ErrorLayout();
+                    } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                      return NoDataLayout(); // Ensures it is centered
+                    } else {
+                      return SingleChildScrollView(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            ListView.builder(
+                              shrinkWrap: true,
+                              physics: NeverScrollableScrollPhysics(),
+                              itemCount: snapshot.data!.length,
+                              itemBuilder: (context, index) {
+                                return RequestCard(
+                                  type: widget.type,
+                                  request: snapshot.data![index],
+                                  onChecked: (bool isChecked) {
+                                    setState(() {
+                                      if (isChecked) {
+                                        checkedRequests
+                                            .add(snapshot.data![index]);
+                                      } else {
+                                        checkedRequests
+                                            .remove(snapshot.data![index]);
+                                      }
+                                      if (checkedRequests.isNotEmpty) {
+                                        _selectionError = null;
+                                      }
+                                    });
+                                  },
+                                );
+                              },
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: TextField(
+                                key: _commentFieldKey,
+                                controller: _commentController,
+                                maxLines: 3,
+                                decoration: InputDecoration(
+                                  border: OutlineInputBorder(),
+                                  alignLabelWithHint: true,
+                                  labelText: 'Add your comments here',
+                                  errorText: _commentError,
+                                ),
+                                onChanged: (value) {
+                                  if (value.isNotEmpty) {
+                                    setState(() {
+                                      _commentError = null;
+                                    });
+                                  }
+                                },
+                              ),
+                            ),
+                            if (_selectionError != null)
+                              Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Text(
+                                  _selectionError!,
+                                  style: TextStyle(color: Colors.red),
+                                ),
+                              ),
+                          ],
                         ),
-                      ),
-                      if (_selectionError != null)
-                        Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Text(
-                            _selectionError!,
-                            style: TextStyle(color: Colors.red),
-                          ),
-                        ),
-                    ],
-                  );
-                }
-              },
-            ),
-          ],
-        ),
-      )
-          : NoInternetLayout(type: widget.type),
+                      );
+                    }
+                  },
+                )
+              : NoInternetLayout(type: widget.type),
       bottomNavigationBar: Visibility(
         visible: hasData,
         child: Padding(
@@ -308,7 +303,7 @@ class _ApprovalListFormState extends State<ApprovalListForm> {
       } else {
         response =
             await SubmitRequestApprovalService().submitSelfStockRequestApproved(
-              widget.type,
+          widget.type,
           true,
           action,
           profileCode ?? "",
@@ -491,29 +486,41 @@ class NoInternetLayout extends StatefulWidget {
 class _NoInternetLayoutState extends State<NoInternetLayout> {
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.wifi_off, size: 100, color: Colors.grey),
-          SizedBox(height: 20),
-          Text(
-            'No Internet Connection',
-            style: TextStyle(fontSize: 18, color: Colors.grey),
+    return Scaffold(
+      body: Center(
+        child: SingleChildScrollView(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              minHeight: MediaQuery.of(context).size.height,
+            ),
+            child: IntrinsicHeight(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.wifi_off, size: 100, color: Colors.grey),
+                  SizedBox(height: 20),
+                  Text(
+                    'No Internet Connection',
+                    style: TextStyle(fontSize: 18, color: Colors.grey),
+                  ),
+                  SizedBox(height: 20),
+                  ElevatedButton(
+                    onPressed: () {
+                      // Retry connection check
+                      Navigator.of(context).pushReplacement(
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              ApprovalListForm(type: widget.type),
+                        ),
+                      );
+                    },
+                    child: Text('Retry'),
+                  ),
+                ],
+              ),
+            ),
           ),
-          SizedBox(height: 20),
-          ElevatedButton(
-            onPressed: () {
-              // Retry connection check
-              Navigator.of(context).pushReplacement(
-                MaterialPageRoute(
-                  builder: (context) => ApprovalListForm(type: widget.type),
-                ),
-              );
-            },
-            child: Text('Retry'),
-          ),
-        ],
+        ),
       ),
     );
   }

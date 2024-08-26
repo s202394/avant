@@ -686,40 +686,41 @@ class _NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
   }
 
   Widget _buildTextField(
-    String label,
-    TextEditingController controller,
-    GlobalKey<FormFieldState> fieldKey, {
-    int maxLines = 1,
-  }) {
+      String label,
+      TextEditingController controller,
+      GlobalKey<FormFieldState> fieldKey, {
+        int maxLines = 1,
+      }) {
     bool isDateField = label == "Date of Birth" || label == "Anniversary";
+
+    // Calculate the maximum selectable date for Date of Birth
+    DateTime maxDate = label == "Date of Birth"
+        ? DateTime.now().subtract(Duration(days: 365 * 18))
+        : DateTime.now();
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: InkWell(
         onTap: isDateField
             ? () async {
-                final DateTime? picked = await showDatePicker(
-                  context: context,
-                  initialDate: DateTime.now(),
-                  firstDate: DateTime(1970, 1, 1),
-                  lastDate: DateTime.now(),
-                  selectableDayPredicate: (DateTime date) {
-                    return date.isAfter(DateTime(1969, 12, 31)) &&
-                        date.isBefore(DateTime.now().add(Duration(days: 1)));
-                  },
-                  builder: (BuildContext context, Widget? child) {
-                    return Theme(
-                      data: ThemeData.light(),
-                      child: child!,
-                    );
-                  },
-                );
+          final DateTime? picked = await showDatePicker(
+            context: context,
+            initialDate: DateTime.now(),
+            firstDate: DateTime(1970, 1, 1),
+            lastDate: maxDate,
+            builder: (BuildContext context, Widget? child) {
+              return Theme(
+                data: ThemeData.light(),
+                child: child!,
+              );
+            },
+          );
 
-                if (picked != null) {
-                  controller.text = DateFormat('dd MMM yyyy').format(picked);
-                  fieldKey.currentState?.validate();
-                }
-              }
+          if (picked != null) {
+            controller.text = DateFormat('dd MMM yyyy').format(picked);
+            fieldKey.currentState?.validate();
+          }
+        }
             : null,
         child: IgnorePointer(
           ignoring: isDateField,

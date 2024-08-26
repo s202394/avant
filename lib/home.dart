@@ -82,11 +82,6 @@ class _HomePageState extends State<HomePage> {
       futurePlanResponse = Future.value(
           PlanResponse(status: "Success", todayPlan: [], tomorrowPlan: []));
     }
-
-    // Update the state after the asynchronous operations are completed
-    setState(() {
-      // Assign any necessary state variables here
-    });
   }
 
   Future<void> _logout() async {

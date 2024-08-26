@@ -1,10 +1,19 @@
+import 'dart:io';
+
 import 'package:avant/api/api_service.dart';
 import 'package:avant/model/get_visit_dsr_model.dart';
 import 'package:avant/model/login_model.dart';
+import 'package:avant/common/toast.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:flutter_html/flutter_html.dart';
+import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
+import 'package:avant/common/common.dart';
+import 'package:avant/home.dart';
+import 'package:avant/home.dart';
+import 'package:avant/service/location_service.dart';
 
 class DsrEntry extends StatefulWidget {
   final int customerId;
@@ -37,7 +46,17 @@ class _DsrEntryPageState extends State<DsrEntry> {
   DateFormat dateFormat = DateFormat('dd/MM/yyyy');
   GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
+  int? executiveId;
+  String? profileCode;
+  String? upHierarchy;
+  String? downHierarchy;
+  String? token;
+
+  ToastMessage toastMessage = new ToastMessage();
+  LocationService locationService = LocationService();
+
   bool _submitted = false;
+  bool _isLoading = false;
 
   late String? executiveName;
 
@@ -61,6 +80,21 @@ class _DsrEntryPageState extends State<DsrEntry> {
   final FocusNode _personMetFocusNode = FocusNode();
   final FocusNode _visitFeedbackFocusNode = FocusNode();
 
+  final ImagePicker _picker = ImagePicker();
+  XFile? _imageFile;
+
+  Future<void> _takePhoto() async {
+    try {
+      final XFile? photo = await _picker.pickImage(source: ImageSource.camera);
+      setState(() {
+        _imageFile = photo;
+      });
+    } catch (e) {
+      // Handle error
+      print('Error picking image: $e');
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -69,21 +103,20 @@ class _DsrEntryPageState extends State<DsrEntry> {
 
   Future<GetVisitDsrResponse> _fetchVisitDsrData() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    String token = prefs.getString('token') ?? '';
-    int? executiveId = await getExecutiveId();
+    token = prefs.getString('token') ?? '';
+    executiveId = await getExecutiveId();
+    profileCode = await getProfileCode();
     executiveName = await getExecutiveName();
-    int customerId = widget.customerId;
-    String customerType = widget.customerType;
-    String upHierarchy = prefs.getString('UpHierarchy') ?? '';
-    String downHierarchy = prefs.getString('DownHierarchy') ?? '';
+    upHierarchy = prefs.getString('UpHierarchy') ?? '';
+    downHierarchy = prefs.getString('DownHierarchy') ?? '';
 
     return await GetVisitDsrService().getVisitDsr(
-      executiveId??0,
-      customerId,
-      customerType,
-      upHierarchy,
-      downHierarchy,
-      token,
+      executiveId ?? 0,
+      widget.customerId,
+      widget.customerType,
+      upHierarchy ?? '',
+      downHierarchy ?? '',
+      token ?? '',
     );
   }
 
@@ -132,9 +165,10 @@ class _DsrEntryPageState extends State<DsrEntry> {
                           ),
                         ),
                         SizedBox(height: 16),
-                        buildDateTextField('Visit Date'),
+                        _buildTextField(
+                            'Visit Date', _dateController, _dateFieldKey),
                         buildTextField('Visit By',
-                            initialValue: executiveName??'', enabled: false),
+                            initialValue: executiveName ?? '', enabled: false),
                         buildDropdownField(
                           'Visit Purpose',
                           selectedVisitPurpose,
@@ -183,8 +217,15 @@ class _DsrEntryPageState extends State<DsrEntry> {
                             followUpAction = value;
                           });
                         }),
-                        buildImageButton(),
-                        buildTextField('Visit Feedback', maxLines: 3),
+                        Text(
+                          'Capture Image',
+                          style: TextStyle(
+                              fontWeight: FontWeight.bold, fontSize: 16),
+                        ),
+                        buildCaptureImage(),
+                        _buildTextField('Visit Feedback',
+                            _visitFeedbackController, _visitFeedbackFieldKey,
+                            maxLines: 3),
                         SizedBox(height: 16),
                       ],
                     ),
@@ -198,8 +239,7 @@ class _DsrEntryPageState extends State<DsrEntry> {
                           setState(() {
                             _submitted = true;
                           });
-                          if (_formKey.currentState!.validate() &&
-                              selectedVisitPurpose != null) {
+                          if (_formKey.currentState!.validate()) {
                             _submitForm();
                           }
                         },
@@ -232,59 +272,103 @@ class _DsrEntryPageState extends State<DsrEntry> {
     );
   }
 
-  void _submitForm() {
-    // Handle form submission logic here
-    print('Form submitted!');
-    // You can access form fields using their controllers or values stored in state variables
+  void _submitForm() async {
+    if (samplingDone == null) {
+      toastMessage.showToastMessage('PLease select Sampling Done.');
+    } else if (followUpAction == null) {
+      toastMessage.showToastMessage('PLease select Follow Up Action.');
+    } else if (_imageFile == null) {
+      toastMessage.showToastMessage('PLease capture image first.');
+    } else {
+      try {
+        FocusScope.of(context).unfocus();
+
+        if (!await _checkInternetConnection()) return;
+
+        setState(() {
+          _isLoading = true;
+        });
+
+        Position position = await locationService.getCurrentLocation(context);
+        print(
+            "Latitude: ${position.latitude}, Longitude: ${position.longitude}");
+
+        try {
+          print("_submitForm clicked");
+          final responseData = await VisitEntryService().visitEntry(
+              executiveId ?? 0,
+              widget.customerType,
+              widget.customerId,
+              executiveId ?? 0,
+              "",
+              profileCode ?? '',
+              "${position.latitude}",
+              "${position.longitude}",
+              "",
+              _visitFeedbackController.text,
+              _dateController.text,
+              _visitPurposeController.text,
+              "",
+              "",
+              "",
+              "",
+              "",
+              "",
+              "",
+              "",
+              "",
+              "",
+              "",
+              "",
+              "",
+              "",
+              "",
+              "",
+              "",
+              "",
+              token ?? "");
+
+          if (responseData.status == 'Success') {
+            String s = responseData.s;
+            print(s);
+            if (s.isNotEmpty) {
+              toastMessage.showInfoToastMessage(s);
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(builder: (context) => HomePage()),
+                (Route<dynamic> route) => false,
+              );
+            } else {
+              print('Add Visit DSR Error s empty');
+              toastMessage
+                  .showToastMessage("An error occurred while adding visit.");
+            }
+          } else {
+            print('Add Visit DSR Error ${responseData.status}');
+            toastMessage
+                .showToastMessage("An error occurred while adding visit.");
+          }
+        } catch (e) {
+          print("Error fetching location: $e");
+        }
+      } catch (e) {
+        print('Add Visit DSR Error $e');
+        toastMessage.showToastMessage("An error occurred while adding visit.");
+      } finally {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 
-  Widget buildDateTextField(String label,
-      {String initialValue = '', bool enabled = true, int maxLines = 1}) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: TextFormField(
-        decoration: InputDecoration(
-          labelText: label,
-          border: OutlineInputBorder(),
-          suffixIcon: InkWell(
-            onTap: () async {
-              // Show date picker
-              final DateTime? picked = await showDatePicker(
-                context: context,
-                initialDate: DateTime.now(),
-                firstDate: DateTime(2000),
-                lastDate: DateTime(2100),
-                builder: (BuildContext context, Widget? child) {
-                  return Theme(
-                    data: ThemeData.light(),
-                    child: child!,
-                  );
-                },
-              );
-
-              // Update selected date in the text field
-              if (picked != null && picked != DateTime.now()) {
-                setState(() {
-                  _dateController.text = dateFormat.format(picked);
-                });
-              }
-            },
-            child: Icon(Icons.calendar_month),
-          ),
-          contentPadding:
-              EdgeInsets.symmetric(vertical: 12.0, horizontal: 12.0),
-          alignLabelWithHint: true,
-        ),
-        controller: _dateController,
-        enabled: true,
-        validator: (value) {
-          if (value == null || value.isEmpty) {
-            return 'Please select $label';
-          }
-          return null;
-        },
-      ),
-    );
+  Future<bool> _checkInternetConnection() async {
+    if (!await checkInternetConnection()) {
+      toastMessage.showToastMessage(
+          "No internet connection. Please check your connection and try again.");
+      return false;
+    }
+    return true;
   }
 
   Widget buildTextField(String label,
@@ -379,19 +463,122 @@ class _DsrEntryPageState extends State<DsrEntry> {
     );
   }
 
-  Widget buildImageButton() {
+  void _removePhoto() {
+    setState(() {
+      _imageFile = null;
+    });
+  }
+
+  Widget buildCaptureImage() {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Row(
-        children: [
-          Text('Click Image:'),
-          IconButton(
-            icon: Icon(Icons.camera_alt),
-            onPressed: () {
-              // Handle image capture
+      child: Center(
+        child: _imageFile == null
+            ? OutlinedButton(
+                onPressed: _takePhoto,
+                style: OutlinedButton.styleFrom(
+                  side: BorderSide(color: Colors.grey, width: 2),
+                  // Border color and width
+                  minimumSize: Size(double.infinity, 300),
+                  // Match parent width and height 300
+                  shape: RoundedRectangleBorder(
+                    borderRadius:
+                        BorderRadius.circular(12.0), // Rounded corners
+                  ),
+                ),
+                child: Icon(
+                  Icons.camera_alt,
+                  color: Colors.grey, // Icon color
+                  size: 50, // Size of the camera icon
+                ),
+              )
+            : Stack(
+                children: [
+                  Container(
+                    width: double.infinity,
+                    height: 300,
+                    decoration: BoxDecoration(
+                      borderRadius:
+                          BorderRadius.circular(12.0), // Rounded corners
+                      image: DecorationImage(
+                        image: FileImage(File(_imageFile!.path)),
+                        // Convert XFile to File
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    right: 10,
+                    top: 10,
+                    child: IconButton(
+                      icon: Icon(Icons.close, color: Colors.red, size: 30),
+                      onPressed: _removePhoto,
+                    ),
+                  ),
+                ],
+              ),
+      ),
+    );
+  }
+
+  Widget _buildTextField(
+    String label,
+    TextEditingController controller,
+    GlobalKey<FormFieldState> fieldKey, {
+    int maxLines = 1,
+  }) {
+    bool isDateField = label == "Visit Date";
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: InkWell(
+        onTap: isDateField
+            ? () async {
+                final DateTime? picked = await showDatePicker(
+                  context: context,
+                  initialDate: DateTime.now(),
+                  firstDate: DateTime(1970, 1, 1),
+                  lastDate: DateTime.now(),
+                  builder: (BuildContext context, Widget? child) {
+                    return Theme(
+                      data: ThemeData.light(),
+                      child: child!,
+                    );
+                  },
+                );
+
+                if (picked != null) {
+                  controller.text = DateFormat('dd MMM yyyy').format(picked);
+                  fieldKey.currentState?.validate();
+                }
+              }
+            : null,
+        child: IgnorePointer(
+          ignoring: isDateField,
+          child: TextFormField(
+            key: fieldKey,
+            controller: controller,
+            decoration: InputDecoration(
+              labelText: label,
+              border: OutlineInputBorder(),
+              alignLabelWithHint: true,
+              suffixIcon: isDateField ? Icon(Icons.calendar_month) : null,
+            ),
+            textAlign: TextAlign.start,
+            maxLines: maxLines,
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Please select $label';
+              }
+              return null;
+            },
+            onChanged: (value) {
+              if (value.isNotEmpty) {
+                fieldKey.currentState?.validate();
+              }
             },
           ),
-        ],
+        ),
       ),
     );
   }
@@ -404,5 +591,49 @@ class _DsrEntryPageState extends State<DsrEntry> {
     _personMetController.dispose();
     _visitFeedbackController.dispose();
     super.dispose();
+  }
+
+  Widget _buildDropdownFieldVisitPurpose(
+      String label,
+      TextEditingController controller,
+      GlobalKey<FormFieldState> fieldKey,
+      List<VisitPurpose> purposeList,
+      FocusNode focusNode,
+      ) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: DropdownButtonFormField<VisitPurpose>(
+        key: fieldKey,
+        value: _selectedBoard,
+        focusNode: focusNode,
+        items: purposeList
+            .map((visitPurpose) => DropdownMenuItem<VisitPurpose>(
+          value: visitPurpose,
+          child: Text(visitPurpose.visitPurpose),
+        ))
+            .toList(),
+        onChanged: (VisitPurpose? value) {
+          setState(() {
+            _selectedBoard = value;
+
+            // Update the text controller with the selected category name
+            controller.text = value?.visitPurpose ?? '';
+
+            // Validate the field
+            fieldKey.currentState?.validate();
+          });
+        },
+        decoration: InputDecoration(
+          labelText: label,
+          border: OutlineInputBorder(),
+        ),
+        validator: (value) {
+          if (value == null || value.visitPurpose.isEmpty) {
+            return 'Please select $label';
+          }
+          return null;
+        },
+      ),
+    );
   }
 }
