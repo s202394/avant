@@ -1,6 +1,8 @@
 import 'package:avant/api/api_service.dart';
 import 'package:avant/approval/approval_list_form.dart';
+import 'package:avant/checked_in.dart';
 import 'package:avant/common/common.dart';
+import 'package:avant/common/constants.dart';
 import 'package:avant/common/toast.dart';
 import 'package:avant/db/db_helper.dart';
 import 'package:avant/dialog/custom_alert_dialog.dart';
@@ -8,17 +10,15 @@ import 'package:avant/login.dart';
 import 'package:avant/model/login_model.dart';
 import 'package:avant/model/menu_model.dart';
 import 'package:avant/model/travel_plan_model.dart';
-import 'package:avant/new_customer/new_customer_school_form1.dart';
-import 'package:avant/new_customer/new_customer_trade_library_form1.dart';
-import 'package:avant/visit/customer_search_visit.dart';
 import 'package:avant/visit/dsr_entry.dart';
 import 'package:avant/visit/visit_detail_page.dart';
-import 'package:avant/checked_in.dart';
-import 'package:avant/common/constants.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class HomePage extends StatefulWidget {
+  const HomePage({super.key});
+
   @override
   _HomePageState createState() => _HomePageState();
 }
@@ -63,6 +63,7 @@ class _HomePageState extends State<HomePage> {
     if (_hasInternet) {
       // Load the menu data from the database
       List<MenuData> menuDataList = await DatabaseHelper().getMenuDataFromDB();
+      print('Menu data from DB: $menuDataList');
 
       if (menuDataList.isEmpty) {
         print('No menu data in DB, fetching from API.');
@@ -78,10 +79,12 @@ class _HomePageState extends State<HomePage> {
             TravelPlanService().fetchTravelPlans(executiveId!, token!);
       }
     } else {
+      print('No Internet');
       futureMenuData = DatabaseHelper().getMenuDataFromDB();
       futurePlanResponse = Future.value(
           PlanResponse(status: "Success", todayPlan: [], tomorrowPlan: []));
     }
+    setState(() {});
   }
 
   Future<void> _logout() async {
@@ -124,7 +127,7 @@ class _HomePageState extends State<HomePage> {
     Navigator.pushAndRemoveUntil(
       context,
       MaterialPageRoute(builder: (context) => LoginPage()),
-      (Route<dynamic> route) => false, // Remove all previous routes
+      (Route<dynamic> route) => false,
     );
   }
 
@@ -139,207 +142,146 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 2,
-      child: Scaffold(
-        appBar: AppBar(
-          centerTitle: true,
-          title: Text("DART CRM"),
-          leading: Padding(
-            padding: EdgeInsets.only(left: 10.0),
-            child: Image.asset(
-              'images/logo.png', // Add your logo image to assets
-              height: 30,
+    return WillPopScope(
+      onWillPop: () async {
+        // Show confirmation dialog when back button is pressed
+        return await _showExitConfirmationDialog(context) ?? false;
+      },
+      child: DefaultTabController(
+        length: 2,
+        child: Scaffold(
+          appBar: AppBar(
+            centerTitle: true,
+            title: const Text("DART CRM"),
+            leading: Padding(
+              padding: const EdgeInsets.only(left: 10.0),
+              child: Image.asset('images/logo.png', height: 30),
             ),
-          ),
-          backgroundColor: Color(0xFFFFF8E1),
-          bottom: PreferredSize(
-            preferredSize: Size.fromHeight(30.0),
-            child: Container(
-              color: Color(0xFFFFE082), // Slightly darker color
-              child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      executiveName ?? "",
-                      style: TextStyle(color: Colors.black),
-                    ),
-                    Text(
-                      profileName ?? "",
-                      style: TextStyle(color: Colors.black),
-                    ),
-                  ],
+            backgroundColor: const Color(0xFFFFF8E1),
+            bottom: PreferredSize(
+              preferredSize: const Size.fromHeight(30.0),
+              child: Container(
+                color: const Color(0xFFFFE082),
+                child: Padding(
+                  padding:
+                  const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(executiveName ?? "",
+                          style: const TextStyle(color: Colors.black)),
+                      Text(profileName ?? "",
+                          style: const TextStyle(color: Colors.black)),
+                    ],
+                  ),
                 ),
               ),
             ),
           ),
-        ),
-        endDrawer: Drawer(
-          child: FutureBuilder<List<MenuData>>(
-            future: futureMenuData,
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                print("ConnectionState.waiting");
-                return Center(child: CircularProgressIndicator());
-              } else if (snapshot.hasError) {
-                print('Error: ${snapshot.error}');
-                return Center(child: Text('Error: ${snapshot.error}'));
-              } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                print('No menu data available');
-                return Center(child: Text('No menu data available'));
-              } else {
-                print('data : ${snapshot.data!.length}');
-                final groupedMenuData = _groupMenuData(snapshot.data!);
-                print('data : ${groupedMenuData.length}');
-                return ListView(
-                  padding: EdgeInsets.zero,
-                  children: <Widget>[
-                    UserAccountsDrawerHeader(
-                      accountName: Text(
-                        executiveName ?? "",
-                        style: TextStyle(color: Colors.white),
-                      ),
-                      accountEmail: Text(
-                        mobileNumber ?? "",
-                        style: TextStyle(color: Colors.white),
-                      ),
-                      currentAccountPicture: CircleAvatar(
-                        backgroundColor: Colors.white,
-                        child: Text(
-                          (executiveName?.isNotEmpty == true)
-                              ? executiveName![0]
-                              : '',
-                          style: TextStyle(fontSize: 40.0, color: Colors.blue),
+          endDrawer: Drawer(
+            child: FutureBuilder<List<MenuData>>(
+              future: futureMenuData,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                } else if (snapshot.hasError) {
+                  return Center(child: Text('Error: ${snapshot.error}'));
+                } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                  return const Center(child: Text('No menu data available'));
+                } else {
+                  final groupedMenuData = _groupMenuData(snapshot.data!);
+                  return ListView(
+                    padding: EdgeInsets.zero,
+                    children: <Widget>[
+                      UserAccountsDrawerHeader(
+                        accountName: Text(executiveName ?? "",
+                            style: const TextStyle(color: Colors.white)),
+                        accountEmail: Text(mobileNumber ?? "",
+                            style: const TextStyle(color: Colors.white)),
+                        currentAccountPicture: CircleAvatar(
+                          backgroundColor: Colors.white,
+                          child: Text(
+                            (executiveName?.isNotEmpty == true)
+                                ? executiveName![0]
+                                : '',
+                            style: const TextStyle(
+                                fontSize: 40.0, color: Colors.blue),
+                          ),
                         ),
+                        decoration: const BoxDecoration(color: Colors.blue),
                       ),
-                      decoration: BoxDecoration(color: Colors.blue),
-                    ),
-                    PunchInToggleSwitch(),
-                    ...groupedMenuData.keys.map((menuName) {
-                      return ExpansionTile(
-                        title: Text(menuName),
-                        children: groupedMenuData[menuName]!.map((childMenu) {
-                          return Padding(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 8.0),
-                            // Adjust the padding value as needed
-                            child: ListTile(
-                              title: Text(childMenu.childMenuName),
-                              onTap: () {
-                                Navigator.pop(context);
-                                // Handle navigation based on menuName and childMenuName
-                                if (childMenu.menuName == 'Visit/ DSR' &&
-                                    childMenu.childMenuName ==
-                                        'FollowUp Action Taken') {
+                      PunchInToggleSwitch(),
+                      ...groupedMenuData.keys.map((menuName) {
+                        return ExpansionTile(
+                          title: Text(menuName),
+                          children: groupedMenuData[menuName]!.map((childMenu) {
+                            return Padding(
+                              padding:
+                              const EdgeInsets.symmetric(horizontal: 8.0),
+                              child: ListTile(
+                                title: Text(childMenu.childMenuName),
+                                onTap: () {
+                                  Navigator.pop(context);
+                                  // Handle navigation based on menuName and childMenuName
+                                  // Navigate based on conditions
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                        builder: (context) =>
-                                            CustomerSearchVisit()),
+                                      builder: (context) =>
+                                          WebViewScreen(url: childMenu.linkURL),
+                                    ),
                                   );
-                                } else if (childMenu.menuName ==
-                                    'Self Stock Approval') {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                        builder: (context) => ApprovalListForm(
-                                            type: 'Self Stock Request')),
-                                  );
-                                } else if (childMenu.menuName == 'Customer') {
-                                  if (childMenu.childMenuName ==
-                                      'School List') {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                          builder: (context) =>
-                                              NewCustomerSchoolForm1(
-                                                  type: 'School')),
-                                    );
-                                  } else if (childMenu.childMenuName ==
-                                      'Institute List') {
-                                  } else if (childMenu.childMenuName ==
-                                      'Trade List') {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                          builder: (context) =>
-                                              NewCustomerTradeLibraryForm1(
-                                                  type: 'Trade')),
-                                    );
-                                  } else if (childMenu.childMenuName ==
-                                      'Library List') {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                          builder: (context) =>
-                                              NewCustomerTradeLibraryForm1(
-                                                  type: 'Library')),
-                                    );
-                                  }
-                                } else {
-                                  // Handle other menu items or navigate to a web view
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                        builder: (context) => WebViewScreen(
-                                            url: childMenu.linkURL)),
-                                  );
-                                }
-                              },
-                            ),
+                                },
+                              ),
+                            );
+                          }).toList(),
+                        );
+                      }),
+                      ListTile(
+                        title: const Text(CUSTOMER_SAMPLE_APPROVAL),
+                        onTap: () {
+                          Navigator.pop(context);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => ApprovalListForm(
+                                    type: CUSTOMER_SAMPLE_APPROVAL)),
                           );
-                        }).toList(),
-                      );
-                    }).toList(),
-                    ListTile(
-                      title: Text(CUSTOMER_SAMPLE_APPROVAL),
-                      onTap: () async {
-                        Navigator.pop(context);
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => ApprovalListForm(
-                                  type: CUSTOMER_SAMPLE_APPROVAL)),
-                        );
-                      },
-                    ),
-                    ListTile(
-                      title: Text('Self Stock Request Approval'),
-                      onTap: () async {
-                        Navigator.pop(context);
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => ApprovalListForm(
-                                  type: 'Self Stock Request Approval')),
-                        );
-                      },
-                    ),
-                    ListTile(
-                      title: Text('Logout'),
-                      onTap: () async {
-                        _logout();
-                      },
-                    ),
-                  ],
-                );
-              }
-            },
+                        },
+                      ),
+                      ListTile(
+                        title: const Text('Self Stock Request Approval'),
+                        onTap: () {
+                          Navigator.pop(context);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => ApprovalListForm(
+                                    type: 'Self Stock Request Approval')),
+                          );
+                        },
+                      ),
+                      ListTile(
+                        title: const Text('Logout'),
+                        onTap: _logout,
+                      ),
+                    ],
+                  );
+                }
+              },
+            ),
           ),
-        ),
-        body: _hasInternet
-            ? _buildContent()
-            : NoInternetScreen(onRefresh: _initialize),
-        bottomNavigationBar: BottomAppBar(
-          height: 40,
-          color: Color(0xFFFFF8E1),
-          child: Center(
-            child: Text(
-              '© 2024 Avant WebTech Pvt. Ltd.',
-              style: TextStyle(color: Colors.black54),
+          body: _hasInternet
+              ? _buildContent()
+              : NoInternetScreen(onRefresh: _initialize),
+          bottomNavigationBar: const BottomAppBar(
+            height: 40,
+            color: Color(0xFFFFF8E1),
+            child: Center(
+              child: Text(
+                '© 2024 Avant WebTech Pvt. Ltd.',
+                style: TextStyle(color: Colors.black54),
+              ),
             ),
           ),
         ),
@@ -353,7 +295,7 @@ class _HomePageState extends State<HomePage> {
         Container(
           width: double.infinity,
           color: Colors.blue,
-          child: Padding(
+          child: const Padding(
             padding: EdgeInsets.symmetric(vertical: 8.0, horizontal: 16),
             child: Text(
               'Travel Plan',
@@ -366,7 +308,7 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
         ),
-        TabBar(
+        const TabBar(
           labelColor: Colors.black,
           unselectedLabelColor: Colors.black54,
           indicatorColor: Colors.blue,
@@ -399,12 +341,39 @@ class _HomePageState extends State<HomePage> {
     }
     return groupedMenuData;
   }
+
+  Future<bool?> _showExitConfirmationDialog(BuildContext context) {
+    return showDialog<bool>(
+      context: context,
+      barrierDismissible: false, // User must tap a button to close the dialog
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Confirm Exit'),
+          content: const Text('Do you really want to exit the app?'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(false); // Do not exit
+              },
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                SystemNavigator.pop();
+              },
+              child: const Text('Exit'),
+            ),
+          ],
+        );
+      },
+    );
+  }
 }
 
 class TodayPlanList extends StatelessWidget {
   final Future<PlanResponse> futurePlanResponse;
 
-  TodayPlanList({required this.futurePlanResponse});
+  const TodayPlanList({super.key, required this.futurePlanResponse});
 
   @override
   Widget build(BuildContext context) {
@@ -412,10 +381,10 @@ class TodayPlanList extends StatelessWidget {
       future: futurePlanResponse,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return Center(child: CircularProgressIndicator());
+          return const Center(child: CircularProgressIndicator());
         } else if (snapshot.hasError) {
           return Center(child: Text('Error: ${snapshot.error}'));
-        } else if (snapshot.hasData && snapshot.data!.todayPlan.length > 0) {
+        } else if (snapshot.hasData && snapshot.data!.todayPlan.isNotEmpty) {
           return ListView.builder(
             itemCount: snapshot.data!.todayPlan.length,
             itemBuilder: (context, index) {
@@ -464,13 +433,13 @@ class TodayPlanList extends StatelessWidget {
                       );
                     },
                   ),
-                  Divider(),
+                  const Divider(),
                 ],
               );
             },
           );
         } else {
-          return Center(child: Text('No data available'));
+          return const Center(child: Text('No data available'));
         }
       },
     );
@@ -480,7 +449,7 @@ class TodayPlanList extends StatelessWidget {
 class TomorrowPlanList extends StatelessWidget {
   final Future<PlanResponse> futurePlanResponse;
 
-  TomorrowPlanList({required this.futurePlanResponse});
+  const TomorrowPlanList({super.key, required this.futurePlanResponse});
 
   @override
   Widget build(BuildContext context) {
@@ -488,10 +457,10 @@ class TomorrowPlanList extends StatelessWidget {
       future: futurePlanResponse,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return Center(child: CircularProgressIndicator());
+          return const Center(child: CircularProgressIndicator());
         } else if (snapshot.hasError) {
           return Center(child: Text('Error: ${snapshot.error}'));
-        } else if (snapshot.hasData && snapshot.data!.tomorrowPlan.length > 0) {
+        } else if (snapshot.hasData && snapshot.data!.tomorrowPlan.isNotEmpty) {
           return ListView.builder(
             itemCount: snapshot.data!.tomorrowPlan.length,
             itemBuilder: (context, index) {
@@ -520,13 +489,13 @@ class TomorrowPlanList extends StatelessWidget {
                       );
                     },
                   ),
-                  Divider(),
+                  const Divider(),
                 ],
               );
             },
           );
         } else {
-          return Center(child: Text('No data available'));
+          return const Center(child: Text('No data available'));
         }
       },
     );
@@ -536,14 +505,14 @@ class TomorrowPlanList extends StatelessWidget {
 class WebViewScreen extends StatelessWidget {
   final String url;
 
-  WebViewScreen({required this.url});
+  const WebViewScreen({super.key, required this.url});
 
   @override
   Widget build(BuildContext context) {
     // Implement WebView to load the given URL
     return Scaffold(
       appBar: AppBar(
-        title: Text('WebView'),
+        title: const Text('WebView'),
       ),
       body: Center(
         child: Text('Load URL: $url'),
@@ -555,7 +524,7 @@ class WebViewScreen extends StatelessWidget {
 class NoInternetScreen extends StatelessWidget {
   final VoidCallback onRefresh;
 
-  NoInternetScreen({required this.onRefresh});
+  const NoInternetScreen({super.key, required this.onRefresh});
 
   @override
   Widget build(BuildContext context) {
@@ -563,16 +532,16 @@ class NoInternetScreen extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.wifi_off, size: 80, color: Colors.grey),
-          SizedBox(height: 20),
-          Text(
+          const Icon(Icons.wifi_off, size: 80, color: Colors.grey),
+          const SizedBox(height: 20),
+          const Text(
             'No Internet Connection',
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
-          SizedBox(height: 20),
+          const SizedBox(height: 20),
           ElevatedButton(
             onPressed: onRefresh,
-            child: Text('Retry'),
+            child: const Text('Retry'),
           ),
         ],
       ),

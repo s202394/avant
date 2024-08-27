@@ -35,8 +35,8 @@ class ApprovalList {
   }
   Map<String, dynamic> toJson() {
     return {
-      'MsgType': status,
-      'MsgText': bookId,
+      'MsgType': msgType,
+      'MsgText': msgText,
     };
   }
 }

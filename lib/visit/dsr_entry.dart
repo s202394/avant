@@ -1,19 +1,19 @@
 import 'dart:io';
 
 import 'package:avant/api/api_service.dart';
+import 'package:avant/common/common.dart';
+import 'package:avant/common/toast.dart';
+import 'package:avant/home.dart';
 import 'package:avant/model/get_visit_dsr_model.dart';
 import 'package:avant/model/login_model.dart';
-import 'package:avant/common/toast.dart';
+import 'package:avant/service/location_service.dart';
+import 'package:avant/views/multi_selection_dropdown.dart';
+import 'package:avant/visit/visit_series_search.dart';
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:flutter/services.dart';
-import 'package:intl/intl.dart';
-import 'package:avant/common/common.dart';
-import 'package:avant/home.dart';
-import 'package:avant/home.dart';
-import 'package:avant/service/location_service.dart';
 
 class DsrEntry extends StatefulWidget {
   final int customerId;
@@ -24,8 +24,9 @@ class DsrEntry extends StatefulWidget {
   final String city;
   final String state;
 
-  DsrEntry(
-      {required this.customerId,
+  const DsrEntry(
+      {super.key,
+      required this.customerId,
       required this.customerName,
       required this.customerCode,
       required this.customerType,
@@ -39,14 +40,19 @@ class DsrEntry extends StatefulWidget {
 
 class _DsrEntryPageState extends State<DsrEntry> {
   String? selectedVisitPurpose;
+  int? selectedVisitPurposeId;
   String? selectedJointVisit;
+  int? selectedJointVisitId;
   String? selectedPersonMet;
+  int? selectedPersonMetId;
   bool? samplingDone;
   bool? followUpAction;
-  DateFormat dateFormat = DateFormat('dd/MM/yyyy');
-  GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+
+  List<PersonMet> _selectedJointVisitWithItems = [];
 
   int? executiveId;
+  int? userId;
   String? profileCode;
   String? upHierarchy;
   String? downHierarchy;
@@ -58,27 +64,21 @@ class _DsrEntryPageState extends State<DsrEntry> {
   bool _submitted = false;
   bool _isLoading = false;
 
+  late Position position;
+  late String address;
   late String? executiveName;
 
   late Future<GetVisitDsrResponse> _visitDsrData;
 
-  TextEditingController _dateController = TextEditingController();
-  TextEditingController _visitPurposeController = TextEditingController();
-  TextEditingController _jointVisitController = TextEditingController();
-  TextEditingController _personMetController = TextEditingController();
-  TextEditingController _visitFeedbackController = TextEditingController();
+  final TextEditingController _dateController = TextEditingController();
+  final TextEditingController _visitPurposeController = TextEditingController();
+  final TextEditingController _jointVisitController = TextEditingController();
+  final TextEditingController _personMetController = TextEditingController();
+  final TextEditingController _visitFeedbackController =
+      TextEditingController();
 
   final _dateFieldKey = GlobalKey<FormFieldState>();
-  final _visitPurposeFieldKey = GlobalKey<FormFieldState>();
-  final _jointVisitFieldKey = GlobalKey<FormFieldState>();
-  final _personMetFieldKey = GlobalKey<FormFieldState>();
   final _visitFeedbackFieldKey = GlobalKey<FormFieldState>();
-
-  final FocusNode _dateFocusNode = FocusNode();
-  final FocusNode _visitPurposeFocusNode = FocusNode();
-  final FocusNode _jointVisitFocusNode = FocusNode();
-  final FocusNode _personMetFocusNode = FocusNode();
-  final FocusNode _visitFeedbackFocusNode = FocusNode();
 
   final ImagePicker _picker = ImagePicker();
   XFile? _imageFile;
@@ -99,12 +99,15 @@ class _DsrEntryPageState extends State<DsrEntry> {
   void initState() {
     super.initState();
     _visitDsrData = _fetchVisitDsrData();
+
+    getAddressData();
   }
 
   Future<GetVisitDsrResponse> _fetchVisitDsrData() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     token = prefs.getString('token') ?? '';
     executiveId = await getExecutiveId();
+    userId = await getUserId();
     profileCode = await getProfileCode();
     executiveName = await getExecutiveName();
     upHierarchy = prefs.getString('UpHierarchy') ?? '';
@@ -124,152 +127,182 @@ class _DsrEntryPageState extends State<DsrEntry> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('DSR Entry'),
-        backgroundColor: Color(0xFFFFF8E1),
+        title: const Text('DSR Entry'),
+        backgroundColor: const Color(0xFFFFF8E1),
       ),
       body: FutureBuilder<GetVisitDsrResponse>(
         future: _visitDsrData,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
+            return const Center(child: CircularProgressIndicator());
           } else if (snapshot.hasError) {
             return Center(child: Text('Error: ${snapshot.error}'));
           } else if (!snapshot.hasData) {
-            return Center(child: Text('No data available'));
+            return const Center(child: Text('No data available'));
           }
 
           final visitDsrData = snapshot.data!;
 
-          return Form(
-            key: _formKey,
-            child: Column(
-              children: [
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: ListView(
-                      children: [
-                        Text(
-                          visitDsrData.customerSummery.customerName,
-                          style: TextStyle(
-                              fontWeight: FontWeight.bold, fontSize: 18),
-                        ),
-                        RichText(
-                          text: TextSpan(
-                            style: DefaultTextStyle.of(context).style,
-                            children: visitDsrData.customerSummery.address
-                                .replaceAll('\\r', '')
-                                .split('\\n')
-                                .map((line) => TextSpan(text: line + '\n'))
-                                .toList(),
-                          ),
-                        ),
-                        SizedBox(height: 16),
-                        _buildTextField(
-                            'Visit Date', _dateController, _dateFieldKey),
-                        buildTextField('Visit By',
-                            initialValue: executiveName ?? '', enabled: false),
-                        buildDropdownField(
-                          'Visit Purpose',
-                          selectedVisitPurpose,
-                          visitDsrData.visitPurposeList
-                              .map((e) => e.visitPurpose)
-                              .toList(),
-                          (value) {
-                            setState(() {
-                              selectedVisitPurpose = value;
-                            });
-                          },
-                        ),
-                        buildDropdownField(
+          return Stack(
+            children: [
+              Form(
+                key: _formKey,
+                child: Column(
+                  children: [
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: ListView(
+                          children: [
+                            Text(
+                              visitDsrData.customerSummery.customerName,
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.bold, fontSize: 18),
+                            ),
+                            RichText(
+                              text: TextSpan(
+                                style: DefaultTextStyle.of(context).style,
+                                children: visitDsrData.customerSummery.address
+                                    .replaceAll('\\r', '')
+                                    .split('\\n')
+                                    .map((line) => TextSpan(text: '$line\n'))
+                                    .toList(),
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            _buildTextField(
+                                'Visit Date', _dateController, _dateFieldKey),
+                            buildTextField('Visit By',
+                                initialValue: executiveName ?? '',
+                                enabled: false),
+                            buildDropdownField(
+                              'Visit Purpose',
+                              selectedVisitPurpose,
+                              {
+                                for (var item in visitDsrData.visitPurposeList)
+                                  item.visitPurpose: item.id
+                              },
+                              (value) {
+                                setState(() {
+                                  selectedVisitPurpose = value;
+                                  selectedVisitPurposeId = value != null
+                                      ? {
+                                          for (var item
+                                              in visitDsrData.visitPurposeList)
+                                            item.visitPurpose: item.id
+                                        }[value]
+                                      : null;
+                                });
+                              },
+                            ),
+                            /* buildDropdownField(
                           'Joint Visit',
                           selectedJointVisit,
-                          visitDsrData.joinVisitList
-                              .map((e) => e.executiveName)
-                              .toList(),
+                          {
+                            for (var item in visitDsrData.joinVisitList)
+                              item.executiveName: item.executiveId
+                          },
                           (value) {
                             setState(() {
                               selectedJointVisit = value;
+                              selectedJointVisitId = value != null
+                                  ? {
+                                      for (var item
+                                          in visitDsrData.joinVisitList)
+                                        item.executiveName: item.executiveId
+                                    }[value]
+                                  : null;
                             });
                           },
-                        ),
-                        buildDropdownField(
-                          'Person Met',
-                          selectedPersonMet,
-                          visitDsrData.personMetList
-                              .map((e) => e.customerContactName)
-                              .toList(),
-                          (value) {
-                            setState(() {
-                              selectedPersonMet = value;
-                            });
-                          },
-                        ),
-                        buildRadioButtons('Sampling Done', samplingDone,
-                            (value) {
-                          setState(() {
-                            samplingDone = value;
-                          });
-                        }),
-                        buildRadioButtons('Follow Up Action', followUpAction,
-                            (value) {
-                          setState(() {
-                            followUpAction = value;
-                          });
-                        }),
-                        Text(
-                          'Capture Image',
-                          style: TextStyle(
-                              fontWeight: FontWeight.bold, fontSize: 16),
-                        ),
-                        buildCaptureImage(),
-                        _buildTextField('Visit Feedback',
-                            _visitFeedbackController, _visitFeedbackFieldKey,
-                            maxLines: 3),
-                        SizedBox(height: 16),
-                      ],
-                    ),
-                  ),
-                ),
-                Row(
-                  children: [
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            _submitted = true;
-                          });
-                          if (_formKey.currentState!.validate()) {
-                            _submitForm();
-                          }
-                        },
-                        child: Container(
-                          width: double.infinity,
-                          color: Colors.blue,
-                          child: Padding(
-                            padding: EdgeInsets.symmetric(
-                                vertical: 8.0, horizontal: 16),
-                            child: Text(
-                              'Submit',
-                              textAlign: TextAlign.center,
+                        ),*/
+                            MultiSelectDropdown<PersonMet>(
+                              label: 'Joint Visit',
+                              items: visitDsrData.personMetList,
+                              selectedItems: _selectedJointVisitWithItems,
+                              itemLabelBuilder: (item) =>
+                                  item.customerContactName,
+                              onChanged: _handleSelectionChange,
+                              isSubmitted: _submitted,
+                            ),
+                            buildRadioButtons('Sampling Done', samplingDone,
+                                (value) {
+                              setState(() {
+                                samplingDone = value;
+                              });
+                            }),
+                            buildRadioButtons(
+                                'Follow Up Action', followUpAction, (value) {
+                              setState(() {
+                                followUpAction = value;
+                              });
+                            }),
+                            const Text(
+                              'Capture Image',
                               style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 18,
+                                  fontWeight: FontWeight.bold, fontSize: 16),
+                            ),
+                            buildCaptureImage(),
+                            _buildTextField(
+                                'Visit Feedback',
+                                _visitFeedbackController,
+                                _visitFeedbackFieldKey,
+                                maxLines: 3),
+                            const SizedBox(height: 16),
+                          ],
+                        ),
+                      ),
+                    ),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                _submitted = true;
+                              });
+                              if (_formKey.currentState!.validate()) {
+                                _submitForm();
+                              }
+                            },
+                            child: Container(
+                              width: double.infinity,
+                              color: Colors.blue,
+                              child: const Padding(
+                                padding: EdgeInsets.symmetric(
+                                    vertical: 8.0, horizontal: 16),
+                                child: Text(
+                                  'Submit',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 18,
+                                  ),
+                                ),
                               ),
                             ),
                           ),
                         ),
-                      ),
+                      ],
                     ),
                   ],
                 ),
-              ],
-            ),
+              ),
+              if (_isLoading)
+                const Center(
+                  child: CircularProgressIndicator(),
+                ),
+            ],
           );
         },
       ),
     );
+  }
+
+  void _handleSelectionChange(List<PersonMet> selectedItems) {
+    setState(() {
+      _selectedJointVisitWithItems = selectedItems;
+    });
   }
 
   void _submitForm() async {
@@ -279,7 +312,7 @@ class _DsrEntryPageState extends State<DsrEntry> {
       toastMessage.showToastMessage('PLease select Follow Up Action.');
     } else if (_imageFile == null) {
       toastMessage.showToastMessage('PLease capture image first.');
-    } else {
+    } else if (followUpAction == false && samplingDone == false) {
       try {
         FocusScope.of(context).unfocus();
 
@@ -288,68 +321,88 @@ class _DsrEntryPageState extends State<DsrEntry> {
         setState(() {
           _isLoading = true;
         });
+        if (address.isEmpty) {
+          address = await locationService.getAddress(
+              position.latitude, position.longitude);
+        }
+        // Assuming _selectedItems is a list of PersonMet objects
+        List<int> selectedIds = _selectedJointVisitWithItems
+            .map((e) => e.customerContactId)
+            .toList();
 
-        Position position = await locationService.getCurrentLocation(context);
-        print(
-            "Latitude: ${position.latitude}, Longitude: ${position.longitude}");
+        // Convert list of IDs to comma-separated string
+        String commaSeparatedIds = selectedIds.join(', ');
 
-        try {
-          print("_submitForm clicked");
-          final responseData = await VisitEntryService().visitEntry(
-              executiveId ?? 0,
-              widget.customerType,
-              widget.customerId,
-              executiveId ?? 0,
-              "",
-              profileCode ?? '',
-              "${position.latitude}",
-              "${position.longitude}",
-              "",
-              _visitFeedbackController.text,
-              _dateController.text,
-              _visitPurposeController.text,
-              "",
-              "",
-              "",
-              "",
-              "",
-              "",
-              "",
-              "",
-              "",
-              "",
-              "",
-              "",
-              "",
-              "",
-              "",
-              "",
-              "",
-              "",
-              token ?? "");
+        // Print the result
+        print('Selected IDs: $commaSeparatedIds');
 
-          if (responseData.status == 'Success') {
-            String s = responseData.s;
-            print(s);
-            if (s.isNotEmpty) {
-              toastMessage.showInfoToastMessage(s);
-              Navigator.pushAndRemoveUntil(
-                context,
-                MaterialPageRoute(builder: (context) => HomePage()),
-                (Route<dynamic> route) => false,
-              );
+        if (address.isNotEmpty) {
+          try {
+            print("_submitForm clicked");
+            final responseData = await VisitEntryService().visitEntry(
+                executiveId ?? 0,
+                widget.customerType,
+                widget.customerId,
+                executiveId ?? 0,
+                address,
+                profileCode ?? '',
+                position.latitude,
+                position.longitude,
+                1,
+                _visitFeedbackController.text,
+                _dateController.text,
+                selectedVisitPurposeId ?? 0,
+                0,
+                commaSeparatedIds,
+                "",
+                "",
+                "",
+                "",
+                "",
+                0,
+                0,
+                userId ?? 0,
+                "",
+                "",
+                false,
+                "",
+                "",
+                false,
+                "",
+                "",
+                token ?? "");
+
+            if (responseData.status == 'Success') {
+              String s = responseData.s;
+              print(s);
+              if (s.isNotEmpty) {
+                print('Add Visit DSR Error s not empty');
+                toastMessage.showInfoToastMessage(s);
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (context) => const HomePage()),
+                  (Route<dynamic> route) => false,
+                );
+              } else if (responseData.e.isNotEmpty) {
+                print('Add Visit DSR Error e not empty');
+                toastMessage.showToastMessage(responseData.e);
+              } else {
+                print('Add Visit DSR Error s & e empty');
+                toastMessage
+                    .showToastMessage("An error occurred while adding visit.");
+                ;
+              }
             } else {
-              print('Add Visit DSR Error s empty');
+              print('Add Visit DSR Error ${responseData.status}');
               toastMessage
                   .showToastMessage("An error occurred while adding visit.");
             }
-          } else {
-            print('Add Visit DSR Error ${responseData.status}');
-            toastMessage
-                .showToastMessage("An error occurred while adding visit.");
+          } catch (e) {
+            print("Error fetching location: $e");
           }
-        } catch (e) {
-          print("Error fetching location: $e");
+        } else {
+          print('Address empty');
+          toastMessage.showToastMessage("Unable to fetch address.");
         }
       } catch (e) {
         print('Add Visit DSR Error $e');
@@ -359,6 +412,16 @@ class _DsrEntryPageState extends State<DsrEntry> {
           _isLoading = false;
         });
       }
+    } else {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => VisitSeriesSearch(
+            schoolName: widget.customerName,
+            address: widget.address,
+          ),
+        ),
+      );
     }
   }
 
@@ -378,9 +441,9 @@ class _DsrEntryPageState extends State<DsrEntry> {
       child: TextFormField(
         decoration: InputDecoration(
           labelText: label,
-          border: OutlineInputBorder(),
+          border: const OutlineInputBorder(),
           contentPadding:
-              EdgeInsets.symmetric(vertical: 12.0, horizontal: 12.0),
+              const EdgeInsets.symmetric(vertical: 12.0, horizontal: 12.0),
           alignLabelWithHint: true,
         ),
         initialValue: initialValue,
@@ -397,13 +460,13 @@ class _DsrEntryPageState extends State<DsrEntry> {
   }
 
   Widget buildDropdownField(String label, String? selectedValue,
-      List<String> items, ValueChanged<String?> onChanged) {
+      Map<String, int> items, ValueChanged<String?> onChanged) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: InputDecorator(
         decoration: InputDecoration(
           labelText: label,
-          border: OutlineInputBorder(),
+          border: const OutlineInputBorder(),
           errorText: _submitted && selectedValue == null
               ? 'Please select a $label'
               : null,
@@ -412,10 +475,10 @@ class _DsrEntryPageState extends State<DsrEntry> {
           child: DropdownButton<String>(
             isDense: true,
             value: selectedValue,
-            items: items.map((item) {
+            items: items.keys.map((key) {
               return DropdownMenuItem<String>(
-                value: item,
-                child: Text(item),
+                value: key,
+                child: Text(key),
               );
             }).toList(),
             onChanged: onChanged,
@@ -441,7 +504,7 @@ class _DsrEntryPageState extends State<DsrEntry> {
                   groupValue: groupValue,
                   onChanged: onChanged,
                 ),
-                Text('Yes'),
+                const Text('Yes'),
               ],
             ),
           ),
@@ -454,7 +517,7 @@ class _DsrEntryPageState extends State<DsrEntry> {
                   groupValue: groupValue,
                   onChanged: onChanged,
                 ),
-                Text('No'),
+                const Text('No'),
               ],
             ),
           ),
@@ -477,16 +540,16 @@ class _DsrEntryPageState extends State<DsrEntry> {
             ? OutlinedButton(
                 onPressed: _takePhoto,
                 style: OutlinedButton.styleFrom(
-                  side: BorderSide(color: Colors.grey, width: 2),
+                  side: const BorderSide(color: Colors.grey, width: 2),
                   // Border color and width
-                  minimumSize: Size(double.infinity, 300),
+                  minimumSize: const Size(double.infinity, 300),
                   // Match parent width and height 300
                   shape: RoundedRectangleBorder(
                     borderRadius:
                         BorderRadius.circular(12.0), // Rounded corners
                   ),
                 ),
-                child: Icon(
+                child: const Icon(
                   Icons.camera_alt,
                   color: Colors.grey, // Icon color
                   size: 50, // Size of the camera icon
@@ -511,7 +574,8 @@ class _DsrEntryPageState extends State<DsrEntry> {
                     right: 10,
                     top: 10,
                     child: IconButton(
-                      icon: Icon(Icons.close, color: Colors.red, size: 30),
+                      icon:
+                          const Icon(Icons.close, color: Colors.red, size: 30),
                       onPressed: _removePhoto,
                     ),
                   ),
@@ -560,9 +624,9 @@ class _DsrEntryPageState extends State<DsrEntry> {
             controller: controller,
             decoration: InputDecoration(
               labelText: label,
-              border: OutlineInputBorder(),
+              border: const OutlineInputBorder(),
               alignLabelWithHint: true,
-              suffixIcon: isDateField ? Icon(Icons.calendar_month) : null,
+              suffixIcon: isDateField ? const Icon(Icons.calendar_month) : null,
             ),
             textAlign: TextAlign.start,
             maxLines: maxLines,
@@ -593,47 +657,11 @@ class _DsrEntryPageState extends State<DsrEntry> {
     super.dispose();
   }
 
-  Widget _buildDropdownFieldVisitPurpose(
-      String label,
-      TextEditingController controller,
-      GlobalKey<FormFieldState> fieldKey,
-      List<VisitPurpose> purposeList,
-      FocusNode focusNode,
-      ) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: DropdownButtonFormField<VisitPurpose>(
-        key: fieldKey,
-        value: _selectedBoard,
-        focusNode: focusNode,
-        items: purposeList
-            .map((visitPurpose) => DropdownMenuItem<VisitPurpose>(
-          value: visitPurpose,
-          child: Text(visitPurpose.visitPurpose),
-        ))
-            .toList(),
-        onChanged: (VisitPurpose? value) {
-          setState(() {
-            _selectedBoard = value;
+  void getAddressData() async {
+    position = await locationService.getCurrentLocation();
+    print("Latitude: ${position.latitude}, Longitude: ${position.longitude}");
 
-            // Update the text controller with the selected category name
-            controller.text = value?.visitPurpose ?? '';
-
-            // Validate the field
-            fieldKey.currentState?.validate();
-          });
-        },
-        decoration: InputDecoration(
-          labelText: label,
-          border: OutlineInputBorder(),
-        ),
-        validator: (value) {
-          if (value == null || value.visitPurpose.isEmpty) {
-            return 'Please select $label';
-          }
-          return null;
-        },
-      ),
-    );
+    address = await locationService.getAddressFromLocation();
+    print("address: $address");
   }
 }

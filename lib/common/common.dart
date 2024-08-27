@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'dart:convert';
-import 'package:avant/common/toast.dart';
+import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
@@ -105,4 +105,16 @@ Future<bool> checkInternetConnection() async {
   } else {
     return false;
   }
+}
+
+String getCurrentDate({String format = 'dd MMM yyyy'}) {
+  DateTime now = DateTime.now();
+  DateFormat formatter = DateFormat(format);
+  return formatter.format(now);
+}
+
+String getCurrentDateTime({String format = 'dd MMM yyyy HH:MM a'}) {
+  DateTime now = DateTime.now();
+  DateFormat formatter = DateFormat(format);
+  return formatter.format(now);
 }

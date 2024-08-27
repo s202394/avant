@@ -53,5 +53,7 @@
     <string>We need access to your photo library to select photos</string>
     <key>NSLocationWhenInUseUsageDescription</key>
     <string>We need your location to show your current position.</string>
+    <key>NSLocationAlwaysUsageDescription</key>
+    <string>We need your location to show your current position.</string>
 </dict>
 </plist>

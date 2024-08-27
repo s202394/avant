@@ -34,8 +34,9 @@ class NewCustomerSchoolForm3 extends StatefulWidget {
   final String gst;
   final String purchaseMode;
 
-  NewCustomerSchoolForm3(
-      {required this.type,
+  const NewCustomerSchoolForm3(
+      {super.key,
+      required this.type,
       required this.customerName,
       required this.address,
       required this.cityId,
@@ -78,7 +79,6 @@ class _NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
   final TextEditingController _contactCityController = TextEditingController();
   final TextEditingController _contactPinCodeController =
       TextEditingController();
-  final TextEditingController _dataSourceController = TextEditingController();
 
   final _contactFirstNameFieldKey = GlobalKey<FormFieldState>();
   final _contactLastNameFieldKey = GlobalKey<FormFieldState>();
@@ -268,13 +268,13 @@ class _NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
         future: futureData,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
+            return const Center(child: CircularProgressIndicator());
           } else if (snapshot.hasError) {
             return Center(child: Text('Error: ${snapshot.error}'));
           } else if (snapshot.hasData) {
             return buildForm(snapshot.data!);
           } else {
-            return Center(child: Text('No data found'));
+            return const Center(child: Text('No data found'));
           }
         },
       ),
@@ -299,14 +299,14 @@ class _NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
         Form(
           key: _formKey,
           child: SingleChildScrollView(
-            padding: EdgeInsets.all(16.0),
+            padding: const EdgeInsets.all(16.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   textAlign: TextAlign.center,
                   widget.customerName,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                   ),
@@ -314,7 +314,7 @@ class _NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
                 Text(
                   textAlign: TextAlign.center,
                   widget.address,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                   ),
@@ -322,19 +322,19 @@ class _NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
                 Text(
                   textAlign: TextAlign.center,
                   '${widget.cityName} - ${widget.pinCode}',
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                SizedBox(height: 10),
+                const SizedBox(height: 10),
                 Container(
                   width: double.infinity, // Full width
                   height: 1, // Height of the line
                   color: Colors.grey, // Line color
                 ),
-                SizedBox(height: 10),
-                Text(
+                const SizedBox(height: 10),
+                const Text(
                   textAlign: TextAlign.center,
                   'Enrolment',
                   style: TextStyle(
@@ -344,8 +344,8 @@ class _NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
                 ),
                 GridView.builder(
                   shrinkWrap: true,
-                  physics: NeverScrollableScrollPhysics(),
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  physics: const NeverScrollableScrollPhysics(),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2, // Number of columns
                     childAspectRatio: 2.0, // Adjust this for aspect ratio
                     crossAxisSpacing: 0.0, // Adjust spacing between columns
@@ -365,7 +365,7 @@ class _NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
                     );
                     return Row(
                       children: [
-                        Container(
+                        SizedBox(
                           width: 60,
                           height: 40,
                           child: Center(
@@ -374,13 +374,13 @@ class _NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
                               classItem.classNumId >= 0
                                   ? 'Class ${classItem.className}'
                                   : classItem.className,
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
                           ),
                         ),
-                        SizedBox(width: 8.0),
+                        const SizedBox(width: 8.0),
                         Expanded(
                           child: Container(
                             decoration: BoxDecoration(
@@ -422,7 +422,7 @@ class _NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
                             ),
                           ),
                         ),
-                        SizedBox(width: 8.0),
+                        const SizedBox(width: 8.0),
                       ],
                     );
                   },
@@ -432,8 +432,8 @@ class _NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
                   height: 1, // Height of the line
                   color: Colors.grey, // Line color
                 ),
-                SizedBox(height: 10),
-                Text(
+                const SizedBox(height: 10),
+                const Text(
                   textAlign: TextAlign.center,
                   'Primary Contact',
                   style: TextStyle(
@@ -441,7 +441,7 @@ class _NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                SizedBox(height: 10),
+                const SizedBox(height: 10),
                 _buildTextField('Contact First Name',
                     _contactFirstNameController, _contactFirstNameFieldKey),
                 _buildTextField('Contact Last Name', _contactLastNameController,
@@ -496,7 +496,7 @@ class _NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
                   },
                   fieldKey: _dataSourceFieldKey,
                 ),
-                SizedBox(height: 20),
+                const SizedBox(height: 20),
                 GestureDetector(
                   onTap: () {
                     if (_formKey.currentState!.validate()) {
@@ -508,12 +508,12 @@ class _NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
                     width: double.infinity,
                     color: Colors.blue,
                     child: Padding(
-                      padding:
-                          EdgeInsets.symmetric(vertical: 8.0, horizontal: 16),
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 8.0, horizontal: 16),
                       child: Text(
                         'Add ${widget.type}',
                         textAlign: TextAlign.center,
-                        style: TextStyle(
+                        style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
                           fontSize: 18,
@@ -527,7 +527,7 @@ class _NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
           ),
         ),
         if (_isLoading)
-          Center(
+          const Center(
             child: CircularProgressIndicator(),
           ),
       ],
@@ -663,7 +663,7 @@ class _NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
         value: value,
         decoration: InputDecoration(
           labelText: label,
-          border: OutlineInputBorder(),
+          border: const OutlineInputBorder(),
         ),
         items: items.map((item) {
           return DropdownMenuItem(
@@ -686,16 +686,16 @@ class _NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
   }
 
   Widget _buildTextField(
-      String label,
-      TextEditingController controller,
-      GlobalKey<FormFieldState> fieldKey, {
-        int maxLines = 1,
-      }) {
+    String label,
+    TextEditingController controller,
+    GlobalKey<FormFieldState> fieldKey, {
+    int maxLines = 1,
+  }) {
     bool isDateField = label == "Date of Birth" || label == "Anniversary";
 
     // Calculate the maximum selectable date for Date of Birth
     DateTime maxDate = label == "Date of Birth"
-        ? DateTime.now().subtract(Duration(days: 365 * 18))
+        ? DateTime.now().subtract(const Duration(days: 365 * 18))
         : DateTime.now();
 
     return Padding(
@@ -703,24 +703,24 @@ class _NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
       child: InkWell(
         onTap: isDateField
             ? () async {
-          final DateTime? picked = await showDatePicker(
-            context: context,
-            initialDate: DateTime.now(),
-            firstDate: DateTime(1970, 1, 1),
-            lastDate: maxDate,
-            builder: (BuildContext context, Widget? child) {
-              return Theme(
-                data: ThemeData.light(),
-                child: child!,
-              );
-            },
-          );
+                final DateTime? picked = await showDatePicker(
+                  context: context,
+                  initialDate: DateTime.now(),
+                  firstDate: DateTime(1970, 1, 1),
+                  lastDate: maxDate,
+                  builder: (BuildContext context, Widget? child) {
+                    return Theme(
+                      data: ThemeData.light(),
+                      child: child!,
+                    );
+                  },
+                );
 
-          if (picked != null) {
-            controller.text = DateFormat('dd MMM yyyy').format(picked);
-            fieldKey.currentState?.validate();
-          }
-        }
+                if (picked != null) {
+                  controller.text = DateFormat('dd MMM yyyy').format(picked);
+                  fieldKey.currentState?.validate();
+                }
+              }
             : null,
         child: IgnorePointer(
           ignoring: isDateField,
@@ -733,9 +733,9 @@ class _NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
             inputFormatters: _getInputFormatters(label),
             decoration: InputDecoration(
               labelText: label,
-              border: OutlineInputBorder(),
+              border: const OutlineInputBorder(),
               alignLabelWithHint: true,
-              suffixIcon: isDateField ? Icon(Icons.calendar_month) : null,
+              suffixIcon: isDateField ? const Icon(Icons.calendar_month) : null,
             ),
             textAlign: TextAlign.start,
             maxLines: maxLines,
@@ -824,7 +824,7 @@ class _NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
         },
         decoration: InputDecoration(
           labelText: label,
-          border: OutlineInputBorder(),
+          border: const OutlineInputBorder(),
         ),
         validator: (value) {
           if (value == null || value.city.isEmpty) {
@@ -834,10 +834,6 @@ class _NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
         },
       ),
     );
-  }
-
-  void _showErrorMessage(String message) {
-    _toastMessage.showToastMessage(message);
   }
 
   Future<bool> _checkInternetConnection() async {

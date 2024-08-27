@@ -2,19 +2,16 @@ import 'package:animate_do/animate_do.dart';
 import 'package:avant/api/api_service.dart';
 import 'package:avant/common/common.dart';
 import 'package:avant/common/toast.dart';
-import 'package:avant/dialog/custom_alert_dialog.dart';
-import 'package:avant/home.dart';
+import 'package:avant/login.dart';
 import 'package:avant/model/change_password_model.dart';
 import 'package:avant/model/forgot_password_model.dart';
-import 'package:avant/model/login_model.dart';
-import 'package:avant/login.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ChangePasswordScreen extends StatefulWidget {
   final Password password;
 
-  ChangePasswordScreen({required this.password});
+  const ChangePasswordScreen({super.key, required this.password});
 
   @override
   _ChangePasswordScreenState createState() => _ChangePasswordScreenState();
@@ -123,32 +120,32 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
         deviceInfo,
         widget.password.id,
         token ?? "");
-    if (responseData != null && responseData.changePasswordModel != null) {
-      if (responseData?.changePasswordModel?.msgText != null &&
-          responseData?.changePasswordModel?.msgType != null) {
+    if (responseData.changePasswordModel != null) {
+      if (responseData.changePasswordModel?.msgText != null &&
+          responseData.changePasswordModel?.msgType != null) {
         if (responseData.changePasswordModel?.msgType == 's') {
           print(
-              'Forgot password successful! ${responseData?.changePasswordModel?.msgText}');
+              'Forgot password successful! ${responseData.changePasswordModel?.msgText}');
           _toastMessage.showToastMessage(
-              responseData?.changePasswordModel?.msgText ??
+              responseData.changePasswordModel?.msgText ??
                   'Password changed successfully.');
           _navigateToHomePage();
         } else {
           print(
-              'Forgot password unsuccessful! ${responseData?.changePasswordModel?.msgText}');
+              'Forgot password unsuccessful! ${responseData.changePasswordModel?.msgText}');
           _toastMessage.showToastMessage(
-              responseData?.changePasswordModel?.msgText ??
+              responseData.changePasswordModel?.msgText ??
                   'There are any issue while forgot your password.');
         }
       } else {
         print(
-            'Forgot password error! ${responseData?.changePasswordModel?.msgType} ${responseData?.changePasswordModel?.msgText}');
+            'Forgot password error! ${responseData.changePasswordModel?.msgType} ${responseData.changePasswordModel?.msgText}');
         _toastMessage.showToastMessage(
             "There are any issue while forgot your password.");
       }
     } else {
       print(
-          'Forgot password error! ${responseData?.changePasswordModel?.msgText}');
+          'Forgot password error! ${responseData.changePasswordModel?.msgText}');
       _toastMessage
           .showToastMessage("There are any issue while forgot your password.");
     }
@@ -185,14 +182,14 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
               ],
             ),
           ),
-          if (_isLoading) Center(child: CircularProgressIndicator()),
+          if (_isLoading) const Center(child: CircularProgressIndicator()),
         ],
       ),
     );
   }
 
   Widget _buildHeader() {
-    return Container(
+    return SizedBox(
       height: 400,
       child: Stack(
         children: <Widget>[
@@ -206,8 +203,8 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
               duration: const Duration(milliseconds: 1600),
               child: Container(
                 margin: const EdgeInsets.only(top: 200),
-                child:
-                    Center(child: Image(image: AssetImage('images/logo.png'))),
+                child: const Center(
+                    child: Image(image: AssetImage('images/logo.png'))),
               ),
             ),
           ),
@@ -246,11 +243,11 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
           color: Colors.white,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(color: const Color.fromRGBO(244, 155, 32, 1)),
-          boxShadow: [
+          boxShadow: const [
             BoxShadow(
-              color: const Color.fromRGBO(244, 155, 32, .2),
+              color: Color.fromRGBO(244, 155, 32, .2),
               blurRadius: 20.0,
-              offset: const Offset(0, 10),
+              offset: Offset(0, 10),
             )
           ],
         ),
@@ -272,10 +269,10 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
     return Container(
       padding: const EdgeInsets.all(8.0),
       decoration: applyDecoration
-          ? BoxDecoration(
+          ? const BoxDecoration(
               border: Border(
                 bottom: BorderSide(
-                  color: const Color.fromRGBO(244, 155, 32, 1),
+                  color: Color.fromRGBO(244, 155, 32, 1),
                 ),
               ),
             )
@@ -305,15 +302,15 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
           height: 50,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(10),
-            gradient: LinearGradient(
+            gradient: const LinearGradient(
               colors: [
-                const Color.fromRGBO(244, 155, 32, 1),
-                const Color.fromRGBO(244, 155, 32, .6)
+                Color.fromRGBO(244, 155, 32, 1),
+                Color.fromRGBO(244, 155, 32, .6)
               ],
             ),
           ),
-          child: Center(
-            child: const Text(
+          child: const Center(
+            child: Text(
               "Change Password",
               style:
                   TextStyle(color: Colors.white, fontWeight: FontWeight.bold),

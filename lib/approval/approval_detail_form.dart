@@ -84,12 +84,12 @@ class _ApprovalDetailFormState extends State<ApprovalDetailForm> {
                 token)
             .then((response) {
           setState(() {
-            hasData = response?.titleDetails?.isNotEmpty ?? false;
+            hasData = response.titleDetails?.isNotEmpty ?? false;
             _titleDetails = response.titleDetails ?? [];
             print('_titleDetails size:${_titleDetails.length}');
             isLoading = false;
           });
-          return response ?? ApprovalDetailsResponse();
+          return response;
         }).catchError((error) {
           setState(() {
             isLoading = false;

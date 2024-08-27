@@ -1,25 +1,24 @@
 import 'dart:convert';
 
 import 'package:avant/api/api_constants.dart';
-import 'package:avant/db/db_helper.dart';
 import 'package:avant/common/constants.dart';
+import 'package:avant/db/db_helper.dart';
 import 'package:avant/model/approval_details_model.dart';
-import 'package:avant/model/visit_details_model.dart';
 import 'package:avant/model/approval_list_model.dart';
 import 'package:avant/model/change_password_model.dart';
+import 'package:avant/model/check_in_check_out_response.dart';
 import 'package:avant/model/customer_entry_master_model.dart';
 import 'package:avant/model/entry_model.dart';
+import 'package:avant/model/fetch_titles_model.dart';
 import 'package:avant/model/followup_action_model.dart';
 import 'package:avant/model/forgot_password_model.dart';
 import 'package:avant/model/geography_model.dart';
 import 'package:avant/model/get_visit_dsr_model.dart';
-import 'package:avant/model/login_model.dart';
 import 'package:avant/model/menu_model.dart';
 import 'package:avant/model/setup_values.dart';
 import 'package:avant/model/submit_approval_model.dart';
 import 'package:avant/model/travel_plan_model.dart';
-import 'package:avant/model/fetch_titles_model.dart';
-import 'package:avant/common/constants.dart';
+import 'package:avant/model/visit_details_model.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -528,8 +527,12 @@ class GetVisitDsrService {
     }
   }
 
-  Future<GetVisitDsrResponse> refreshAndRetryVisitDsr(int executiveId, int customerId,
-      String customerType, String upHierarchy, String downHierarchy) async {
+  Future<GetVisitDsrResponse> refreshAndRetryVisitDsr(
+      int executiveId,
+      int customerId,
+      String customerType,
+      String upHierarchy,
+      String downHierarchy) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String username = prefs.getString('token_username') ?? '';
     String password = prefs.getString('password') ?? '';
@@ -552,20 +555,20 @@ class GetVisitDsrService {
 
   Future<FetchTitlesResponse> fetchTitles(
       int seriesId, String classLevel, String isbn, String token) async {
-    final body;
-    if (isbn.isNotEmpty)
+    final String body;
+    if (isbn.isNotEmpty) {
       body = jsonEncode(<String, dynamic>{
         'BookISBN': isbn,
       });
-    else if (classLevel.isNotEmpty)
+    } else if (classLevel.isNotEmpty) {
       body = jsonEncode(<String, dynamic>{
         'ClassLevel': classLevel,
       });
-    else
+    } else {
       body = jsonEncode(<String, dynamic>{
         'SeriesId': seriesId,
       });
-
+    }
     final response = await http.post(
       Uri.parse(FETCH_TITLES_URL),
       headers: <String, String>{
@@ -577,7 +580,7 @@ class GetVisitDsrService {
 
     print('Response status: ${response.statusCode}');
     print('Response body: ${response.body}');
-    print('Request body: ${body}');
+    print('Request body: $body');
 
     if (response.statusCode == 200) {
       final jsonResponse = json.decode(response.body);
@@ -671,8 +674,8 @@ class VisitEntryService {
       int loggedInExecutiveId,
       String addressEntry,
       String loggedInExecutiveProfileCode,
-      String longEntry,
-      String latEntry,
+      double longEntry,
+      double latEntry,
       int academicSessionId,
       String visitFeedBack,
       String visitDate,
@@ -689,43 +692,61 @@ class VisitEntryService {
       int enteredBy,
       String followUpActionXML,
       String visitDetailsXMLForSampleGiven,
-      String webEntry,
+      bool webEntry,
       String mailBody,
       String mailContentType,
-      String sendThankYouMail,
+      bool sendThankYouMail,
       String competingDataXML,
       String visitDetailsXMLForToBeDispatched,
       String token) async {
+    final String body = jsonEncode(<String, dynamic>{
+      if (executiveId > 0) 'ExecutiveId': executiveId,
+      if (customerType.isNotEmpty) 'CustomerType': customerType,
+      if (customerId > 0) 'Customerid': customerId,
+      if (loggedInExecutiveId > 0) 'LoggedInExecutiveid': loggedInExecutiveId,
+      if (customerType.isNotEmpty) 'addressEntry': addressEntry,
+      if (customerType.isNotEmpty)
+        'LoggedInExecutiveProfileCode': loggedInExecutiveProfileCode,
+      if (longEntry > 0) 'LongEntry': longEntry,
+      if (latEntry > 0) 'LatEntry': latEntry,
+      if (academicSessionId > 0) 'AcademicSessionId': academicSessionId,
+      if (visitFeedBack.isNotEmpty) 'VisitFeedBack': visitFeedBack,
+      if (visitDate.isNotEmpty) 'VisitDate': visitDate,
+      if (visitPurpose > 0) 'VisitPurpose': visitPurpose,
+      if (customerContact > 0) 'CustomerContact': customerContact,
+      if (jointVisitWith.isNotEmpty) 'JointVisitWith': jointVisitWith,
+      if (uploadedDocumentXML.isNotEmpty)
+        'UploadedDocumentXML': uploadedDocumentXML,
+      if (otherVisitPurpose.isNotEmpty) 'OtherVisitPurpose': otherVisitPurpose,
+      if (requestRemarks.isNotEmpty) 'RequestRemarks': requestRemarks,
+      if (shippingInstructions.isNotEmpty)
+        'ShippingInstructions': shippingInstructions,
+      if (shipmentMode.isNotEmpty) 'ShipmentMode': shipmentMode,
+      if (totalPrice > 0) 'TotalPrice': totalPrice,
+      if (totalQty > 0) 'TotalQty': totalQty,
+      if (enteredBy > 0) 'EnteredBy': enteredBy,
+      if (followUpActionXML.isNotEmpty) 'FollowUpActionXML': followUpActionXML,
+      if (visitDetailsXMLForSampleGiven.isNotEmpty)
+        'VisitDetailsXMLforSampleGiven': visitDetailsXMLForSampleGiven,
+      'WebEntry': webEntry,
+      if (mailBody.isNotEmpty) 'MailBody': mailBody,
+      if (mailContentType.isNotEmpty) 'MailContentType': mailContentType,
+      'SendThankyouMail': sendThankYouMail,
+      if (competingDataXML.isNotEmpty) 'CompetingDataXML': competingDataXML,
+      if (visitDetailsXMLForToBeDispatched.isNotEmpty)
+        'VisitDetailsXMLforToBeDispatched': visitDetailsXMLForToBeDispatched,
+    });
+    print("Request body : $body");
     final response = await http.post(
       Uri.parse(VISIT_ENTRY_URL),
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
         'Authorization': 'Bearer $token',
       },
-      body: jsonEncode(<String, dynamic>{
-        'ExecutiveId': executiveId,
-        'LoggedInExecutiveid': loggedInExecutiveId,
-        'CustomerId': customerId,
-        'EnteredBy': enteredBy,
-        'CustomerContact': customerContact,
-        'AcademicSessionId': academicSessionId,
-        'LoggedInExecutiveProfileCode': loggedInExecutiveProfileCode,
-        'JointVisitWith': jointVisitWith,
-        'VisitPurpose': visitPurpose,
-        'VisitFeedBack': visitFeedBack,
-        'VisitDate': visitDate,
-        'addressEntry': addressEntry,
-        'LongEntry': longitude,
-        'LatEntry': latitude,
-        'CustomerType': customerType,
-        'TotalQty': totalQty,
-        'TotalPrice': totalPrice,
-        'Shipping instruct': shippingInstruct,
-        'ShipmentMode': shipmentMode,
-        'UploadedDocumentXML': uploadedDocumentXML,
-      }),
+      body: body,
     );
 
+    print('Request URL: ${response.request?.url}');
     print('Response status: ${response.statusCode}');
     print('Response body: ${response.body}');
 
@@ -736,25 +757,35 @@ class VisitEntryService {
       // Token is invalid or expired, refresh the token and retry
       return await refreshAndRetry(
           executiveId,
-          loggedInExecutiveId,
+          customerType,
           customerId,
-          enteredBy,
-          customerContact,
-          academicSessionId,
+          loggedInExecutiveId,
+          addressEntry,
           loggedInExecutiveProfileCode,
-          jointVisitWith,
-          visitPurpose,
+          longEntry,
+          latEntry,
+          academicSessionId,
           visitFeedBack,
           visitDate,
-          addressEntry,
-          longitude,
-          latitude,
-          customerType,
-          totalQty,
-          totalPrice,
-          shippingInstruct,
+          visitPurpose,
+          customerContact,
+          jointVisitWith,
+          uploadedDocumentXML,
+          otherVisitPurpose,
+          requestRemarks,
+          shippingInstructions,
           shipmentMode,
-          uploadedDocumentXML);
+          totalPrice,
+          totalQty,
+          enteredBy,
+          followUpActionXML,
+          visitDetailsXMLForSampleGiven,
+          webEntry,
+          mailBody,
+          mailContentType,
+          sendThankYouMail,
+          competingDataXML,
+          visitDetailsXMLForToBeDispatched);
     } else {
       throw Exception('Failed to load followup action executives');
     }
@@ -762,25 +793,35 @@ class VisitEntryService {
 
   Future<EntryResponse> refreshAndRetry(
       int executiveId,
-      int loggedInExecutiveId,
+      String customerType,
       int customerId,
-      int enteredBy,
-      int customerContact,
-      int academicSessionId,
+      int loggedInExecutiveId,
+      String addressEntry,
       String loggedInExecutiveProfileCode,
-      String jointVisitWith,
-      int visitPurpose,
+      double longEntry,
+      double latEntry,
+      int academicSessionId,
       String visitFeedBack,
       String visitDate,
-      String addressEntry,
-      String longitude,
-      String latitude,
-      String customerType,
-      int totalQty,
-      double totalPrice,
-      String shippingInstruct,
+      int visitPurpose,
+      int customerContact,
+      String jointVisitWith,
+      String uploadedDocumentXML,
+      String otherVisitPurpose,
+      String requestRemarks,
+      String shippingInstructions,
       String shipmentMode,
-      String uploadedDocumentXML) async {
+      double totalPrice,
+      int totalQty,
+      int enteredBy,
+      String followUpActionXML,
+      String visitDetailsXMLForSampleGiven,
+      bool webEntry,
+      String mailBody,
+      String mailContentType,
+      bool sendThankYouMail,
+      String competingDataXML,
+      String visitDetailsXMLForToBeDispatched) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String username = prefs.getString('token_username') ?? '';
     String password = prefs.getString('password') ?? '';
@@ -792,25 +833,35 @@ class VisitEntryService {
       if (newToken != null && newToken.isNotEmpty) {
         return await visitEntry(
             executiveId,
-            loggedInExecutiveId,
+            customerType,
             customerId,
-            enteredBy,
-            customerContact,
-            academicSessionId,
+            loggedInExecutiveId,
+            addressEntry,
             loggedInExecutiveProfileCode,
-            jointVisitWith,
-            visitPurpose,
+            longEntry,
+            latEntry,
+            academicSessionId,
             visitFeedBack,
             visitDate,
-            addressEntry,
-            longitude,
-            latitude,
-            customerType,
-            totalQty,
-            totalPrice,
-            shippingInstruct,
-            shipmentMode,
+            visitPurpose,
+            customerContact,
+            jointVisitWith,
             uploadedDocumentXML,
+            otherVisitPurpose,
+            requestRemarks,
+            shippingInstructions,
+            shipmentMode,
+            totalPrice,
+            totalQty,
+            enteredBy,
+            followUpActionXML,
+            visitDetailsXMLForSampleGiven,
+            webEntry,
+            mailBody,
+            mailContentType,
+            sendThankYouMail,
+            competingDataXML,
+            visitDetailsXMLForToBeDispatched,
             newToken);
       } else {
         throw Exception('Failed to retrieve new token');
@@ -885,7 +936,7 @@ class GeographyService {
 class CustomerEntryMasterService {
   Future<CustomerEntryMasterResponse> fetchCustomerEntryMaster(
       String downHierarchy, String token) async {
-    final body=jsonEncode(<String, dynamic>{
+    final body = jsonEncode(<String, dynamic>{
       'DownHierarchy': downHierarchy,
     });
     final response = await http.post(
@@ -1716,6 +1767,78 @@ class CreateNewCustomerService {
             xmlClassName,
             dataSourceId,
             newToken);
+      } else {
+        throw Exception('Failed to retrieve new token');
+      }
+    } else {
+      throw Exception(
+          'Username or password is not stored in SharedPreferences');
+    }
+  }
+}
+
+class CheckInCheckOutService {
+  Future<CheckInCheckOutResponse> checkInCheckOut(
+      int executiveId,
+      int enteredBy,
+      String date,
+      String type,
+      String dateTime,
+      String longEntry,
+      String latEntry,
+      String token) async {
+    String body = jsonEncode(<String, dynamic>{
+      'ExecutiveId': executiveId,
+      'Date': date,
+      'Type': type,
+      'DateTime': dateTime,
+      'LongEntry': longEntry,
+      'LatEntry': latEntry,
+      'EnteredBy': enteredBy,
+    });
+    print('Request body: $body');
+    final response = await http.post(Uri.parse(CHECK_IN_CHECK_OUT_URL),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+          'Authorization': 'Bearer $token',
+        },
+        body: body);
+
+    print('Request URL: ${response.request?.url}');
+    print('Response status: ${response.statusCode}');
+    print('Response body: ${response.body}');
+
+    if (response.statusCode == 200) {
+      final jsonResponse = json.decode(response.body);
+      return CheckInCheckOutResponse.fromJson(jsonResponse);
+    } else if (response.statusCode == 401) {
+      // Token is invalid or expired, refresh the token and retry
+      return await refreshAndRetry(
+          executiveId, enteredBy, date, type, dateTime, longEntry, latEntry);
+    } else {
+      throw Exception('Failed to check in check out');
+    }
+  }
+
+  Future<CheckInCheckOutResponse> refreshAndRetry(
+      int executiveId,
+      int enteredBy,
+      String date,
+      String type,
+      String dateTime,
+      String longEntry,
+      String latEntry) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String username = prefs.getString('token_username') ?? '';
+    String password = prefs.getString('password') ?? '';
+
+    if (username.isNotEmpty && password.isNotEmpty) {
+      await TokenService().token(username, password);
+      String? newToken = prefs.getString('token');
+
+      if (newToken != null && newToken.isNotEmpty) {
+        return await checkInCheckOut(executiveId, enteredBy, date, type,
+            dateTime, longEntry, latEntry, newToken);
       } else {
         throw Exception('Failed to retrieve new token');
       }

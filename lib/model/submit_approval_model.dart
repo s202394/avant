@@ -9,11 +9,11 @@ class SubmitRequestApprovalResponse{
 
   factory SubmitRequestApprovalResponse.fromJson(Map<String, dynamic> json) {
     var returnMessageData = json["ReturnMessage"][0];
-    final ReturnMessageData = ReturnMessage.fromJson(returnMessageData);
+    final returnMessage = ReturnMessage.fromJson(returnMessageData);
 
     return SubmitRequestApprovalResponse(
       status: json['Status'] ?? '',
-      returnMessage: ReturnMessageData,
+      returnMessage: returnMessage,
     );
   }
 }
