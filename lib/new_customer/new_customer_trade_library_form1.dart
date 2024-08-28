@@ -222,19 +222,19 @@ class _NewCustomerTradeLibraryForm1State
     return Scaffold(
       appBar: AppBar(
         title: Text('New Customer - ${widget.type}'),
-        backgroundColor: Color(0xFFFFF8E1),
+        backgroundColor: const Color(0xFFFFF8E1),
       ),
       body: FutureBuilder<CustomerEntryMasterResponse>(
         future: futureData,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
+            return const Center(child: CircularProgressIndicator());
           } else if (snapshot.hasError) {
             return Center(child: Text('Error: ${snapshot.error}'));
           } else if (snapshot.hasData) {
             return buildForm(snapshot.data!);
           } else {
-            return Center(child: Text('No data found'));
+            return const Center(child: Text('No data found'));
           }
         },
       ),
@@ -243,7 +243,7 @@ class _NewCustomerTradeLibraryForm1State
 
   Widget buildForm(CustomerEntryMasterResponse data) {
     return SingleChildScrollView(
-      padding: EdgeInsets.all(16.0),
+      padding: const EdgeInsets.all(16.0),
       child: Form(
         key: _formKey,
         child: Column(
@@ -270,13 +270,13 @@ class _NewCustomerTradeLibraryForm1State
                 _customerCategoryFocusNode),
             _buildTextField('PAN', _panController, _panFieldKey, _panFocusNode),
             _buildTextField('GST', _gstController, _gstFieldKey, _gstFocusNode),
-            SizedBox(height: 16.0),
-            Text('Key Customer:'),
+            const SizedBox(height: 16.0),
+            const Text('Key Customer:'),
             Row(
               children: [
                 Expanded(
                   child: RadioListTile<bool>(
-                    title: Text('Yes'),
+                    title: const Text('Yes'),
                     value: true,
                     groupValue: _selectedKeyCustomer,
                     onChanged: (newValue) {
@@ -289,7 +289,7 @@ class _NewCustomerTradeLibraryForm1State
                 ),
                 Expanded(
                   child: RadioListTile<bool>(
-                    title: Text('No'),
+                    title: const Text('No'),
                     value: false,
                     groupValue: _selectedKeyCustomer,
                     onChanged: (newValue) {
@@ -302,12 +302,12 @@ class _NewCustomerTradeLibraryForm1State
                 ),
               ],
             ),
-            Text('Customer Status:'),
+            const Text('Customer Status:'),
             Row(
               children: [
                 Expanded(
                   child: RadioListTile<bool>(
-                    title: Text('Active'),
+                    title: const Text('Active'),
                     value: true,
                     groupValue: _selectedCustomerStatus,
                     onChanged: (newValue) {
@@ -321,7 +321,7 @@ class _NewCustomerTradeLibraryForm1State
                 ),
                 Expanded(
                   child: RadioListTile<bool>(
-                    title: Text('Inactive'),
+                    title: const Text('Inactive'),
                     value: false,
                     groupValue: _selectedCustomerStatus,
                     onChanged: (newValue) {
@@ -335,7 +335,7 @@ class _NewCustomerTradeLibraryForm1State
                 ),
               ],
             ),
-            SizedBox(height: 16.0),
+            const SizedBox(height: 16.0),
             GestureDetector(
               onTap: () {
                 _submitForm();
@@ -343,7 +343,7 @@ class _NewCustomerTradeLibraryForm1State
               child: Container(
                 width: double.infinity,
                 color: Colors.blue,
-                child: Padding(
+                child: const Padding(
                   padding: EdgeInsets.symmetric(vertical: 8.0, horizontal: 16),
                   child: Text(
                     'Next',

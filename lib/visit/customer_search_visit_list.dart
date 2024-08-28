@@ -5,19 +5,24 @@ import 'package:avant/visit/visit_series_search.dart';
 import 'package:intl/intl.dart';
 
 class CustomerSearchVisitList extends StatefulWidget {
-  final String? customerName;
-  final String? customerCode;
-  final String? principalName;
-  final String? city;
-  final int? cityId;
+  final int customerId;
+  final String customerName;
+  final String customerCode;
+  final String customerType;
+  final String address;
+  final String city;
+  final String state;
 
-  CustomerSearchVisitList(
-      {required this.customerName,
-        required this.customerCode,
-        required this.principalName,
-        required this.city,
-        required this.cityId,
-      });
+  const CustomerSearchVisitList({
+    super.key,
+    required this.customerId,
+    required this.customerName,
+    required this.customerCode,
+    required this.customerType,
+    required this.address,
+    required this.city,
+    required this.state,
+  });
 
   @override
   _CustomerSearchVisitListPageState createState() =>
@@ -29,15 +34,15 @@ class _CustomerSearchVisitListPageState extends State<CustomerSearchVisitList> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Color(0xFFFFF8E1),
-        title: Text('Visit DSR'),
+        backgroundColor: const Color(0xFFFFF8E1),
+        title: const Text('Visit DSR'),
       ),
       body: Column(
         children: [
           Container(
             width: double.infinity,
-            color: Color(0xFFF49B20),
-            child: Padding(
+            color: const Color(0xFFF49B20),
+            child: const Padding(
               padding: EdgeInsets.symmetric(vertical: 8.0, horizontal: 16),
               child: Text(
                 'Search Costumer - Visit',
@@ -72,26 +77,40 @@ class _CustomerSearchVisitListPageState extends State<CustomerSearchVisitList> {
                             context,
                             MaterialPageRoute(
                               builder: (context) => VisitSeriesSearch(
-                                schoolName: 'ASN Sr. Secondary School (SCH654)',
-                                address: 'Mayur Vihar Phase 1, New Delhi - 110001, Delhi',
+                                customerId: widget.customerId,
+                                customerName: widget.customerName,
+                                customerCode: widget.customerCode,
+                                customerType: widget.customerType,
+                                address: widget.address,
+                                city: widget.city,
+                                state: widget.state,
+                                visitFeedback: '',
+                                visitDate: '',
+                                visitPurposeId: 0,
+                                jointVisitWithIds: '',
+                                samplingDone: false,
+                                followUpAction: false,
                               ),
                             ),
                           );
                         },
-                        child: Image.asset('images/travel.png', height: 30, width: 30),
+                        child: Image.asset('images/travel.png',
+                            height: 30, width: 30),
                       ),
                       onTap: () {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
                             builder: (context) => VisitDetailsPage(
-                              customerId: 0,visitId: 0,isTodayPlan: false,
+                              customerId: 0,
+                              visitId: 0,
+                              isTodayPlan: false,
                             ),
                           ),
                         );
                       },
                     ),
-                    Divider(), // Add Divider here
+                    const Divider(), // Add Divider here
                   ],
                 );
               },

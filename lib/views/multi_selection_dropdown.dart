@@ -6,7 +6,7 @@ class MultiSelectDropdown<T> extends StatefulWidget {
   final List<T> selectedItems;
   final String Function(T) itemLabelBuilder;
   final ValueChanged<List<T>> onChanged;
-  final bool  isSubmitted;
+  final bool isSubmitted;
 
   const MultiSelectDropdown({
     super.key,
@@ -33,7 +33,9 @@ class _MultiSelectDropdownState<T> extends State<MultiSelectDropdown<T>> {
 
   @override
   Widget build(BuildContext context) {
-    return PopupMenuButton<T>(
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: double.infinity),
+      child: PopupMenuButton<T>(
         onSelected: (item) {
           setState(() {
             if (_selectedItems.contains(item)) {
@@ -63,7 +65,12 @@ class _MultiSelectDropdownState<T> extends State<MultiSelectDropdown<T>> {
                       });
                     },
                   ),
-                  Text(widget.itemLabelBuilder(item)),
+                  Expanded(
+                    child: Text(
+                      widget.itemLabelBuilder(item),
+                      style: const TextStyle(color: Colors.black),
+                    ),
+                  ),
                 ],
               ),
             );
@@ -75,7 +82,7 @@ class _MultiSelectDropdownState<T> extends State<MultiSelectDropdown<T>> {
             decoration: InputDecoration(
               labelText: widget.label,
               border: const OutlineInputBorder(),
-              errorText: _selectedItems.isEmpty&& widget.isSubmitted
+              errorText: _selectedItems.isEmpty && widget.isSubmitted
                   ? 'Please select a ${widget.label}'
                   : null,
             ),
@@ -97,6 +104,8 @@ class _MultiSelectDropdownState<T> extends State<MultiSelectDropdown<T>> {
               ),
             ),
           ),
-        ));
+        ),
+      ),
+    );
   }
 }

@@ -22,6 +22,8 @@ import 'package:avant/model/visit_details_model.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../model/series_and_class_level_list_response.dart';
+
 class TokenService {
   Future<void> token(String username, String password) async {
     final body = jsonEncode(
@@ -1839,6 +1841,61 @@ class CheckInCheckOutService {
       if (newToken != null && newToken.isNotEmpty) {
         return await checkInCheckOut(executiveId, enteredBy, date, type,
             dateTime, longEntry, latEntry, newToken);
+      } else {
+        throw Exception('Failed to retrieve new token');
+      }
+    } else {
+      throw Exception(
+          'Username or password is not stored in SharedPreferences');
+    }
+  }
+}
+
+class SeriesAndClassLevelListService {
+  Future<SeriesAndClassLevelListResponse> getSeriesAndClassLevelList(
+      int executiveId, String profileId, String token) async {
+    final String body = jsonEncode(<String, dynamic>{
+      'ProfileId': profileId,
+      'ExecutiveId': executiveId,
+    });
+    print("Request body : $body");
+    final response = await http.post(
+      Uri.parse(GET_SERIES_AND_CLASS_LEVEL_LIST_URL),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+        'Authorization': 'Bearer $token',
+      },
+      body: body,
+    );
+
+    print('Request URL: ${response.request?.url}');
+    print('Response status: ${response.statusCode}');
+    print('Response body: ${response.body}');
+
+    if (response.statusCode == 200) {
+      final jsonResponse = json.decode(response.body);
+      return SeriesAndClassLevelListResponse.fromJson(jsonResponse);
+    } else if (response.statusCode == 401) {
+      // Token is invalid or expired, refresh the token and retry
+      return await refreshAndRetry(executiveId, profileId);
+    } else {
+      throw Exception('Failed to load visit dsr');
+    }
+  }
+
+  Future<SeriesAndClassLevelListResponse> refreshAndRetry(
+      int executiveId, String profileId) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String username = prefs.getString('token_username') ?? '';
+    String password = prefs.getString('password') ?? '';
+
+    if (username.isNotEmpty && password.isNotEmpty) {
+      await TokenService().token(username, password);
+      String? newToken = prefs.getString('token');
+
+      if (newToken != null && newToken.isNotEmpty) {
+        return await getSeriesAndClassLevelList(
+            executiveId, profileId, newToken);
       } else {
         throw Exception('Failed to retrieve new token');
       }

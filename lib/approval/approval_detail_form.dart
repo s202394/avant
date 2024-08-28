@@ -2,6 +2,7 @@ import 'package:avant/api/api_service.dart';
 import 'package:avant/common/error_layout.dart';
 import 'package:avant/common/no_data_layout.dart';
 import 'package:avant/common/toast.dart';
+import 'package:avant/common/common_text.dart';
 import 'package:avant/home.dart';
 import 'package:avant/model/approval_details_model.dart';
 import 'package:avant/model/login_model.dart';
@@ -10,13 +11,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:avant/common/constants.dart';
+
 class ApprovalDetailForm extends StatefulWidget {
   final String type;
   final int requestId;
   final int customerId;
   final String customerType;
 
-  ApprovalDetailForm({
+  const ApprovalDetailForm({
+    super.key,
     required this.type,
     required this.requestId,
     required this.customerId,
@@ -33,6 +36,7 @@ class _ApprovalDetailFormState extends State<ApprovalDetailForm> {
   List<TitleDetails> _titleDetails = [];
 
   final ToastMessage _toastMessage = ToastMessage();
+  final DetailText _detailText = DetailText();
 
   late String token;
   late int? executiveId;
@@ -109,7 +113,7 @@ class _ApprovalDetailFormState extends State<ApprovalDetailForm> {
       context: context,
       barrierDismissible: false,
       builder: (BuildContext context) {
-        return Center(child: CircularProgressIndicator());
+        return const Center(child: CircularProgressIndicator());
       },
     );
 
@@ -158,7 +162,7 @@ class _ApprovalDetailFormState extends State<ApprovalDetailForm> {
           _toastMessage.showInfoToastMessage(s);
           Navigator.pushAndRemoveUntil(
             context,
-            MaterialPageRoute(builder: (context) => HomePage()),
+            MaterialPageRoute(builder: (context) => const HomePage()),
             (Route<dynamic> route) => false,
           );
         } else {
@@ -191,13 +195,13 @@ class _ApprovalDetailFormState extends State<ApprovalDetailForm> {
       ),
       body: Center(
         child: isLoading
-            ? CircularProgressIndicator()
+            ? const CircularProgressIndicator()
             : isConnected
                 ? FutureBuilder<ApprovalDetailsResponse>(
                     future: futureRequestDetails,
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) {
-                        return CircularProgressIndicator();
+                        return const CircularProgressIndicator();
                       } else if (snapshot.hasError) {
                         return ErrorLayout();
                       } else if (!hasData) {
@@ -205,50 +209,50 @@ class _ApprovalDetailFormState extends State<ApprovalDetailForm> {
                       } else if (snapshot.hasData) {
                         var response = snapshot.data!;
                         return ListView(
-                          padding: EdgeInsets.all(16.0),
+                          padding: const EdgeInsets.all(16.0),
                           children: [
                             ListTile(
-                              title: Text(
+                              title: const Text(
                                 'Request Details',
                                 style: TextStyle(fontWeight: FontWeight.bold),
                               ),
                               subtitle: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  _buildDetailText(
+                                  _detailText.buildDetailText(
                                     'Request No: ',
                                     response.requestDetails?.requestNumber ??
                                         '',
                                   ),
-                                  _buildDetailText(
+                                  _detailText.buildDetailText(
                                     'Request Date: ',
                                     response.requestDetails?.requestDate ?? '',
                                   ),
-                                  _buildDetailText(
+                                  _detailText.buildDetailText(
                                     'Executive Name: ',
                                     response.requestDetails?.executiveName ??
                                         '',
                                   ),
-                                  _buildDetailText(
+                                  _detailText.buildDetailText(
                                     'Request Status: ',
                                     response.requestDetails?.requestStatus ??
                                         '',
                                   ),
-                                  _buildDetailText(
+                                  _detailText.buildDetailText(
                                     'Shipment Mode: ',
                                     response.requestDetails?.shipmentMode ?? '',
                                   ),
-                                  _buildDetailText(
+                                  _detailText.buildDetailText(
                                     'Ship To: ',
                                     response.requestDetails?.wareHouseName ??
                                         '',
                                   ),
-                                  _buildDetailText(
+                                  _detailText.buildDetailText(
                                     'Shipping Address: ',
                                     response.requestDetails?.shippingAddress ??
                                         '',
                                   ),
-                                  _buildDetailText(
+                                  _detailText.buildDetailText(
                                     'Request Remarks: ',
                                     response.requestDetails?.requestRemarks ??
                                         '',
@@ -256,81 +260,71 @@ class _ApprovalDetailFormState extends State<ApprovalDetailForm> {
                                 ],
                               ),
                             ),
-                            SizedBox(height: 8.0),
+                            const SizedBox(height: 8.0),
                             Visibility(
                               visible: (response.titleDetails?.length ?? 0) > 0,
                               child: Column(
                                 children: [
                                   _buildSectionTitle('Title Details'),
-                                  Container(
-                                    child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Expanded(
-                                          child: ListTile(
-                                            leading: Text(
-                                              'SNo.',
-                                              style: TextStyle(
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize: 14),
-                                            ),
-                                            title: Text(
-                                              'Title Details',
+                                  const Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Expanded(
+                                        child: ListTile(
+                                          leading: Text(
+                                            'SNo.',
+                                            style: TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 14),
+                                          ),
+                                          title: Text(
+                                            'Title Details',
+                                            style: TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 14),
+                                          ),
+                                        ),
+                                      ),
+                                      Row(
+                                        children: [
+                                          Center(
+                                            child: Text(
+                                              textAlign: TextAlign.center,
+                                              'Req Qty',
                                               style: TextStyle(
                                                   fontWeight: FontWeight.bold,
                                                   fontSize: 14),
                                             ),
                                           ),
-                                        ),
-                                        Row(
-                                          children: [
-                                            Container(
-                                              child: Center(
-                                                child: Text(
-                                                  textAlign: TextAlign.center,
-                                                  'Req Qty',
-                                                  style: TextStyle(
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                      fontSize: 14),
-                                                ),
-                                              ),
+                                          SizedBox(width: 8.0),
+                                          Center(
+                                            child: Text(
+                                              textAlign: TextAlign.center,
+                                              'Appr Qty',
+                                              style: TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 14),
                                             ),
-                                            SizedBox(width: 8.0),
-                                            Container(
-                                              child: Center(
-                                                child: Text(
-                                                  textAlign: TextAlign.center,
-                                                  'Appr Qty',
-                                                  style: TextStyle(
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                      fontSize: 14),
-                                                ),
-                                              ),
+                                          ),
+                                          SizedBox(width: 5.0),
+                                          Center(
+                                            child: Text(
+                                              textAlign: TextAlign.center,
+                                              'Reject',
+                                              style: TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 14),
                                             ),
-                                            SizedBox(width: 5.0),
-                                            Container(
-                                              child: Center(
-                                                child: Text(
-                                                  textAlign: TextAlign.center,
-                                                  'Reject',
-                                                  style: TextStyle(
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                      fontSize: 14),
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
                                   ),
                                   ListView.builder(
                                     shrinkWrap: true,
-                                    physics: NeverScrollableScrollPhysics(),
+                                    physics:
+                                        const NeverScrollableScrollPhysics(),
                                     itemCount:
                                         response.titleDetails?.length ?? 0,
                                     itemBuilder: (context, index) {
@@ -346,101 +340,93 @@ class _ApprovalDetailFormState extends State<ApprovalDetailForm> {
                                   (response.approvalMatrix?.length ?? 0) > 0,
                               child: Column(
                                 children: [
-                                  SizedBox(height: 8.0),
+                                  const SizedBox(height: 8.0),
                                   _buildSectionTitle('Approval Matrix'),
-                                  SizedBox(height: 8.0),
-                                  Container(
-                                    child: Table(
-                                      columnWidths: const <int,
-                                          TableColumnWidth>{
-                                        0: FixedColumnWidth(40.0),
-                                        // Fixed width for the first column
-                                        1: FlexColumnWidth(),
-                                        // Flex the rest
-                                        2: FlexColumnWidth(),
-                                        3: FlexColumnWidth(),
-                                      },
-                                      border:
-                                          TableBorder.all(color: Colors.grey),
-                                      // Table border
-                                      children: [
-                                        TableRow(
-                                          decoration: BoxDecoration(
-                                            color: Colors.grey[200],
+                                  const SizedBox(height: 8.0),
+                                  Table(
+                                    columnWidths: const <int, TableColumnWidth>{
+                                      0: FixedColumnWidth(40.0),
+                                      // Fixed width for the first column
+                                      1: FlexColumnWidth(),
+                                      // Flex the rest
+                                      2: FlexColumnWidth(),
+                                      3: FlexColumnWidth(),
+                                    },
+                                    border: TableBorder.all(color: Colors.grey),
+                                    // Table border
+                                    children: [
+                                      TableRow(
+                                        decoration: BoxDecoration(
+                                          color: Colors.grey[200],
+                                        ),
+                                        children: const [
+                                          Padding(
+                                            padding: EdgeInsets.only(
+                                                top: 8.0,
+                                                bottom: 8,
+                                                left: 5,
+                                                right: 5),
+                                            child: Text(
+                                              'SNo.',
+                                              style: TextStyle(
+                                                  fontWeight: FontWeight.bold),
+                                            ),
                                           ),
-                                          children: [
-                                            Padding(
-                                              padding: const EdgeInsets.only(
-                                                  top: 8.0,
-                                                  bottom: 8,
-                                                  left: 5,
-                                                  right: 5),
-                                              child: Text(
-                                                'SNo.',
-                                                style: TextStyle(
-                                                    fontWeight:
-                                                        FontWeight.bold),
-                                              ),
+                                          Padding(
+                                            padding: EdgeInsets.only(
+                                                top: 8.0,
+                                                bottom: 8,
+                                                left: 5,
+                                                right: 5),
+                                            child: Text(
+                                              'Entry/Approval By',
+                                              style: TextStyle(
+                                                  fontWeight: FontWeight.bold),
                                             ),
-                                            Padding(
-                                              padding: const EdgeInsets.only(
-                                                  top: 8.0,
-                                                  bottom: 8,
-                                                  left: 5,
-                                                  right: 5),
-                                              child: Text(
-                                                'Entry/Approval By',
-                                                style: TextStyle(
-                                                    fontWeight:
-                                                        FontWeight.bold),
-                                              ),
+                                          ),
+                                          Padding(
+                                            padding: EdgeInsets.only(
+                                                top: 8.0,
+                                                bottom: 8,
+                                                left: 5,
+                                                right: 5),
+                                            child: Text(
+                                              'Entry Type',
+                                              style: TextStyle(
+                                                  fontWeight: FontWeight.bold),
                                             ),
-                                            Padding(
-                                              padding: const EdgeInsets.only(
-                                                  top: 8.0,
-                                                  bottom: 8,
-                                                  left: 5,
-                                                  right: 5),
-                                              child: Text(
-                                                'Entry Type',
-                                                style: TextStyle(
-                                                    fontWeight:
-                                                        FontWeight.bold),
-                                              ),
+                                          ),
+                                          Padding(
+                                            padding: EdgeInsets.only(
+                                                top: 8.0,
+                                                bottom: 8,
+                                                left: 5,
+                                                right: 5),
+                                            child: Text(
+                                              'Remarks',
+                                              style: TextStyle(
+                                                  fontWeight: FontWeight.bold),
                                             ),
-                                            Padding(
-                                              padding: const EdgeInsets.only(
-                                                  top: 8.0,
-                                                  bottom: 8,
-                                                  left: 5,
-                                                  right: 5),
-                                              child: Text(
-                                                'Remarks',
-                                                style: TextStyle(
-                                                    fontWeight:
-                                                        FontWeight.bold),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        // Table rows
-                                        ...List.generate(
-                                          response.approvalMatrix?.length ?? 0,
-                                          (index) => buildMatrixTableRow(
-                                              response.approvalMatrix![index],
-                                              index),
-                                        ),
-                                      ],
-                                    ),
+                                          ),
+                                        ],
+                                      ),
+                                      // Table rows
+                                      ...List.generate(
+                                        response.approvalMatrix?.length ?? 0,
+                                        (index) => buildMatrixTableRow(
+                                            response.approvalMatrix![index],
+                                            index),
+                                      ),
+                                    ],
                                   ),
                                 ],
                               ),
                             ),
-                            SizedBox(height: 16.0),
+                            const SizedBox(height: 16.0),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text(
+                                const Text(
                                   "Certification Queries",
                                   style: TextStyle(
                                     fontWeight: FontWeight.bold,
@@ -451,12 +437,12 @@ class _ApprovalDetailFormState extends State<ApprovalDetailForm> {
                                   onPressed: () => openDialog(context),
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: Colors.lightBlueAccent,
-                                    textStyle: TextStyle(
+                                    textStyle: const TextStyle(
                                       color: Colors.white,
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
-                                  child: Text(
+                                  child: const Text(
                                     'New Query',
                                     style: TextStyle(
                                       color: Colors.white,
@@ -468,7 +454,7 @@ class _ApprovalDetailFormState extends State<ApprovalDetailForm> {
                             ),
                             ListView.builder(
                               shrinkWrap: true,
-                              physics: NeverScrollableScrollPhysics(),
+                              physics: const NeverScrollableScrollPhysics(),
                               itemCount:
                                   response.clarificationList?.length ?? 0,
                               itemBuilder: (context, index) {
@@ -478,7 +464,7 @@ class _ApprovalDetailFormState extends State<ApprovalDetailForm> {
                                   title: Text(
                                       clarification.clarificationQuery ?? ''),
                                   subtitle: Text(
-                                      '${clarification.clarificationResponse}' ??
+                                      clarification.clarificationResponse ??
                                           ''),
                                 );
                               },
@@ -486,7 +472,7 @@ class _ApprovalDetailFormState extends State<ApprovalDetailForm> {
                           ],
                         );
                       }
-                      return Text("Unexpected state");
+                      return const Text("Unexpected state");
                     },
                   )
                 : NoInternetLayout(
@@ -506,12 +492,12 @@ class _ApprovalDetailFormState extends State<ApprovalDetailForm> {
                   _handleRequest(context, "Approve", _titleDetails),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.green,
-                textStyle: TextStyle(
+                textStyle: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              child: Text(
+              child: const Text(
                 'Approve',
                 style: TextStyle(
                   color: Colors.white,
@@ -523,12 +509,12 @@ class _ApprovalDetailFormState extends State<ApprovalDetailForm> {
               onPressed: () => _handleRequest(context, "Reject", _titleDetails),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.red,
-                textStyle: TextStyle(
+                textStyle: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              child: Text(
+              child: const Text(
                 'Reject',
                 style: TextStyle(
                   color: Colors.white,
@@ -559,28 +545,12 @@ class _ApprovalDetailFormState extends State<ApprovalDetailForm> {
     return xmlBuffer.toString();
   }
 
-  Widget _buildDetailText(String label, String value) {
-    return Text.rich(
-      TextSpan(
-        children: [
-          TextSpan(
-            text: label,
-            style: TextStyle(fontWeight: FontWeight.bold),
-          ),
-          TextSpan(
-            text: value,
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildSectionTitle(String title) {
     return Align(
       alignment: Alignment.centerLeft,
       child: Text(
         title,
-        style: TextStyle(
+        style: const TextStyle(
           fontWeight: FontWeight.bold,
           fontSize: 16.0,
         ),
@@ -608,26 +578,26 @@ class _ApprovalDetailFormState extends State<ApprovalDetailForm> {
               ),
               title: Text(
                 titleDetails.title,
-                style: TextStyle(fontWeight: FontWeight.bold),
+                style: const TextStyle(fontWeight: FontWeight.bold),
               ),
               subtitle: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     titleDetails.author,
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                    style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                   Text(
                     titleDetails.isbn,
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                    style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                   Text(
                     titleDetails.series,
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                    style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                   Text(
                     '₹ ${titleDetails.price}',
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                    style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                 ],
               ),
@@ -635,20 +605,20 @@ class _ApprovalDetailFormState extends State<ApprovalDetailForm> {
           ),
           Row(
             children: [
-              Container(
+              SizedBox(
                 width: 40,
                 height: 40,
                 child: Center(
                   child: Text(
                     textAlign: TextAlign.center,
                     '${titleDetails.requestedQty}',
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                 ),
               ),
-              SizedBox(width: 8.0),
+              const SizedBox(width: 8.0),
               Container(
                 width: 40,
                 height: 40,
@@ -662,8 +632,9 @@ class _ApprovalDetailFormState extends State<ApprovalDetailForm> {
                     controller: qtyController,
                     keyboardType: TextInputType.number,
                     textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
-                    decoration: InputDecoration(
+                    style: const TextStyle(
+                        fontSize: 15, fontWeight: FontWeight.bold),
+                    decoration: const InputDecoration(
                       border: InputBorder.none,
                       counterText: "", // Hides the default character counter
                       contentPadding:
@@ -679,18 +650,18 @@ class _ApprovalDetailFormState extends State<ApprovalDetailForm> {
                   ),
                 ),
               ),
-              SizedBox(width: 8.0),
+              const SizedBox(width: 8.0),
               GestureDetector(
                 onTap: () {
                   // Handle delete action
                 },
-                child: Icon(
+                child: const Icon(
                   Icons.cancel,
                   color: Colors.red,
                   size: 35,
                 ),
               ),
-              SizedBox(width: 5.0),
+              const SizedBox(width: 5.0),
             ],
           ),
         ],
@@ -706,7 +677,7 @@ class _ApprovalDetailFormState extends State<ApprovalDetailForm> {
           child: Text(
             textAlign: TextAlign.center,
             '${approvalMatrix.sequenceNo}',
-            style: TextStyle(
+            style: const TextStyle(
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -718,7 +689,7 @@ class _ApprovalDetailFormState extends State<ApprovalDetailForm> {
             children: [
               Text(
                 approvalMatrix.executiveName,
-                style: TextStyle(fontWeight: FontWeight.bold),
+                style: const TextStyle(fontWeight: FontWeight.bold),
               ),
               Text(approvalMatrix.entryDate),
               Text(approvalMatrix.profileCode),
@@ -728,15 +699,15 @@ class _ApprovalDetailFormState extends State<ApprovalDetailForm> {
         Padding(
           padding: const EdgeInsets.all(8.0),
           child: Text(
-            '${approvalMatrix.approvalLevel}',
-            style: TextStyle(fontWeight: FontWeight.bold),
+            approvalMatrix.approvalLevel,
+            style: const TextStyle(fontWeight: FontWeight.bold),
           ),
         ),
         Padding(
           padding: const EdgeInsets.all(8.0),
           child: Text(
-            '${approvalMatrix.remarks}',
-            style: TextStyle(fontSize: 12.0),
+            approvalMatrix.remarks,
+            style: const TextStyle(fontSize: 12.0),
           ),
         ),
       ],
@@ -749,39 +720,32 @@ class _ApprovalDetailFormState extends State<ApprovalDetailForm> {
       padding: const EdgeInsets.all(8.0),
       child: Row(
         children: [
-          // Sequence Number
           Text(
             '${approvalMatrix.sequenceNo}',
-            style: TextStyle(fontWeight: FontWeight.bold),
+            style: const TextStyle(fontWeight: FontWeight.bold),
           ),
-          SizedBox(width: 32), // Spacer
-          // Executive Name and Details
+          const SizedBox(width: 32),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   approvalMatrix.executiveName,
-                  style: TextStyle(fontWeight: FontWeight.bold),
+                  style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
                 Text(approvalMatrix.entryDate),
                 Text(approvalMatrix.profileCode),
               ],
             ),
           ),
-          SizedBox(width: 16), // Spacer
-          // Approval Level
+          const SizedBox(width: 16),
           Text(
-            '${approvalMatrix.approvalLevel}',
-            style: TextStyle(fontWeight: FontWeight.bold),
+            approvalMatrix.approvalLevel,
+            style: const TextStyle(fontWeight: FontWeight.bold),
           ),
-          SizedBox(width: 16), // Spacer
-          // Remarks
+          const SizedBox(width: 16),
           Expanded(
-            child: Text(
-              '${approvalMatrix.remarks}',
-              textAlign: TextAlign.end, // Align remarks to the right
-            ),
+            child: Text(approvalMatrix.remarks, textAlign: TextAlign.end),
           ),
         ],
       ),
@@ -799,16 +763,16 @@ class _ApprovalDetailFormState extends State<ApprovalDetailForm> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              Text(
+              const Text(
                 'Raise Query',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 16.0,
                 ),
               ),
-              Divider(thickness: 1.5),
-              SizedBox(height: 16.0),
-              Text(
+              const Divider(thickness: 1.5),
+              const SizedBox(height: 16.0),
+              const Text(
                 'Query To',
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
@@ -824,23 +788,23 @@ class _ApprovalDetailFormState extends State<ApprovalDetailForm> {
                   ),
                 ],
                 onChanged: (value) {},
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   border: OutlineInputBorder(),
                   isDense: true,
                 ),
               ),
-              SizedBox(height: 16.0),
-              Text(
+              const SizedBox(height: 16.0),
+              const Text(
                 'Query',
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
               TextFormField(
                 maxLines: 4,
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   border: OutlineInputBorder(),
                 ),
               ),
-              SizedBox(height: 16.0),
+              const SizedBox(height: 16.0),
               Center(
                 child: ElevatedButton(
                   onPressed: () {
@@ -848,14 +812,14 @@ class _ApprovalDetailFormState extends State<ApprovalDetailForm> {
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.lightBlueAccent,
-                    padding:
-                        EdgeInsets.symmetric(horizontal: 32.0, vertical: 12.0),
-                    textStyle: TextStyle(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 32.0, vertical: 12.0),
+                    textStyle: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  child: Text(
+                  child: const Text(
                     'Send Query',
                     style: TextStyle(
                       color: Colors.white,
@@ -878,7 +842,8 @@ class NoInternetLayout extends StatefulWidget {
   final int customerId;
   final String customerType;
 
-  NoInternetLayout({
+  const NoInternetLayout({
+    super.key,
     required this.type,
     required this.requestId,
     required this.customerId,
@@ -896,13 +861,13 @@ class _NoInternetLayoutState extends State<NoInternetLayout> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.wifi_off, size: 100, color: Colors.grey),
-          SizedBox(height: 20),
-          Text(
+          const Icon(Icons.wifi_off, size: 100, color: Colors.grey),
+          const SizedBox(height: 20),
+          const Text(
             'No Internet Connection',
             style: TextStyle(fontSize: 18, color: Colors.grey),
           ),
-          SizedBox(height: 20),
+          const SizedBox(height: 20),
           ElevatedButton(
             onPressed: () {
               // Retry connection check
@@ -917,7 +882,7 @@ class _NoInternetLayoutState extends State<NoInternetLayout> {
                 ),
               );
             },
-            child: Text('Retry'),
+            child: const Text('Retry'),
           ),
         ],
       ),

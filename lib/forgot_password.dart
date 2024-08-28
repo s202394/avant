@@ -8,7 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ForgotPasswordPage extends StatefulWidget {
-  ForgotPasswordPage({super.key});
+  const ForgotPasswordPage({super.key});
 
   @override
   _ForgotPasswordPageState createState() => _ForgotPasswordPageState();
@@ -94,16 +94,15 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
 
     final responseData =
         await LoginService().forgotPassword(email, token ?? "");
-    if (responseData != null &&
-        responseData.password != null &&
+    if (responseData.password != null &&
         responseData.password!.userName.isNotEmpty) {
       print(
-          'Forgot password successful! Username: ${responseData?.password?.userName}');
-      if (responseData != null && responseData.password != null) {
+          'Forgot password successful! Username: ${responseData.password?.userName}');
+      if (responseData.password != null) {
         _navigateToChangePasswordPage(responseData.password!);
       }
     } else {
-      print('Forgot password error! User ID: ${responseData?.password}');
+      print('Forgot password error! User ID: ${responseData.password}');
       _toastMessage
           .showToastMessage("There are any issue while forgot your password.");
     }
@@ -140,14 +139,14 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
               ],
             ),
           ),
-          if (_isLoading) Center(child: CircularProgressIndicator()),
+          if (_isLoading) const Center(child: CircularProgressIndicator()),
         ],
       ),
     );
   }
 
   Widget _buildHeader() {
-    return Container(
+    return SizedBox(
       height: 400,
       child: Stack(
         children: <Widget>[
@@ -161,8 +160,8 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
               duration: const Duration(milliseconds: 1600),
               child: Container(
                 margin: const EdgeInsets.only(top: 200),
-                child:
-                    Center(child: Image(image: AssetImage('images/logo.png'))),
+                child: const Center(
+                    child: Image(image: AssetImage('images/logo.png'))),
               ),
             ),
           ),
@@ -201,11 +200,11 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
           color: Colors.white,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(color: const Color.fromRGBO(244, 155, 32, 1)),
-          boxShadow: [
+          boxShadow: const [
             BoxShadow(
-              color: const Color.fromRGBO(244, 155, 32, .2),
+              color: Color.fromRGBO(244, 155, 32, .2),
               blurRadius: 20.0,
-              offset: const Offset(0, 10),
+              offset: Offset(0, 10),
             )
           ],
         ),
@@ -220,10 +219,10 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
     return Container(
       padding: const EdgeInsets.all(8.0),
       decoration: applyDecoration
-          ? BoxDecoration(
+          ? const BoxDecoration(
               border: Border(
                 bottom: BorderSide(
-                  color: const Color.fromRGBO(244, 155, 32, 1),
+                  color: Color.fromRGBO(244, 155, 32, 1),
                 ),
               ),
             )
@@ -253,15 +252,15 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
           height: 50,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(10),
-            gradient: LinearGradient(
+            gradient: const LinearGradient(
               colors: [
-                const Color.fromRGBO(244, 155, 32, 1),
-                const Color.fromRGBO(244, 155, 32, .6)
+                Color.fromRGBO(244, 155, 32, 1),
+                Color.fromRGBO(244, 155, 32, .6)
               ],
             ),
           ),
-          child: Center(
-            child: const Text(
+          child: const Center(
+            child: Text(
               "Forgot Password",
               style:
                   TextStyle(color: Colors.white, fontWeight: FontWeight.bold),

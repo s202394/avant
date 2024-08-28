@@ -51,6 +51,8 @@ class _DsrEntryPageState extends State<DsrEntry> {
 
   List<PersonMet> _selectedJointVisitWithItems = [];
 
+  String fetchedAddress = '';
+
   int? executiveId;
   int? userId;
   String? profileCode;
@@ -142,6 +144,9 @@ class _DsrEntryPageState extends State<DsrEntry> {
           }
 
           final visitDsrData = snapshot.data!;
+
+          // Set the fetched address here
+          fetchedAddress = visitDsrData.customerSummery.address;
 
           return Stack(
             children: [
@@ -307,12 +312,12 @@ class _DsrEntryPageState extends State<DsrEntry> {
 
   void _submitForm() async {
     if (samplingDone == null) {
-      toastMessage.showToastMessage('PLease select Sampling Done.');
+      toastMessage.showToastMessage('Please select Sampling Done.');
     } else if (followUpAction == null) {
-      toastMessage.showToastMessage('PLease select Follow Up Action.');
-    } else if (_imageFile == null) {
-      toastMessage.showToastMessage('PLease capture image first.');
-    } else if (followUpAction == false && samplingDone == false) {
+      toastMessage.showToastMessage('Please select Follow Up Action.');
+    } /*else if (_imageFile == null) {
+    toastMessage.showToastMessage('Please capture image first.');
+  }*/ else if (followUpAction == false && samplingDone == false) {
       try {
         FocusScope.of(context).unfocus();
 
@@ -321,10 +326,12 @@ class _DsrEntryPageState extends State<DsrEntry> {
         setState(() {
           _isLoading = true;
         });
+
         if (address.isEmpty) {
           address = await locationService.getAddress(
               position.latitude, position.longitude);
         }
+
         // Assuming _selectedItems is a list of PersonMet objects
         List<int> selectedIds = _selectedJointVisitWithItems
             .map((e) => e.customerContactId)
@@ -381,7 +388,7 @@ class _DsrEntryPageState extends State<DsrEntry> {
                 Navigator.pushAndRemoveUntil(
                   context,
                   MaterialPageRoute(builder: (context) => const HomePage()),
-                  (Route<dynamic> route) => false,
+                      (Route<dynamic> route) => false,
                 );
               } else if (responseData.e.isNotEmpty) {
                 print('Add Visit DSR Error e not empty');
@@ -390,7 +397,6 @@ class _DsrEntryPageState extends State<DsrEntry> {
                 print('Add Visit DSR Error s & e empty');
                 toastMessage
                     .showToastMessage("An error occurred while adding visit.");
-                ;
               }
             } else {
               print('Add Visit DSR Error ${responseData.status}');
@@ -413,12 +419,30 @@ class _DsrEntryPageState extends State<DsrEntry> {
         });
       }
     } else {
+      // Assuming _selectedItems is a list of PersonMet objects
+      List<int> selectedIds =
+      _selectedJointVisitWithItems.map((e) => e.customerContactId).toList();
+
+      // Convert list of IDs to comma-separated string
+      String commaSeparatedIds = selectedIds.join(', ');
+
       Navigator.push(
         context,
         MaterialPageRoute(
           builder: (context) => VisitSeriesSearch(
-            schoolName: widget.customerName,
-            address: widget.address,
+            customerId: widget.customerId,
+            customerName: widget.customerName,
+            customerCode: widget.customerCode,
+            customerType: widget.customerType,
+            address: fetchedAddress,
+            city: widget.city,
+            state: widget.state,
+            visitFeedback: _visitFeedbackController.text,
+            visitDate: _dateController.text,
+            visitPurposeId: selectedVisitPurposeId ?? 0,
+            jointVisitWithIds: commaSeparatedIds,
+            samplingDone: samplingDone ?? false,
+            followUpAction: followUpAction ?? false,
           ),
         ),
       );

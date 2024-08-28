@@ -185,7 +185,6 @@ class RequestDetails {
       'ExecutiveCode': executiveCode,
       'ShipmentModeId': shipmentModeId,
       'ShipTo': shipTo,
-      'ShipTo': booksellerId,
       'BooksellerId': booksellerId,
       'BooksellerName': booksellerName,
       'BooksellerCode': booksellerCode,

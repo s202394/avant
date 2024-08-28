@@ -13,6 +13,8 @@ const String EXECUTIVE_LOCATION_URL = URL + 'ExecutiveLocationAPI';
 const String TRAVEL_PLAN_URL = URL + 'apiPlanList';
 const String VISIT_DETAILS_URL = URL + 'VisitDetails';
 const String GET_DSR_ENTRY_URL = URL + 'DSREntryApi';
+const String GET_SERIES_AND_CLASS_LEVEL_LIST_URL =
+    '${URL}SeriesAndClassLevelList';
 const String FOLLOWUP_ACTION_EXECUTIVE_URL = URL + 'apifollowupAction';
 const String VISIT_ENTRY_URL = URL + 'ApiVisitEntry';
 const String FETCH_TITLES_URL = URL + 'FetchTitles';

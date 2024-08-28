@@ -1,9 +1,10 @@
-import 'dart:io';
 import 'dart:convert';
-import 'package:intl/intl.dart';
-import 'package:http/http.dart' as http;
-import 'package:device_info_plus/device_info_plus.dart';
+import 'dart:io';
+
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:device_info_plus/device_info_plus.dart';
+import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
 
 class Validator {
   //Check Valid Email

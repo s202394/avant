@@ -22,7 +22,7 @@ class NewCustomerSchoolForm2 extends StatefulWidget {
   final String keyCustomer;
   final String customerStatus;
 
-  NewCustomerSchoolForm2({
+  const NewCustomerSchoolForm2({super.key,
     required this.type,
     required this.customerName,
     required this.address,
@@ -174,19 +174,19 @@ class _NewCustomerSchoolForm2State extends State<NewCustomerSchoolForm2> {
     return Scaffold(
       appBar: AppBar(
         title: Text('New Customer - ${widget.type}'),
-        backgroundColor: Color(0xFFFFF8E1),
+        backgroundColor: const Color(0xFFFFF8E1),
       ),
       body: FutureBuilder<CustomerEntryMasterResponse>(
         future: futureData,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
+            return const Center(child: CircularProgressIndicator());
           } else if (snapshot.hasError) {
             return Center(child: Text('Error: ${snapshot.error}'));
           } else if (snapshot.hasData) {
             return buildForm(snapshot.data!);
           } else {
-            return Center(child: Text('No data found'));
+            return const Center(child: Text('No data found'));
           }
         },
       ),
@@ -195,7 +195,7 @@ class _NewCustomerSchoolForm2State extends State<NewCustomerSchoolForm2> {
 
   Widget buildForm(CustomerEntryMasterResponse data) {
     return SingleChildScrollView(
-      padding: EdgeInsets.all(16.0),
+      padding: const EdgeInsets.all(16.0),
       child: Form(
         key: _formKey,
         child: Column(
@@ -204,7 +204,7 @@ class _NewCustomerSchoolForm2State extends State<NewCustomerSchoolForm2> {
             Text(
               textAlign: TextAlign.center,
               widget.customerName,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
               ),
@@ -212,7 +212,7 @@ class _NewCustomerSchoolForm2State extends State<NewCustomerSchoolForm2> {
             Text(
               textAlign: TextAlign.center,
               widget.address,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
               ),
@@ -220,18 +220,18 @@ class _NewCustomerSchoolForm2State extends State<NewCustomerSchoolForm2> {
             Text(
               textAlign: TextAlign.center,
               '${widget.cityName} - ${widget.pinCode}',
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
               ),
             ),
-            SizedBox(height: 10),
+            const SizedBox(height: 10),
             Container(
               width: double.infinity, // Full width
               height: 1, // Height of the line
               color: Colors.grey, // Line color
             ),
-            SizedBox(height: 10),
+            const SizedBox(height: 10),
             _buildDropdownClassesField('Start Class', startClassController,
                 _startClassFieldKey, data.classesList, _startClassFocusNode,
                 isStartClass: true),
@@ -257,7 +257,7 @@ class _NewCustomerSchoolForm2State extends State<NewCustomerSchoolForm2> {
             _buildTextField('PAN', panController, _panFieldKey, _panFocusNode),
             _buildTextField('GST', gstController, _gstFieldKey, _gstFocusNode),
             buildPurchaseModeField(data.purchaseModeList),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
             GestureDetector(
               onTap: () {
                 _submitForm();
@@ -265,7 +265,7 @@ class _NewCustomerSchoolForm2State extends State<NewCustomerSchoolForm2> {
               child: Container(
                 width: double.infinity,
                 color: Colors.blue,
-                child: Padding(
+                child: const Padding(
                   padding: EdgeInsets.symmetric(vertical: 8.0, horizontal: 16),
                   child: Text(
                     'Next',
@@ -300,7 +300,7 @@ class _NewCustomerSchoolForm2State extends State<NewCustomerSchoolForm2> {
           focusNode: focusNode,
           decoration: InputDecoration(
               labelText: label,
-              border: OutlineInputBorder(),
+              border: const OutlineInputBorder(),
               alignLabelWithHint: true),
           enabled: enabled,
           maxLines: maxLines,
@@ -377,7 +377,7 @@ class _NewCustomerSchoolForm2State extends State<NewCustomerSchoolForm2> {
         },
         decoration: InputDecoration(
           labelText: label,
-          border: OutlineInputBorder(),
+          border: const OutlineInputBorder(),
         ),
         validator: (value) {
           if (value == null || value.isEmpty) {
@@ -395,7 +395,7 @@ class _NewCustomerSchoolForm2State extends State<NewCustomerSchoolForm2> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Purchase Mode:'),
+          const Text('Purchase Mode:'),
           Column(
             children: purchaseModeList.map((mode) {
               return buildRadioOption(mode.modeName, mode.modeValue);
@@ -454,7 +454,7 @@ class _NewCustomerSchoolForm2State extends State<NewCustomerSchoolForm2> {
         },
         decoration: InputDecoration(
           labelText: label,
-          border: OutlineInputBorder(),
+          border: const OutlineInputBorder(),
         ),
         validator: (value) {
           if (value == null || value.className.isEmpty) {
@@ -504,10 +504,11 @@ class _NewCustomerSchoolForm2State extends State<NewCustomerSchoolForm2> {
             .toList(),
         onChanged: (Months? value) {
           setState(() {
-            if (label == "Sampling Month")
+            if (label == "Sampling Month") {
               _selectedSamplingMonth = value;
-            else
+            } else {
               _selectedDecisionMonth = value;
+            }
 
             // Update the text controller with the selected category name
             controller.text = value?.name ?? '';
@@ -518,7 +519,7 @@ class _NewCustomerSchoolForm2State extends State<NewCustomerSchoolForm2> {
         },
         decoration: InputDecoration(
           labelText: label,
-          border: OutlineInputBorder(),
+          border: const OutlineInputBorder(),
         ),
         validator: (value) {
           if (value == null || value.name.isEmpty) {

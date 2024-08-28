@@ -1,26 +1,116 @@
-import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
-import 'package:avant/visit/customer_search_visit.dart';
-import 'package:avant/visit/customer_search_visit_list.dart';
 import 'package:avant/visit/visit_dsr_series_title_wise.dart';
+import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import '../api/api_service.dart';
+import '../common/common_text.dart';
+import '../model/login_model.dart';
 
 class VisitSeriesSearch extends StatefulWidget {
-  final String schoolName;
+  final int customerId;
+  final String customerName;
+  final String customerCode;
+  final String customerType;
   final String address;
+  final String city;
+  final String state;
+  final String visitFeedback;
+  final String visitDate;
+  final int visitPurposeId;
+  final String jointVisitWithIds;
+  final bool samplingDone;
+  final bool followUpAction;
 
-  VisitSeriesSearch({required this.schoolName, required this.address});
+  const VisitSeriesSearch({
+    super.key,
+    required this.customerId,
+    required this.customerName,
+    required this.customerCode,
+    required this.customerType,
+    required this.address,
+    required this.city,
+    required this.state,
+    required this.visitFeedback,
+    required this.visitDate,
+    required this.visitPurposeId,
+    required this.samplingDone,
+    required this.jointVisitWithIds,
+    required this.followUpAction,
+  });
 
   @override
   _VisitSeriesSearchPageState createState() => _VisitSeriesSearchPageState();
 }
 
 class _VisitSeriesSearchPageState extends State<VisitSeriesSearch> {
-  GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
   String? selectedClassLevel;
   String? selectedSeries;
 
+  List<DropdownMenuItem<String>> classLevelItems = [];
+  List<DropdownMenuItem<String>> seriesItems = [];
+
+  late SharedPreferences prefs;
+  late String token;
+  int? executiveId;
+  String? profileCode;
+
   bool _submitted = false;
+  bool _isLoading = true;
+
+  final DetailText _detailText = DetailText();
+
+  final TextEditingController titleController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchSeriesAndClassLevels();
+  }
+
+  Future<void> _fetchSeriesAndClassLevels() async {
+    prefs = await SharedPreferences.getInstance();
+    setState(() {
+      token = prefs.getString('token') ?? '';
+    });
+    executiveId = await getExecutiveId();
+    profileCode = await getProfileCode();
+    try {
+      final response = await SeriesAndClassLevelListService()
+          .getSeriesAndClassLevelList(
+              executiveId ?? 0, profileCode ?? '', token ?? '');
+
+      setState(() {
+        classLevelItems = response.classLevelList
+                ?.map(
+                  (e) => DropdownMenuItem(
+                    value: e.classLevelName,
+                    child: Text(e.classLevelName),
+                  ),
+                )
+                .toList() ??
+            [];
+
+        seriesItems = response.seriesList
+                ?.map(
+                  (e) => DropdownMenuItem(
+                    value: e.seriesName,
+                    child: Text(e.seriesName),
+                  ),
+                )
+                .toList() ??
+            [];
+        _isLoading = false;
+      });
+    } catch (e) {
+      // Handle error
+      print('Error fetching data: $e');
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -29,97 +119,109 @@ class _VisitSeriesSearchPageState extends State<VisitSeriesSearch> {
       child: Scaffold(
         appBar: AppBar(
           backgroundColor: Colors.amber[100],
-          title: Text('DSR Entry'),
+          title: const Text('DSR Entry'),
         ),
-        body: Form(
-          key: _formKey, // Assign the form key
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(16.0),
+        body: _isLoading
+            ? const Center(
+                child: CircularProgressIndicator()) // Show progress indicator
+            : Form(
+                key: _formKey,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('ASN Sr. Secondary School (SCH654)',
-                        style: TextStyle(fontWeight: FontWeight.bold)),
-                    Text('Mayur Vihar Phase 1\nNew Delhi - 110001\nDelhi'),
-                    SizedBox(height: 8),
-                    Text('Visit Date: 24 Jun 2024',
-                        style: TextStyle(fontWeight: FontWeight.bold)),
-                  ],
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.only(left: 16, right: 16, bottom: 8),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text('Sampling Done: Yes',
-                        style: TextStyle(fontWeight: FontWeight.bold)),
-                    Text('Follow up Action: No',
-                        style: TextStyle(fontWeight: FontWeight.bold)),
-                  ],
-                ),
-              ),
-              Container(
-                color: Colors.orange,
-                child: TabBar(
-                  labelColor: Colors.black,
-                  indicatorColor: Colors.blue,
-                  tabs: [
-                    Tab(text: 'Series/ Title'),
-                    Tab(text: 'Title wise'),
-                  ],
-                ),
-              ),
-              Expanded(
-                child: TabBarView(
-                  children: [
-                    _buildSeriesTitleTab(),
-                    _buildTitleWiseTab(),
-                  ],
-                ),
-              ),
-              Row(
-                children: [
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          _submitted = true;
-                        });
-                        if (_formKey.currentState!.validate() &&
-                            selectedClassLevel != null &&
-                            selectedSeries != null) {
-                          _submitForm();
-                        }
-                      },
-                      child: Container(
-                        width: double.infinity,
-                        color: Colors.blue,
-                        child: Padding(
-                          padding:
-                          EdgeInsets.symmetric(vertical: 8.0, horizontal: 16),
-                          child: Text(
-                            'Search Costumer',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 18,
+                    Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            widget.customerName,
+                            style: const TextStyle(
+                                fontWeight: FontWeight.bold, fontSize: 18),
+                          ),
+                          RichText(
+                            text: TextSpan(
+                              style: const TextStyle(
+                                color: Colors.black, // Specify the color here
+                                fontSize: 16, // Specify the font size here
+                              ),
+                              children: widget.address
+                                  .replaceAll('\\r', '')
+                                  .split('\\n')
+                                  .map((line) => TextSpan(text: '$line\n'))
+                                  .toList(),
+                            ),
+                          ),
+                          const Divider(height: 1),
+                          const SizedBox(height: 16),
+                          _detailText.buildDetailText(
+                            'Sampling Done: ',
+                            widget.samplingDone ? 'Yes' : 'No',
+                          ),
+                          _detailText.buildDetailText(
+                            'Follow up Action: ',
+                            widget.followUpAction ? 'Yes' : 'No',
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      color: Colors.orange,
+                      child: const TabBar(
+                        labelColor: Colors.black,
+                        indicatorColor: Colors.blue,
+                        tabs: [
+                          Tab(text: 'Series/ Title'),
+                          Tab(text: 'Title wise'),
+                        ],
+                      ),
+                    ),
+                    Expanded(
+                      child: TabBarView(
+                        children: [
+                          _buildSeriesTitleTab(),
+                          _buildTitleWiseTab(),
+                        ],
+                      ),
+                    ),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                _submitted = true;
+                              });
+                              if (_formKey.currentState!.validate() &&
+                                  selectedClassLevel != null &&
+                                  selectedSeries != null) {
+                                _submitForm();
+                              }
+                            },
+                            child: Container(
+                              width: double.infinity,
+                              color: Colors.blue,
+                              child: const Padding(
+                                padding: EdgeInsets.symmetric(
+                                    vertical: 8.0, horizontal: 16),
+                                child: Text(
+                                  'Search Customer',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 18,
+                                  ),
+                                ),
+                              ),
                             ),
                           ),
                         ),
-                      ),
+                      ],
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ],
-          ),
-        ),
-
       ),
     );
   }
@@ -131,45 +233,14 @@ class _VisitSeriesSearchPageState extends State<VisitSeriesSearch> {
       context,
       MaterialPageRoute(
         builder: (context) => VisitDsrSeriesTitleWise(
-          schoolName: widget.schoolName,
+          schoolName: widget.customerName,
           address: widget.address,
           series: selectedSeries ?? '',
           classLevel: selectedClassLevel ?? '',
+          title: titleController.text ?? '',
         ),
       ),
     );
-  }
-
-  Widget buildDropdownField(
-      String label, String? selectedValue, ValueChanged<String?> onChanged) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: InputDecorator(
-        decoration: InputDecoration(
-          labelText: label,
-          border: OutlineInputBorder(),
-          errorText: _submitted && selectedValue == null
-              ? 'Please select a $label'
-              : null,
-        ),
-        child: DropdownButtonHideUnderline(
-          child: DropdownButton<String>(
-            isDense: true,
-            value: selectedValue,
-            items: [
-              DropdownMenuItem(child: Text('Option 1'), value: 'Option 1'),
-              DropdownMenuItem(child: Text('Option 2'), value: 'Option 2'),
-            ],
-            onChanged: onChanged,
-          ),
-        ),
-      ),
-    );
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
   }
 
   Widget _buildSeriesTitleTab() {
@@ -179,14 +250,22 @@ class _VisitSeriesSearchPageState extends State<VisitSeriesSearch> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            buildDropdownField('Series', selectedSeries, (value) {
+            buildDropdownField('Series', selectedSeries, seriesItems, (value) {
               setState(() {
                 selectedSeries = value;
+                if (_submitted) {
+                  // Clear error messages if a valid selection is made
+                  _formKey.currentState?.validate();
+                }
               });
             }),
-            buildDropdownField('Class Level', selectedClassLevel, (value) {
+            buildDropdownField(
+                'Class Level', selectedClassLevel, classLevelItems, (value) {
               setState(() {
                 selectedClassLevel = value;
+                if (_submitted) {
+                  _formKey.currentState?.validate();
+                }
               });
             }),
           ],
@@ -202,7 +281,7 @@ class _VisitSeriesSearchPageState extends State<VisitSeriesSearch> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            buildTextField('Title / ISBN',
+            buildTextField('Title / ISBN', titleController,
                 initialValue: '', enabled: true),
           ],
         ),
@@ -210,21 +289,23 @@ class _VisitSeriesSearchPageState extends State<VisitSeriesSearch> {
     );
   }
 
-  Widget buildTextField(String label,
+  Widget buildTextField(String label, TextEditingController controller,
       {String initialValue = '', bool enabled = true, int maxLines = 1}) {
+    controller = TextEditingController(text: initialValue);
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: TextFormField(
+        controller: controller,
         decoration: InputDecoration(
           labelText: label,
-          border: OutlineInputBorder(),
-          contentPadding: EdgeInsets.symmetric(
+          border: const OutlineInputBorder(),
+          contentPadding: const EdgeInsets.symmetric(
             vertical: 12.0,
             horizontal: 12.0,
           ),
           alignLabelWithHint: true,
         ),
-        initialValue: initialValue,
         enabled: enabled,
         maxLines: maxLines,
         validator: (value) {
@@ -233,6 +314,43 @@ class _VisitSeriesSearchPageState extends State<VisitSeriesSearch> {
           }
           return null;
         },
+        onChanged: (text) {
+          if (_formKey.currentState != null) {
+            _formKey.currentState!.validate();
+          }
+        },
+      ),
+    );
+  }
+
+  Widget buildDropdownField(String label, String? selectedValue,
+      List<DropdownMenuItem<String>> items, ValueChanged<String?> onChanged) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: InputDecorator(
+        decoration: InputDecoration(
+          labelText: label,
+          border: const OutlineInputBorder(),
+          errorText:
+              _submitted && selectedSeries == null && selectedClassLevel == null
+                  ? 'Please select a $label'
+                  : null,
+        ),
+        child: DropdownButtonHideUnderline(
+          child: DropdownButton<String>(
+            isDense: true,
+            value: selectedValue,
+            items: items,
+            onChanged: (value) {
+              onChanged(value);
+              setState(() {
+                if (_submitted) {
+                  _formKey.currentState?.validate();
+                }
+              });
+            },
+          ),
+        ),
       ),
     );
   }

@@ -13,7 +13,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 class NewCustomerSchoolForm1 extends StatefulWidget {
   final String type;
 
-  NewCustomerSchoolForm1({required this.type});
+  const NewCustomerSchoolForm1({super.key, required this.type});
 
   @override
   _NewCustomerSchoolForm1State createState() => _NewCustomerSchoolForm1State();
@@ -216,19 +216,19 @@ class _NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
     return Scaffold(
       appBar: AppBar(
         title: Text('New Customer - ${widget.type}'),
-        backgroundColor: Color(0xFFFFF8E1),
+        backgroundColor: const Color(0xFFFFF8E1),
       ),
       body: FutureBuilder<CustomerEntryMasterResponse>(
         future: futureData,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
+            return const Center(child: CircularProgressIndicator());
           } else if (snapshot.hasError) {
             return Center(child: Text('Error: ${snapshot.error}'));
           } else if (snapshot.hasData) {
             return buildForm(snapshot.data!);
           } else {
-            return Center(child: Text('No data found'));
+            return const Center(child: Text('No data found'));
           }
         },
       ),
@@ -264,8 +264,8 @@ class _NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
                 _chainSchoolFieldKey,
                 data.chainSchoolList,
                 _chainSchoolFocusNode),
-            SizedBox(height: 16.0),
-            Text('Key Customer:'),
+            const SizedBox(height: 16.0),
+            const Text('Key Customer:'),
             Row(
               children: [
                 Expanded(
@@ -296,12 +296,12 @@ class _NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
                 ),
               ],
             ),
-            Text('Customer Status:'),
+            const Text('Customer Status:'),
             Row(
               children: [
                 Expanded(
                   child: RadioListTile<bool>(
-                    title: Text('Active'),
+                    title: const Text('Active'),
                     value: true,
                     groupValue: _selectedCustomerStatus,
                     onChanged: (newValue) {
@@ -315,7 +315,7 @@ class _NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
                 ),
                 Expanded(
                   child: RadioListTile<bool>(
-                    title: Text('Inactive'),
+                    title: const Text('Inactive'),
                     value: false,
                     groupValue: _selectedCustomerStatus,
                     onChanged: (newValue) {
@@ -329,7 +329,7 @@ class _NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
                 ),
               ],
             ),
-            SizedBox(height: 16.0),
+            const SizedBox(height: 16.0),
             GestureDetector(
               onTap: () {
                 _submitForm();
@@ -337,7 +337,7 @@ class _NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
               child: Container(
                 width: double.infinity,
                 color: Colors.blue,
-                child: Padding(
+                child: const Padding(
                   padding: EdgeInsets.symmetric(vertical: 8.0, horizontal: 16),
                   child: Text(
                     'Next',

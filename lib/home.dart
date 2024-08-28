@@ -163,8 +163,8 @@ class _HomePageState extends State<HomePage> {
               child: Container(
                 color: const Color(0xFFFFE082),
                 child: Padding(
-                  padding:
-                  const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16.0, vertical: 8.0),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -210,14 +210,14 @@ class _HomePageState extends State<HomePage> {
                         ),
                         decoration: const BoxDecoration(color: Colors.blue),
                       ),
-                      PunchInToggleSwitch(),
+                      const PunchInToggleSwitch(),
                       ...groupedMenuData.keys.map((menuName) {
                         return ExpansionTile(
                           title: Text(menuName),
                           children: groupedMenuData[menuName]!.map((childMenu) {
                             return Padding(
                               padding:
-                              const EdgeInsets.symmetric(horizontal: 8.0),
+                                  const EdgeInsets.symmetric(horizontal: 8.0),
                               child: ListTile(
                                 title: Text(childMenu.childMenuName),
                                 onTap: () {
@@ -321,8 +321,14 @@ class _HomePageState extends State<HomePage> {
         Expanded(
           child: TabBarView(
             children: [
-              TodayPlanList(futurePlanResponse: futurePlanResponse),
-              TomorrowPlanList(futurePlanResponse: futurePlanResponse),
+              TodayPlanList(
+                futurePlanResponse: futurePlanResponse,
+                onRefresh: _initialize,
+              ),
+              TomorrowPlanList(
+                futurePlanResponse: futurePlanResponse,
+                onRefresh: _initialize,
+              ),
             ],
           ),
         ),
@@ -372,8 +378,10 @@ class _HomePageState extends State<HomePage> {
 
 class TodayPlanList extends StatelessWidget {
   final Future<PlanResponse> futurePlanResponse;
+  final VoidCallback onRefresh;
 
-  const TodayPlanList({super.key, required this.futurePlanResponse});
+  const TodayPlanList(
+      {super.key, required this.futurePlanResponse, required this.onRefresh});
 
   @override
   Widget build(BuildContext context) {
@@ -383,7 +391,8 @@ class TodayPlanList extends StatelessWidget {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         } else if (snapshot.hasError) {
-          return Center(child: Text('Error: ${snapshot.error}'));
+          print('Error: ${snapshot.error}');
+          return ServerErrorScreen(onRefresh: onRefresh);
         } else if (snapshot.hasData && snapshot.data!.todayPlan.isNotEmpty) {
           return ListView.builder(
             itemCount: snapshot.data!.todayPlan.length,
@@ -448,8 +457,10 @@ class TodayPlanList extends StatelessWidget {
 
 class TomorrowPlanList extends StatelessWidget {
   final Future<PlanResponse> futurePlanResponse;
+  final Function() onRefresh;
 
-  const TomorrowPlanList({super.key, required this.futurePlanResponse});
+  const TomorrowPlanList(
+      {super.key, required this.futurePlanResponse, required this.onRefresh});
 
   @override
   Widget build(BuildContext context) {
@@ -459,7 +470,8 @@ class TomorrowPlanList extends StatelessWidget {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         } else if (snapshot.hasError) {
-          return Center(child: Text('Error: ${snapshot.error}'));
+          print('Error: ${snapshot.error}');
+          return ServerErrorScreen(onRefresh: onRefresh);
         } else if (snapshot.hasData && snapshot.data!.tomorrowPlan.isNotEmpty) {
           return ListView.builder(
             itemCount: snapshot.data!.tomorrowPlan.length,
@@ -536,6 +548,34 @@ class NoInternetScreen extends StatelessWidget {
           const SizedBox(height: 20),
           const Text(
             'No Internet Connection',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 20),
+          ElevatedButton(
+            onPressed: onRefresh,
+            child: const Text('Retry'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class ServerErrorScreen extends StatelessWidget {
+  final VoidCallback onRefresh;
+
+  const ServerErrorScreen({super.key, required this.onRefresh});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.error_outline, size: 80, color: Colors.grey),
+          const SizedBox(height: 20),
+          const Text(
+            'Server Error',
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 20),

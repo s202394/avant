@@ -8,12 +8,16 @@ class VisitDsrSeriesTitleWise extends StatefulWidget {
   final String address;
   final String classLevel;
   final String series;
+  final String title;
 
-  VisitDsrSeriesTitleWise(
-      {required this.schoolName,
-      required this.address,
-      required this.series,
-      required this.classLevel});
+  const VisitDsrSeriesTitleWise({
+    super.key,
+    required this.schoolName,
+    required this.address,
+    required this.series,
+    required this.classLevel,
+    required this.title,
+  });
 
   @override
   _VisitDsrSeriesTitleWise createState() => _VisitDsrSeriesTitleWise();
@@ -27,7 +31,7 @@ class _VisitDsrSeriesTitleWise extends State<VisitDsrSeriesTitleWise> {
 
   bool _submitted = false;
 
-  GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
   @override
   Widget build(BuildContext context) {
@@ -36,7 +40,7 @@ class _VisitDsrSeriesTitleWise extends State<VisitDsrSeriesTitleWise> {
       child: Scaffold(
         appBar: AppBar(
           backgroundColor: Colors.amber[100],
-          title: Text('DSR Entry'),
+          title: const Text('DSR Entry'),
         ),
         body: Form(
           key: _formKey, // Assign the form key

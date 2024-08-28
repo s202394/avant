@@ -6,6 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class CustomerSearchVisit extends StatefulWidget {
+  const CustomerSearchVisit({super.key});
+
   @override
   _CustomerSearchVisitPageState createState() =>
       _CustomerSearchVisitPageState();
@@ -22,15 +24,15 @@ class _CustomerSearchVisitPageState extends State<CustomerSearchVisit> {
   List<Geography> _filteredCities = [];
   Geography? _selectedCity;
 
-  GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final _cityFieldKey = GlobalKey<FormFieldState>();
 
   final FocusNode _cityFocusNode = FocusNode();
 
-  TextEditingController _customerNameController = TextEditingController();
-  TextEditingController _customerCodeController = TextEditingController();
-  TextEditingController _teacherNameController = TextEditingController();
-  TextEditingController _cityController = TextEditingController();
+  final TextEditingController _customerNameController = TextEditingController();
+  final TextEditingController _customerCodeController = TextEditingController();
+  final TextEditingController _teacherNameController = TextEditingController();
+  final TextEditingController _cityController = TextEditingController();
 
   bool _submitted = false;
   bool _isLoading = true; // Add loading state
@@ -90,19 +92,19 @@ class _CustomerSearchVisitPageState extends State<CustomerSearchVisit> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('DSR Entry'),
-        backgroundColor: Color(0xFFFFF8E1),
+        title: const Text('DSR Entry'),
+        backgroundColor: const Color(0xFFFFF8E1),
       ),
       body: _isLoading // Show progress bar while loading
-          ? Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator())
           : Form(
               key: _formKey,
               child: Column(
                 children: [
                   Container(
                     width: double.infinity,
-                    color: Color(0xFFF49B20),
-                    child: Padding(
+                    color: const Color(0xFFF49B20),
+                    child: const Padding(
                       padding:
                           EdgeInsets.symmetric(vertical: 8.0, horizontal: 16),
                       child: Text(
@@ -129,7 +131,7 @@ class _CustomerSearchVisitPageState extends State<CustomerSearchVisit> {
                               _teacherNameController, _submitted),
                           _buildDropdownFieldCity('City', _cityController,
                               _cityFieldKey, _cityFocusNode),
-                          SizedBox(height: 16),
+                          const SizedBox(height: 16),
                         ],
                       ),
                     ),
@@ -149,7 +151,7 @@ class _CustomerSearchVisitPageState extends State<CustomerSearchVisit> {
                           child: Container(
                             width: double.infinity,
                             color: Colors.blue,
-                            child: Padding(
+                            child: const Padding(
                               padding: EdgeInsets.symmetric(
                                   vertical: 8.0, horizontal: 16),
                               child: Text(
@@ -180,11 +182,13 @@ class _CustomerSearchVisitPageState extends State<CustomerSearchVisit> {
       context,
       MaterialPageRoute(
         builder: (context) => CustomerSearchVisitList(
+          customerId:0,
           customerName: _customerNameController.text,
           customerCode: _customerCodeController.text,
-          principalName: _teacherNameController.text,
-          city: _selectedCity?.city,
-          cityId: _selectedCity?.cityId,
+          customerType: _teacherNameController.text,
+          address: _selectedCity?.city??'',
+          city: _selectedCity?.city??'',
+          state: _selectedCity?.city??'',
         ),
       ),
     );
@@ -197,11 +201,11 @@ class _CustomerSearchVisitPageState extends State<CustomerSearchVisit> {
       child: TextFormField(
         decoration: InputDecoration(
           labelText: label,
-          border: OutlineInputBorder(),
+          border: const OutlineInputBorder(),
           errorText: submitted && controller.text.isEmpty
               ? 'Please enter $label'
               : null,
-          contentPadding: EdgeInsets.symmetric(
+          contentPadding: const EdgeInsets.symmetric(
             vertical: 12.0,
             horizontal: 12.0,
           ),
@@ -250,7 +254,7 @@ class _CustomerSearchVisitPageState extends State<CustomerSearchVisit> {
         },
         decoration: InputDecoration(
           labelText: label,
-          border: OutlineInputBorder(),
+          border: const OutlineInputBorder(),
         ),
         validator: (value) {
           if (value == null || value.city.isEmpty) {
