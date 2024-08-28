@@ -5,8 +5,11 @@ import 'package:avant/model/login_model.dart';
 import 'package:avant/db/db_helper.dart';
 import 'package:avant/model/geography_model.dart';
 import 'package:avant/home.dart';
+import 'package:avant/service/location_service.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:avant/common/toast.dart';
@@ -25,7 +28,8 @@ class NewCustomerTradeLibraryForm2 extends StatefulWidget {
   final String keyCustomer;
   final String customerStatus;
 
-  NewCustomerTradeLibraryForm2({
+  const NewCustomerTradeLibraryForm2({
+    super.key,
     required this.type,
     required this.customerName,
     required this.address,
@@ -41,18 +45,17 @@ class NewCustomerTradeLibraryForm2 extends StatefulWidget {
   });
 
   @override
-  _NewCustomerTradeLibraryForm2State createState() =>
-      _NewCustomerTradeLibraryForm2State();
+  NewCustomerTradeLibraryForm2State createState() =>
+      NewCustomerTradeLibraryForm2State();
 }
 
-class _NewCustomerTradeLibraryForm2State
+class NewCustomerTradeLibraryForm2State
     extends State<NewCustomerTradeLibraryForm2> {
   final _formKey = GlobalKey<FormState>();
   late Future<CustomerEntryMasterResponse> futureData;
 
   DatabaseHelper dbHelper = DatabaseHelper();
-
-  DateFormat dateFormat = DateFormat('dd MMM yyyy');
+  LocationService locationService = LocationService();
 
   final TextEditingController _contactFirstNameController =
       TextEditingController();
@@ -144,9 +147,13 @@ class _NewCustomerTradeLibraryForm2State
       setState(() {
         _filteredCities = dbData;
       });
-      print("Loaded geography data from the database.");
+      if (kDebugMode) {
+        print("Loaded geography data from the database.");
+      }
     } else {
-      print("No data in DB, fetching from API.");
+      if (kDebugMode) {
+        print("No data in DB, fetching from API.");
+      }
       _fetchGeographyData();
     }
   }
@@ -164,7 +171,9 @@ class _NewCustomerTradeLibraryForm2State
             .toList();
       });
     } catch (e) {
-      print(e);
+      if (kDebugMode) {
+        print(e);
+      }
     }
   }
 
@@ -175,30 +184,40 @@ class _NewCustomerTradeLibraryForm2State
 
     if (existingData != null && !isEmptyData(existingData)) {
       // Data exists in the database, return it
-      print(
-          "CustomerEntryMaster data found in db: ${existingData.salutationMasterList}");
+      if (kDebugMode) {
+        print(
+            "CustomerEntryMaster data found in db: ${existingData.salutationMasterList}");
+      }
       return existingData;
     } else {
       String downHierarchy = prefs.getString('DownHierarchy') ?? '';
 
       // Data does not exist in the database, fetch from API
-      print("CustomerEntryMaster data not found in db. Fetching from API...");
+      if (kDebugMode) {
+        print("CustomerEntryMaster data not found in db. Fetching from API...");
+      }
 
       try {
         CustomerEntryMasterResponse response =
             await CustomerEntryMasterService()
                 .fetchCustomerEntryMaster(downHierarchy, token);
-        print(
-            "CustomerEntryMaster data fetched from API and saved to db. $response");
+        if (kDebugMode) {
+          print(
+              "CustomerEntryMaster data fetched from API and saved to db. $response");
+        }
         // Save the fetched data to the database
         await dbHelper.insertCustomerEntryMasterResponse(response);
 
-        print(
-            "CustomerEntryMaster data fetched from API and saved to db. $response");
+        if (kDebugMode) {
+          print(
+              "CustomerEntryMaster data fetched from API and saved to db. $response");
+        }
         return response;
       } catch (e) {
         // Handle API fetch error
-        print("Error fetching CustomerEntryMaster data from API: $e");
+        if (kDebugMode) {
+          print("Error fetching CustomerEntryMaster data from API: $e");
+        }
         rethrow; // Re-throw the error if needed
       }
     }
@@ -243,19 +262,19 @@ class _NewCustomerTradeLibraryForm2State
     return Scaffold(
       appBar: AppBar(
         title: Text('New Customer - ${widget.type}'),
-        backgroundColor: Color(0xFFFFF8E1),
+        backgroundColor: const Color(0xFFFFF8E1),
       ),
       body: FutureBuilder<CustomerEntryMasterResponse>(
         future: futureData,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
+            return const Center(child: CircularProgressIndicator());
           } else if (snapshot.hasError) {
             return Center(child: Text('Error: ${snapshot.error}'));
           } else if (snapshot.hasData) {
             return buildForm(snapshot.data!);
           } else {
-            return Center(child: Text('No data found'));
+            return const Center(child: Text('No data found'));
           }
         },
       ),
@@ -274,7 +293,7 @@ class _NewCustomerTradeLibraryForm2State
     return Stack(
       children: [
         SingleChildScrollView(
-          padding: EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(16.0),
           child: Form(
             key: _formKey,
             child: Column(
@@ -322,11 +341,13 @@ class _NewCustomerTradeLibraryForm2State
                     'City', _contactCityController, _contactCityFieldKey),
                 _buildTextField('Pin Code', _contactPinCodeController,
                     _contactPinCodeFieldKey),
-                SizedBox(height: 20),
+                const SizedBox(height: 20),
                 GestureDetector(
                   onTap: () {
                     if (_formKey.currentState!.validate()) {
-                      print("Add ${widget.type} data API");
+                      if (kDebugMode) {
+                        print("Add ${widget.type} data API");
+                      }
                       _submitForm();
                     }
                   },
@@ -334,12 +355,12 @@ class _NewCustomerTradeLibraryForm2State
                     width: double.infinity,
                     color: Colors.blue,
                     child: Padding(
-                      padding:
-                          EdgeInsets.symmetric(vertical: 8.0, horizontal: 16),
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 8.0, horizontal: 16),
                       child: Text(
                         'Add ${widget.type}',
                         textAlign: TextAlign.center,
-                        style: TextStyle(
+                        style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
                           fontSize: 18,
@@ -353,7 +374,7 @@ class _NewCustomerTradeLibraryForm2State
           ),
         ),
         if (_isLoading)
-          Center(
+          const Center(
             child: CircularProgressIndicator(),
           ),
       ],
@@ -369,6 +390,12 @@ class _NewCustomerTradeLibraryForm2State
       _isLoading = true;
     });
     try {
+      Position position = await locationService.getCurrentLocation();
+      if (kDebugMode) {
+        print(
+            "Latitude: ${position.latitude}, Longitude: ${position.longitude}");
+      }
+
       final responseData = await CreateNewCustomerService().createNewCustomer(
           widget.type,
           widget.customerName,
@@ -395,31 +422,39 @@ class _NewCustomerTradeLibraryForm2State
           int.parse(_contactPinCodeController.text),
           _selectedSalutationId ?? 0,
           _selectedContactDesignationId ?? 0,
-          "28.535517",
-          "77.391029",
-          token ?? "");
+          position.latitude,
+          position.longitude,
+          token);
 
       if (responseData.status == 'Success') {
         String s = responseData.s;
         if (s.isNotEmpty) {
           _toastMessage.showInfoToastMessage(s);
-          Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(builder: (context) => HomePage()),
-            (Route<dynamic> route) => false,
-          );
+          if (mounted) {
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (context) => const HomePage()),
+              (Route<dynamic> route) => false,
+            );
+          }
         } else {
-          print('Add New Customer Error s empty');
+          if (kDebugMode) {
+            print('Add New Customer Error s empty');
+          }
           _toastMessage
               .showToastMessage("An error occurred while adding new customer.");
         }
       } else {
-        print('Add New Customer Error ${responseData.status}');
+        if (kDebugMode) {
+          print('Add New Customer Error ${responseData.status}');
+        }
         _toastMessage
             .showToastMessage("An error occurred while adding new customer.");
       }
     } catch (e) {
-      print('Add New Customer Error $e');
+      if (kDebugMode) {
+        print('Add New Customer Error $e');
+      }
       _toastMessage
           .showToastMessage("An error occurred while adding new customer.");
     } finally {
@@ -443,7 +478,7 @@ class _NewCustomerTradeLibraryForm2State
         value: value,
         decoration: InputDecoration(
           labelText: label,
-          border: OutlineInputBorder(),
+          border: const OutlineInputBorder(),
         ),
         items: items.map((item) {
           return DropdownMenuItem(
@@ -508,9 +543,9 @@ class _NewCustomerTradeLibraryForm2State
             inputFormatters: _getInputFormatters(label),
             decoration: InputDecoration(
               labelText: label,
-              border: OutlineInputBorder(),
+              border: const OutlineInputBorder(),
               alignLabelWithHint: true,
-              suffixIcon: isDateField ? Icon(Icons.calendar_month) : null,
+              suffixIcon: isDateField ? const Icon(Icons.calendar_month) : null,
             ),
             textAlign: TextAlign.start,
             maxLines: maxLines,
@@ -599,7 +634,7 @@ class _NewCustomerTradeLibraryForm2State
         },
         decoration: InputDecoration(
           labelText: label,
-          border: OutlineInputBorder(),
+          border: const OutlineInputBorder(),
         ),
         validator: (value) {
           if (value == null || value.city.isEmpty) {
@@ -609,10 +644,6 @@ class _NewCustomerTradeLibraryForm2State
         },
       ),
     );
-  }
-
-  void _showErrorMessage(String message) {
-    _toastMessage.showToastMessage(message);
   }
 
   Future<bool> _checkInternetConnection() async {

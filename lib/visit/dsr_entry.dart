@@ -9,6 +9,7 @@ import 'package:avant/model/login_model.dart';
 import 'package:avant/service/location_service.dart';
 import 'package:avant/views/multi_selection_dropdown.dart';
 import 'package:avant/visit/visit_series_search.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
@@ -35,10 +36,10 @@ class DsrEntry extends StatefulWidget {
       required this.state});
 
   @override
-  _DsrEntryPageState createState() => _DsrEntryPageState();
+  DsrEntryPageState createState() => DsrEntryPageState();
 }
 
-class _DsrEntryPageState extends State<DsrEntry> {
+class DsrEntryPageState extends State<DsrEntry> {
   String? selectedVisitPurpose;
   int? selectedVisitPurposeId;
   String? selectedJointVisit;
@@ -60,7 +61,7 @@ class _DsrEntryPageState extends State<DsrEntry> {
   String? downHierarchy;
   String? token;
 
-  ToastMessage toastMessage = new ToastMessage();
+  ToastMessage toastMessage = ToastMessage();
   LocationService locationService = LocationService();
 
   bool _submitted = false;
@@ -93,7 +94,9 @@ class _DsrEntryPageState extends State<DsrEntry> {
       });
     } catch (e) {
       // Handle error
-      print('Error picking image: $e');
+      if (kDebugMode) {
+        print('Error picking image: $e');
+      }
     }
   }
 
@@ -341,11 +344,15 @@ class _DsrEntryPageState extends State<DsrEntry> {
         String commaSeparatedIds = selectedIds.join(', ');
 
         // Print the result
-        print('Selected IDs: $commaSeparatedIds');
+        if (kDebugMode) {
+          print('Selected IDs: $commaSeparatedIds');
+        }
 
         if (address.isNotEmpty) {
           try {
-            print("_submitForm clicked");
+            if (kDebugMode) {
+              print("_submitForm clicked");
+            }
             final responseData = await VisitEntryService().visitEntry(
                 executiveId ?? 0,
                 widget.customerType,
@@ -381,37 +388,55 @@ class _DsrEntryPageState extends State<DsrEntry> {
 
             if (responseData.status == 'Success') {
               String s = responseData.s;
-              print(s);
+              if (kDebugMode) {
+                print(s);
+              }
               if (s.isNotEmpty) {
-                print('Add Visit DSR Error s not empty');
+                if (kDebugMode) {
+                  print('Add Visit DSR Error s not empty');
+                }
                 toastMessage.showInfoToastMessage(s);
-                Navigator.pushAndRemoveUntil(
-                  context,
-                  MaterialPageRoute(builder: (context) => const HomePage()),
-                      (Route<dynamic> route) => false,
-                );
+                if (mounted) {
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(builder: (context) => const HomePage()),
+                        (Route<dynamic> route) => false,
+                  );
+                }
               } else if (responseData.e.isNotEmpty) {
-                print('Add Visit DSR Error e not empty');
+                if (kDebugMode) {
+                  print('Add Visit DSR Error e not empty');
+                }
                 toastMessage.showToastMessage(responseData.e);
               } else {
-                print('Add Visit DSR Error s & e empty');
+                if (kDebugMode) {
+                  print('Add Visit DSR Error s & e empty');
+                }
                 toastMessage
                     .showToastMessage("An error occurred while adding visit.");
               }
             } else {
-              print('Add Visit DSR Error ${responseData.status}');
+              if (kDebugMode) {
+                print('Add Visit DSR Error ${responseData.status}');
+              }
               toastMessage
                   .showToastMessage("An error occurred while adding visit.");
             }
           } catch (e) {
-            print("Error fetching location: $e");
+            if (kDebugMode) {
+              print("Error fetching location: $e");
+            }
           }
         } else {
-          print('Address empty');
+          if (kDebugMode) {
+            print('Address empty');
+          }
           toastMessage.showToastMessage("Unable to fetch address.");
         }
       } catch (e) {
-        print('Add Visit DSR Error $e');
+        if (kDebugMode) {
+          print('Add Visit DSR Error $e');
+        }
         toastMessage.showToastMessage("An error occurred while adding visit.");
       } finally {
         setState(() {
@@ -683,9 +708,13 @@ class _DsrEntryPageState extends State<DsrEntry> {
 
   void getAddressData() async {
     position = await locationService.getCurrentLocation();
-    print("Latitude: ${position.latitude}, Longitude: ${position.longitude}");
+    if (kDebugMode) {
+      print("Latitude: ${position.latitude}, Longitude: ${position.longitude}");
+    }
 
     address = await locationService.getAddressFromLocation();
-    print("address: $address");
+    if (kDebugMode) {
+      print("address: $address");
+    }
   }
 }

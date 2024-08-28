@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:device_info_plus/device_info_plus.dart';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 
@@ -29,11 +30,15 @@ Future<String> getIpAddress() async {
       final ip = jsonDecode(response.body)['ip'];
       return ip;
     } else {
-      print('Failed to fetch IP address');
+      if (kDebugMode) {
+        print('Failed to fetch IP address');
+      }
       return 'Unknown';
     }
   } catch (e) {
-    print('Error fetching IP address: $e');
+    if (kDebugMode) {
+      print('Error fetching IP address: $e');
+    }
     return 'Unknown';
   }
 }
@@ -82,7 +87,7 @@ Future<String> getDeviceId() async {
 
   if (Platform.isAndroid) {
     AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
-    deviceId = androidInfo.id ?? 'Unknown'; // Unique ID on Android
+    deviceId = androidInfo.id; // Unique ID on Android
   } else if (Platform.isIOS) {
     IosDeviceInfo iosInfo = await deviceInfo.iosInfo;
     deviceId = iosInfo.identifierForVendor ?? 'Unknown'; // Unique ID on iOS
@@ -97,7 +102,9 @@ Future<String> getDeviceId() async {
 Future<bool> checkInternetConnection() async {
   var connectivityResult = await (Connectivity().checkConnectivity());
 
-  print('checkInternetConnection : $connectivityResult');
+  if (kDebugMode) {
+    print('checkInternetConnection : $connectivityResult');
+  }
 
   if (connectivityResult == ConnectivityResult.mobile ||
       connectivityResult == ConnectivityResult.wifi ||

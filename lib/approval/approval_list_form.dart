@@ -8,22 +8,26 @@ import 'package:avant/home.dart';
 import 'package:avant/model/approval_list_model.dart';
 import 'package:avant/model/login_model.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:avant/common/constants.dart';
 
+import '../model/submit_approval_model.dart';
+
 class ApprovalListForm extends StatefulWidget {
   final String type;
 
-  ApprovalListForm({
+  const ApprovalListForm({
+    super.key,
     required this.type,
   });
 
   @override
-  _ApprovalListFormState createState() => _ApprovalListFormState();
+  ApprovalListFormState createState() => ApprovalListFormState();
 }
 
-class _ApprovalListFormState extends State<ApprovalListForm> {
+class ApprovalListFormState extends State<ApprovalListForm> {
   final TextEditingController _commentController = TextEditingController();
   final _commentFieldKey = GlobalKey<FormFieldState>();
 
@@ -107,18 +111,18 @@ class _ApprovalListFormState extends State<ApprovalListForm> {
     return Scaffold(
       appBar: AppBar(
         title: Text('${widget.type} Approval'),
-        backgroundColor: Color(0xFFFFF8E1),
+        backgroundColor: const Color(0xFFFFF8E1),
       ),
       body: isLoading
-          ? Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator())
           : isConnected
               ? FutureBuilder<List<ApprovalList>>(
                   future: futureRequests,
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
-                      return Center(child: CircularProgressIndicator());
+                      return const Center(child: CircularProgressIndicator());
                     } else if (snapshot.hasError) {
-                      return ErrorLayout();
+                      return const ErrorLayout();
                     } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
                       return NoDataLayout(); // Ensures it is centered
                     } else {
@@ -128,7 +132,7 @@ class _ApprovalListFormState extends State<ApprovalListForm> {
                           children: [
                             ListView.builder(
                               shrinkWrap: true,
-                              physics: NeverScrollableScrollPhysics(),
+                              physics: const NeverScrollableScrollPhysics(),
                               itemCount: snapshot.data!.length,
                               itemBuilder: (context, index) {
                                 return RequestCard(
@@ -158,7 +162,7 @@ class _ApprovalListFormState extends State<ApprovalListForm> {
                                 controller: _commentController,
                                 maxLines: 3,
                                 decoration: InputDecoration(
-                                  border: OutlineInputBorder(),
+                                  border: const OutlineInputBorder(),
                                   alignLabelWithHint: true,
                                   labelText: 'Add your comments here',
                                   errorText: _commentError,
@@ -177,7 +181,7 @@ class _ApprovalListFormState extends State<ApprovalListForm> {
                                 padding: const EdgeInsets.all(8.0),
                                 child: Text(
                                   _selectionError!,
-                                  style: TextStyle(color: Colors.red),
+                                  style: const TextStyle(color: Colors.red),
                                 ),
                               ),
                           ],
@@ -199,9 +203,9 @@ class _ApprovalListFormState extends State<ApprovalListForm> {
                   onPressed: () => _handleRequest(context, "Approve"),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.green,
-                    padding: EdgeInsets.symmetric(vertical: 16.0),
+                    padding: const EdgeInsets.symmetric(vertical: 16.0),
                   ),
-                  child: Text(
+                  child: const Text(
                     'Approve',
                     style: TextStyle(
                       color: Colors.white,
@@ -217,9 +221,9 @@ class _ApprovalListFormState extends State<ApprovalListForm> {
                   onPressed: () => _handleRequest(context, "Reject"),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.red,
-                    padding: EdgeInsets.symmetric(vertical: 16.0),
+                    padding: const EdgeInsets.symmetric(vertical: 16.0),
                   ),
-                  child: Text(
+                  child: const Text(
                     'Reject',
                     style: TextStyle(
                       color: Colors.white,
@@ -258,34 +262,32 @@ class _ApprovalListFormState extends State<ApprovalListForm> {
       return;
     }
 
-    if (checkedRequests.length == 0) {
+    if (checkedRequests.isEmpty) {
       _toastMessage
           .showToastMessage("Please select any item to take an action.");
       return;
     }
+
     FocusScope.of(context).unfocus();
 
     if (!await _checkInternetConnection()) return;
 
     // Show loading indicator
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return Center(child: CircularProgressIndicator());
-      },
-    );
+    if (mounted) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return const Center(child: CircularProgressIndicator());
+        },
+      );
+    }
 
     try {
-      String requestIds = "";
-      for (var request in checkedRequests) {
-        if (requestIds.isNotEmpty)
-          requestIds = requestIds + ",${request.requestId}";
-        else
-          requestIds = "${request.requestId}";
-      }
+      String requestIds =
+          checkedRequests.map((request) => request.requestId).join(',');
 
-      final response;
+      final SubmitRequestApprovalResponse response;
       if (widget.type == CUSTOMER_SAMPLE_APPROVAL) {
         response = await SubmitRequestApprovalService()
             .submitCustomerSamplingRequestApproved(
@@ -316,34 +318,46 @@ class _ApprovalListFormState extends State<ApprovalListForm> {
         );
       }
 
-      Navigator.of(context).pop();
-      print(
-          'Approval ${widget.type} successful: ${response.returnMessage.msgText}');
+      if (mounted) {
+        Navigator.of(context).pop(); // Dismiss the loading dialog
+      }
+
+      if (kDebugMode) {
+        print(
+            'Approval ${widget.type} successful: ${response.returnMessage.msgText}');
+      }
+
       if (response.status == 'Success') {
-        String s = response.returnMessage.msgText;
-        if (s.isNotEmpty) {
-          _toastMessage.showInfoToastMessage(s);
-          Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(builder: (context) => HomePage()),
-            (Route<dynamic> route) => false,
-          );
+        String message = response.returnMessage.msgText;
+        if (message.isNotEmpty) {
+          _toastMessage.showInfoToastMessage(message);
+          if (mounted) {
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (context) => const HomePage()),
+              (Route<dynamic> route) => false,
+            );
+          }
         } else {
-          print('$action ${widget.type} Error s empty');
+          if (kDebugMode) {
+            print('$action ${widget.type} Error: message is empty');
+          }
           _toastMessage.showToastMessage(
               "An error occurred while $action ${widget.type}.");
         }
       } else {
-        print('Add  ${widget.type} Error ${response.status}');
+        print('Add ${widget.type} Error: ${response.status}');
         _toastMessage.showToastMessage(
-            "An error occurred while $action  ${widget.type}.");
+            "An error occurred while $action ${widget.type}.");
       }
     } catch (error) {
-      Navigator.of(context).pop();
+      if (mounted) {
+        Navigator.of(context).pop(); // Dismiss the loading dialog
+      }
       // Handle the error (e.g., show error message)
-      print('Failed to  ${widget.type} $action: $error');
+      print('Failed to ${widget.type} $action: $error');
       _toastMessage
-          .showToastMessage("An error occurred while $action  ${widget.type}.");
+          .showToastMessage("An error occurred while $action ${widget.type}.");
     }
   }
 
@@ -362,14 +376,17 @@ class RequestCard extends StatefulWidget {
   final Function(bool) onChecked;
   final String type;
 
-  RequestCard(
-      {required this.request, required this.onChecked, required this.type});
+  const RequestCard(
+      {super.key,
+      required this.request,
+      required this.onChecked,
+      required this.type});
 
   @override
-  _RequestCardState createState() => _RequestCardState();
+  RequestCardState createState() => RequestCardState();
 }
 
-class _RequestCardState extends State<RequestCard> {
+class RequestCardState extends State<RequestCard> {
   bool isChecked = false;
 
   @override
@@ -388,7 +405,7 @@ class _RequestCardState extends State<RequestCard> {
         title: Text.rich(
           TextSpan(
             children: [
-              TextSpan(
+              const TextSpan(
                 text: 'Request No: ',
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
@@ -404,7 +421,7 @@ class _RequestCardState extends State<RequestCard> {
             Text.rich(
               TextSpan(
                 children: [
-                  TextSpan(
+                  const TextSpan(
                     text: 'Executive Name: ',
                     style: TextStyle(fontWeight: FontWeight.bold),
                   ),
@@ -417,7 +434,7 @@ class _RequestCardState extends State<RequestCard> {
             Text.rich(
               TextSpan(
                 children: [
-                  TextSpan(
+                  const TextSpan(
                     text: 'Request Date: ',
                     style: TextStyle(fontWeight: FontWeight.bold),
                   ),
@@ -430,7 +447,7 @@ class _RequestCardState extends State<RequestCard> {
             Text.rich(
               TextSpan(
                 children: [
-                  TextSpan(
+                  const TextSpan(
                     text: 'Address: ',
                     style: TextStyle(fontWeight: FontWeight.bold),
                   ),
@@ -443,7 +460,7 @@ class _RequestCardState extends State<RequestCard> {
             Text.rich(
               TextSpan(
                 children: [
-                  TextSpan(
+                  const TextSpan(
                     text: 'Request Status: ',
                     style: TextStyle(fontWeight: FontWeight.bold),
                   ),
@@ -477,13 +494,13 @@ class _RequestCardState extends State<RequestCard> {
 class NoInternetLayout extends StatefulWidget {
   final String type;
 
-  NoInternetLayout({required this.type});
+  const NoInternetLayout({super.key, required this.type});
 
   @override
-  _NoInternetLayoutState createState() => _NoInternetLayoutState();
+  NoInternetLayoutState createState() => NoInternetLayoutState();
 }
 
-class _NoInternetLayoutState extends State<NoInternetLayout> {
+class NoInternetLayoutState extends State<NoInternetLayout> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -497,13 +514,13 @@ class _NoInternetLayoutState extends State<NoInternetLayout> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.wifi_off, size: 100, color: Colors.grey),
-                  SizedBox(height: 20),
-                  Text(
+                  const Icon(Icons.wifi_off, size: 100, color: Colors.grey),
+                  const SizedBox(height: 20),
+                  const Text(
                     'No Internet Connection',
                     style: TextStyle(fontSize: 18, color: Colors.grey),
                   ),
-                  SizedBox(height: 20),
+                  const SizedBox(height: 20),
                   ElevatedButton(
                     onPressed: () {
                       // Retry connection check
@@ -514,7 +531,7 @@ class _NoInternetLayoutState extends State<NoInternetLayout> {
                         ),
                       );
                     },
-                    child: Text('Retry'),
+                    child: const Text('Retry'),
                   ),
                 ],
               ),

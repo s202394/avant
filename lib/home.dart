@@ -12,6 +12,7 @@ import 'package:avant/model/menu_model.dart';
 import 'package:avant/model/travel_plan_model.dart';
 import 'package:avant/visit/dsr_entry.dart';
 import 'package:avant/visit/visit_detail_page.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -20,10 +21,10 @@ class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
   @override
-  _HomePageState createState() => _HomePageState();
+  HomePageState createState() => HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class HomePageState extends State<HomePage> {
   late SharedPreferences prefs;
   final ToastMessage _toastMessage = ToastMessage();
 
@@ -63,14 +64,20 @@ class _HomePageState extends State<HomePage> {
     if (_hasInternet) {
       // Load the menu data from the database
       List<MenuData> menuDataList = await DatabaseHelper().getMenuDataFromDB();
-      print('Menu data from DB: $menuDataList');
+      if (kDebugMode) {
+        print('Menu data from DB: $menuDataList');
+      }
 
       if (menuDataList.isEmpty) {
-        print('No menu data in DB, fetching from API.');
+        if (kDebugMode) {
+          print('No menu data in DB, fetching from API.');
+        }
         // Fetch data from API if no data in DB
         futureMenuData = MenuService().getMenus(profileId!, token!);
       } else {
-        print('Menu data found in DB.');
+        if (kDebugMode) {
+          print('Menu data found in DB.');
+        }
         futureMenuData = Future.value(menuDataList);
       }
 
@@ -79,7 +86,9 @@ class _HomePageState extends State<HomePage> {
             TravelPlanService().fetchTravelPlans(executiveId!, token!);
       }
     } else {
-      print('No Internet');
+      if (kDebugMode) {
+        print('No Internet');
+      }
       futureMenuData = DatabaseHelper().getMenuDataFromDB();
       futurePlanResponse = Future.value(
           PlanResponse(status: "Success", todayPlan: [], tomorrowPlan: []));
@@ -91,27 +100,33 @@ class _HomePageState extends State<HomePage> {
     if (!await _checkInternetConnection()) return;
 
     try {
-      print('GOING TO LOGOUT');
-      showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return CustomAlertDialog(
-            title: "Logout",
-            content: "You are sure you want to logout.",
-            onConfirm: () {
-              // Handle confirm action
-              Navigator.of(context).pop();
-              logout();
-            },
-            onCancel: () {
-              // Handle cancel action
-              Navigator.of(context).pop();
-            },
-          );
-        },
-      );
+      if (kDebugMode) {
+        print('GOING TO LOGOUT');
+      }
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return CustomAlertDialog(
+              title: "Logout",
+              content: "You are sure you want to logout.",
+              onConfirm: () {
+                // Handle confirm action
+                Navigator.of(context).pop();
+                logout();
+              },
+              onCancel: () {
+                // Handle cancel action
+                Navigator.of(context).pop();
+              },
+            );
+          },
+        );
+      }
     } catch (e) {
-      print('Logout Error $e');
+      if (kDebugMode) {
+        print('Logout Error $e');
+      }
       clearDataAfterLogout();
     }
   }
@@ -124,11 +139,13 @@ class _HomePageState extends State<HomePage> {
   void clearDataAfterLogout() async {
     await DatabaseHelper().clearDatabase();
     await clearSharedPreferences();
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(builder: (context) => LoginPage()),
-      (Route<dynamic> route) => false,
-    );
+    if (mounted) {
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => LoginPage()),
+        (Route<dynamic> route) => false,
+      );
+    }
   }
 
   Future<bool> _checkInternetConnection() async {
@@ -391,7 +408,9 @@ class TodayPlanList extends StatelessWidget {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         } else if (snapshot.hasError) {
-          print('Error: ${snapshot.error}');
+          if (kDebugMode) {
+            print('Error: ${snapshot.error}');
+          }
           return ServerErrorScreen(onRefresh: onRefresh);
         } else if (snapshot.hasData && snapshot.data!.todayPlan.isNotEmpty) {
           return ListView.builder(
@@ -470,7 +489,9 @@ class TomorrowPlanList extends StatelessWidget {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         } else if (snapshot.hasError) {
-          print('Error: ${snapshot.error}');
+          if (kDebugMode) {
+            print('Error: ${snapshot.error}');
+          }
           return ServerErrorScreen(onRefresh: onRefresh);
         } else if (snapshot.hasData && snapshot.data!.tomorrowPlan.isNotEmpty) {
           return ListView.builder(

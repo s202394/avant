@@ -2,21 +2,22 @@ import 'package:animate_do/animate_do.dart';
 import 'package:avant/api/api_service.dart';
 import 'package:avant/common/common.dart';
 import 'package:avant/common/toast.dart';
-import 'package:avant/model/login_model.dart';
 import 'package:avant/dialog/custom_alert_dialog.dart';
 import 'package:avant/forgot_password.dart';
 import 'package:avant/home.dart';
+import 'package:avant/model/login_model.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginPage extends StatefulWidget {
-  LoginPage({super.key});
+  const LoginPage({super.key});
 
   @override
-  _LoginPageState createState() => _LoginPageState();
+  LoginPageState createState() => LoginPageState();
 }
 
-class _LoginPageState extends State<LoginPage> {
+class LoginPageState extends State<LoginPage> {
   late SharedPreferences prefs;
 
   final _emailController = TextEditingController();
@@ -76,17 +77,27 @@ class _LoginPageState extends State<LoginPage> {
 
     try {
       await _getToken(tokenUsername, password);
-      print('Get token successful! token: $token');
+      if (kDebugMode) {
+        print('Get token successful! token: $token');
+      }
       if ((token ?? "").isNotEmpty) {
-        print('GOING TO LOGIN');
+        if (kDebugMode) {
+          print('GOING TO LOGIN');
+        }
         await _loginUser(emailOrPhone, password);
-        print('GOING TO Home Page');
+        if (kDebugMode) {
+          print('GOING TO Home Page');
+        }
       } else {
-        print('Token Error');
+        if (kDebugMode) {
+          print('Token Error');
+        }
         _toastMessage.showToastMessage("An error occurred while logging in.");
       }
     } catch (e) {
-      print('Token Error $e');
+      if (kDebugMode) {
+        print('Token Error $e');
+      }
       _toastMessage.showToastMessage("An error occurred while logging in.");
     } finally {
       setState(() => _isLoading = false);
@@ -130,10 +141,14 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<void> _getToken(String emailOrPhone, String password) async {
-    print('Getting Token $emailOrPhone $password');
+    if (kDebugMode) {
+      print('Getting Token $emailOrPhone $password');
+    }
     await TokenService().token(emailOrPhone, password);
     token = prefs.getString('token');
-    print('Get token successful! Token: $token');
+    if (kDebugMode) {
+      print('Get token successful! Token: $token');
+    }
   }
 
   Future<void> _loginUser(String emailOrPhone, String password) async {
@@ -141,37 +156,43 @@ class _LoginPageState extends State<LoginPage> {
     final String deviceInfo = await getDeviceInfo();
     final String deviceId = await getDeviceId();
 
-    print(
-        'Login details ipAddress : $ipAddress , deviceInfo : $deviceInfo , deviceId : $deviceId');
+    if (kDebugMode) {
+      print(
+          'Login details ipAddress : $ipAddress , deviceInfo : $deviceInfo , deviceId : $deviceId');
+    }
 
     final responseData = await LoginService().login(
         emailOrPhone, password, ipAddress, deviceId, deviceInfo, token ?? "");
     final loginResponse = await LoginResponse.fromJson(responseData);
-    if (loginResponse!.executiveData.loginBlocked == 'N') {
+    if (loginResponse.executiveData.loginBlocked == 'N') {
       final String? userId = prefs.getString('userId');
 
-      print('Login successful! User ID: $userId');
+      if (kDebugMode) {
+        print('Login successful! User ID: $userId');
+      }
       _saveData(emailOrPhone, password, true);
     } else {
-      showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return SingleAlertDialog(
-            title: "Alert",
-            content: "You are not allowed to login. Please contact to admin.",
-            onOk: () {
-              // Handle ok action
-              Navigator.of(context).pop();
-            },
-          );
-        },
-      );
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return SingleAlertDialog(
+              title: "Alert",
+              content: "You are not allowed to login. Please contact to admin.",
+              onOk: () {
+                // Handle ok action
+                Navigator.of(context).pop();
+              },
+            );
+          },
+        );
+      }
     }
   }
 
   void _navigateToHomePage() {
     Navigator.push(
-        context, MaterialPageRoute(builder: (context) => HomePage()));
+        context, MaterialPageRoute(builder: (context) => const HomePage()));
   }
 
   @override
@@ -199,14 +220,14 @@ class _LoginPageState extends State<LoginPage> {
               ],
             ),
           ),
-          if (_isLoading) Center(child: CircularProgressIndicator()),
+          if (_isLoading) const Center(child: CircularProgressIndicator()),
         ],
       ),
     );
   }
 
   Widget _buildHeader() {
-    return Container(
+    return SizedBox(
       height: 400,
       child: Stack(
         children: <Widget>[
@@ -220,8 +241,8 @@ class _LoginPageState extends State<LoginPage> {
               duration: const Duration(milliseconds: 1600),
               child: Container(
                 margin: const EdgeInsets.only(top: 200),
-                child:
-                    Center(child: Image(image: AssetImage('images/logo.png'))),
+                child: const Center(
+                    child: Image(image: AssetImage('images/logo.png'))),
               ),
             ),
           ),
@@ -260,11 +281,11 @@ class _LoginPageState extends State<LoginPage> {
           color: Colors.white,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(color: const Color.fromRGBO(244, 155, 32, 1)),
-          boxShadow: [
+          boxShadow: const [
             BoxShadow(
-              color: const Color.fromRGBO(244, 155, 32, .2),
+              color: Color.fromRGBO(244, 155, 32, .2),
               blurRadius: 20.0,
-              offset: const Offset(0, 10),
+              offset: Offset(0, 10),
             )
           ],
         ),
@@ -287,10 +308,9 @@ class _LoginPageState extends State<LoginPage> {
     return Container(
       padding: const EdgeInsets.all(8.0),
       decoration: applyDecoration
-          ? BoxDecoration(
+          ? const BoxDecoration(
               border: Border(
-                  bottom:
-                      BorderSide(color: const Color.fromRGBO(244, 155, 32, 1))),
+                  bottom: BorderSide(color: Color.fromRGBO(244, 155, 32, 1))),
             )
           : null,
       child: TextField(
@@ -318,15 +338,15 @@ class _LoginPageState extends State<LoginPage> {
           height: 50,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(10),
-            gradient: LinearGradient(
+            gradient: const LinearGradient(
               colors: [
-                const Color.fromRGBO(244, 155, 32, 1),
-                const Color.fromRGBO(244, 155, 32, .6)
+                Color.fromRGBO(244, 155, 32, 1),
+                Color.fromRGBO(244, 155, 32, .6)
               ],
             ),
           ),
-          child: Center(
-            child: const Text(
+          child: const Center(
+            child: Text(
               "Login",
               style:
                   TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
@@ -354,7 +374,7 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void _navigateToForgotPasswordPage() {
-    Navigator.push(
-        context, MaterialPageRoute(builder: (context) => ForgotPasswordPage()));
+    Navigator.push(context,
+        MaterialPageRoute(builder: (context) => const ForgotPasswordPage()));
   }
 }

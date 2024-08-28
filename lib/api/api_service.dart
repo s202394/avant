@@ -1368,8 +1368,8 @@ class CreateNewCustomerService {
       int resPinCode,
       int salutationId,
       int contactDesignationId,
-      String latEntry,
-      String longEntry,
+      double latEntry,
+      double longEntry,
       String token) async {
     final body = jsonEncode(<String, dynamic>{
       'CustomerType': customerType,
@@ -1480,8 +1480,8 @@ class CreateNewCustomerService {
       int resPinCode,
       int salutationId,
       int contactDesignationId,
-      String latEntry,
-      String longEntry) async {
+      double latEntry,
+      double longEntry) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String username = prefs.getString('token_username') ?? '';
     String password = prefs.getString('password') ?? '';
@@ -1555,8 +1555,8 @@ class CreateNewCustomerService {
       int resPinCode,
       int salutationId,
       int contactDesignationId,
-      String latEntry,
-      String longEntry,
+      double latEntry,
+      double longEntry,
       String ranking,
       int boardId,
       int chainSchoolId,
@@ -1704,8 +1704,8 @@ class CreateNewCustomerService {
     int resPinCode,
     int salutationId,
     int contactDesignationId,
-    String latEntry,
-    String longEntry,
+    double latEntry,
+    double longEntry,
     String ranking,
     int boardId,
     int chainSchoolId,

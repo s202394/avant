@@ -5,6 +5,7 @@ import 'package:avant/db/db_helper.dart';
 import 'package:avant/model/customer_entry_master_model.dart';
 import 'package:avant/model/geography_model.dart';
 import 'package:avant/new_customer/new_customer_school_form2.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -16,10 +17,10 @@ class NewCustomerSchoolForm1 extends StatefulWidget {
   const NewCustomerSchoolForm1({super.key, required this.type});
 
   @override
-  _NewCustomerSchoolForm1State createState() => _NewCustomerSchoolForm1State();
+  NewCustomerSchoolForm1State createState() => NewCustomerSchoolForm1State();
 }
 
-class _NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
+class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
   late Future<CustomerEntryMasterResponse> futureData;
 
   final _formKey = GlobalKey<FormState>();
@@ -125,9 +126,13 @@ class _NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
       setState(() {
         _filteredCities = dbData;
       });
-      print("Loaded geography data from the database.");
+      if (kDebugMode) {
+        print("Loaded geography data from the database.");
+      }
     } else {
-      print("No data in DB, fetching from API.");
+      if (kDebugMode) {
+        print("No data in DB, fetching from API.");
+      }
       _fetchGeographyData();
     }
   }
@@ -145,7 +150,9 @@ class _NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
             .toList();
       });
     } catch (e) {
-      print(e);
+      if (kDebugMode) {
+        print(e);
+      }
     }
   }
 
@@ -163,29 +170,39 @@ class _NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
 
     if (existingData != null && !isEmptyData(existingData)) {
       // Data exists in the database, return it
-      print(
-          "CustomerEntryMaster data found in db: ${existingData.salutationMasterList}");
+      if (kDebugMode) {
+        print(
+            "CustomerEntryMaster data found in db: ${existingData.salutationMasterList}");
+      }
       return existingData;
     } else {
       String downHierarchy = prefs.getString('DownHierarchy') ?? '';
 
       // Data does not exist in the database, fetch from API
-      print("CustomerEntryMaster data not found in db. Fetching from API...");
+      if (kDebugMode) {
+        print("CustomerEntryMaster data not found in db. Fetching from API...");
+      }
 
       try {
         CustomerEntryMasterResponse response =
             await CustomerEntryMasterService()
                 .fetchCustomerEntryMaster(downHierarchy, token);
-        print(
-            "CustomerEntryMaster data fetched from API and saved to db. $response");
+        if (kDebugMode) {
+          print(
+              "CustomerEntryMaster data fetched from API and saved to db. $response");
+        }
         // Save the fetched data to the database
         await dbHelper.insertCustomerEntryMasterResponse(response);
-        print(
-            "CustomerEntryMaster data fetched from API and saved to db. $response");
+        if (kDebugMode) {
+          print(
+              "CustomerEntryMaster data fetched from API and saved to db. $response");
+        }
         return response;
       } catch (e) {
         // Handle API fetch error
-        print("Error fetching CustomerEntryMaster data from API: $e");
+        if (kDebugMode) {
+          print("Error fetching CustomerEntryMaster data from API: $e");
+        }
         rethrow; // Re-throw the error if needed
       }
     }
@@ -237,7 +254,7 @@ class _NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
 
   Widget buildForm(CustomerEntryMasterResponse data) {
     return SingleChildScrollView(
-      padding: EdgeInsets.all(16.0),
+      padding: const EdgeInsets.all(16.0),
       child: Form(
         key: _formKey,
         child: Column(
@@ -270,26 +287,30 @@ class _NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
               children: [
                 Expanded(
                   child: RadioListTile<bool>(
-                    title: Text('Yes'),
+                    title: const Text('Yes'),
                     value: true,
                     groupValue: _selectedKeyCustomer,
                     onChanged: (newValue) {
                       setState(() {
                         _selectedKeyCustomer = newValue;
-                        print("_selectedKeyCustomer:$_selectedKeyCustomer");
+                        if (kDebugMode) {
+                          print("_selectedKeyCustomer:$_selectedKeyCustomer");
+                        }
                       });
                     },
                   ),
                 ),
                 Expanded(
                   child: RadioListTile<bool>(
-                    title: Text('No'),
+                    title: const Text('No'),
                     value: false,
                     groupValue: _selectedKeyCustomer,
                     onChanged: (newValue) {
                       setState(() {
                         _selectedKeyCustomer = newValue;
-                        print("_selectedKeyCustomer:$_selectedKeyCustomer");
+                        if (kDebugMode) {
+                          print("_selectedKeyCustomer:$_selectedKeyCustomer");
+                        }
                       });
                     },
                   ),
@@ -307,8 +328,10 @@ class _NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
                     onChanged: (newValue) {
                       setState(() {
                         _selectedCustomerStatus = newValue;
-                        print(
-                            "_selectedCustomerStatus:$_selectedCustomerStatus");
+                        if (kDebugMode) {
+                          print(
+                              "_selectedCustomerStatus:$_selectedCustomerStatus");
+                        }
                       });
                     },
                   ),
@@ -321,8 +344,10 @@ class _NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
                     onChanged: (newValue) {
                       setState(() {
                         _selectedCustomerStatus = newValue;
-                        print(
-                            "_selectedCustomerStatus:$_selectedCustomerStatus");
+                        if (kDebugMode) {
+                          print(
+                              "_selectedCustomerStatus:$_selectedCustomerStatus");
+                        }
                       });
                     },
                   ),
@@ -444,7 +469,7 @@ class _NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
           focusNode: focusNode,
           decoration: InputDecoration(
               labelText: label,
-              border: OutlineInputBorder(),
+              border: const OutlineInputBorder(),
               alignLabelWithHint: true),
           enabled: enabled,
           maxLines: maxLines,
@@ -513,7 +538,7 @@ class _NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
         },
         decoration: InputDecoration(
           labelText: label,
-          border: OutlineInputBorder(),
+          border: const OutlineInputBorder(),
         ),
         validator: (value) {
           if (value == null || value.city.isEmpty) {
@@ -557,7 +582,7 @@ class _NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
         },
         decoration: InputDecoration(
           labelText: label,
-          border: OutlineInputBorder(),
+          border: const OutlineInputBorder(),
         ),
         validator: (value) {
           if (value == null || value.boardName.isEmpty) {
@@ -601,7 +626,7 @@ class _NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
         },
         decoration: InputDecoration(
           labelText: label,
-          border: OutlineInputBorder(),
+          border: const OutlineInputBorder(),
         ),
         validator: (value) {
           if (value == null || value.chainSchoolName.isEmpty) {

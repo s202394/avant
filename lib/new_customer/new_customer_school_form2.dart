@@ -4,6 +4,7 @@ import 'package:avant/common/toast.dart';
 import 'package:avant/db/db_helper.dart';
 import 'package:avant/model/customer_entry_master_model.dart';
 import 'package:avant/new_customer/new_customer_school_form3.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -38,10 +39,10 @@ class NewCustomerSchoolForm2 extends StatefulWidget {
   });
 
   @override
-  _NewCustomerSchoolForm2State createState() => _NewCustomerSchoolForm2State();
+  NewCustomerSchoolForm2State createState() => NewCustomerSchoolForm2State();
 }
 
-class _NewCustomerSchoolForm2State extends State<NewCustomerSchoolForm2> {
+class NewCustomerSchoolForm2State extends State<NewCustomerSchoolForm2> {
   late SharedPreferences prefs;
   late Future<CustomerEntryMasterResponse> futureData;
 
@@ -107,30 +108,40 @@ class _NewCustomerSchoolForm2State extends State<NewCustomerSchoolForm2> {
 
     if (existingData != null && !isEmptyData(existingData)) {
       // Data exists in the database, return it
-      print(
+      if (kDebugMode) {
+        print(
           "CustomerEntryMaster data found in db: ${existingData.salutationMasterList}");
+      }
       return existingData;
     } else {
       String downHierarchy = prefs.getString('DownHierarchy') ?? '';
 
       // Data does not exist in the database, fetch from API
-      print("CustomerEntryMaster data not found in db. Fetching from API...");
+      if (kDebugMode) {
+        print("CustomerEntryMaster data not found in db. Fetching from API...");
+      }
 
       try {
         CustomerEntryMasterResponse response =
             await CustomerEntryMasterService()
                 .fetchCustomerEntryMaster(downHierarchy, token);
-        print(
+        if (kDebugMode) {
+          print(
             "CustomerEntryMaster data fetched from API and saved to db. $response");
+        }
         // Save the fetched data to the database
         await dbHelper.insertCustomerEntryMasterResponse(response);
 
-        print(
+        if (kDebugMode) {
+          print(
             "CustomerEntryMaster data fetched from API and saved to db. $response");
+        }
         return response;
       } catch (e) {
         // Handle API fetch error
-        print("Error fetching CustomerEntryMaster data from API: $e");
+        if (kDebugMode) {
+          print("Error fetching CustomerEntryMaster data from API: $e");
+        }
         rethrow; // Re-throw the error if needed
       }
     }

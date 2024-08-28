@@ -5,6 +5,7 @@ import 'package:avant/db/db_helper.dart';
 import 'package:avant/model/customer_entry_master_model.dart';
 import 'package:avant/model/geography_model.dart';
 import 'package:avant/new_customer/new_customer_trade_library_form2.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -13,14 +14,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 class NewCustomerTradeLibraryForm1 extends StatefulWidget {
   final String type;
 
-  NewCustomerTradeLibraryForm1({required this.type});
+  const NewCustomerTradeLibraryForm1({super.key, required this.type});
 
   @override
-  _NewCustomerTradeLibraryForm1State createState() =>
-      _NewCustomerTradeLibraryForm1State();
+  NewCustomerTradeLibraryForm1State createState() =>
+      NewCustomerTradeLibraryForm1State();
 }
 
-class _NewCustomerTradeLibraryForm1State
+class NewCustomerTradeLibraryForm1State
     extends State<NewCustomerTradeLibraryForm1> {
   late Future<CustomerEntryMasterResponse> futureData;
 
@@ -131,9 +132,13 @@ class _NewCustomerTradeLibraryForm1State
       setState(() {
         _filteredCities = dbData;
       });
-      print("Loaded geography data from the database.");
+      if (kDebugMode) {
+        print("Loaded geography data from the database.");
+      }
     } else {
-      print("No data in DB, fetching from API.");
+      if (kDebugMode) {
+        print("No data in DB, fetching from API.");
+      }
       _fetchGeographyData();
     }
   }
@@ -151,7 +156,9 @@ class _NewCustomerTradeLibraryForm1State
             .toList();
       });
     } catch (e) {
-      print(e);
+      if (kDebugMode) {
+        print(e);
+      }
     }
   }
 
@@ -169,29 +176,39 @@ class _NewCustomerTradeLibraryForm1State
 
     if (existingData != null && !isEmptyData(existingData)) {
       // Data exists in the database, return it
-      print(
-          "CustomerEntryMaster data found in db: ${existingData.salutationMasterList}");
+      if (kDebugMode) {
+        print(
+            "CustomerEntryMaster data found in db: ${existingData.salutationMasterList}");
+      }
       return existingData;
     } else {
       String downHierarchy = prefs.getString('DownHierarchy') ?? '';
 
       // Data does not exist in the database, fetch from API
-      print("CustomerEntryMaster data not found in db. Fetching from API...");
+      if (kDebugMode) {
+        print("CustomerEntryMaster data not found in db. Fetching from API...");
+      }
 
       try {
         CustomerEntryMasterResponse response =
             await CustomerEntryMasterService()
                 .fetchCustomerEntryMaster(downHierarchy, token);
-        print(
-            "CustomerEntryMaster data fetched from API and saved to db. $response");
+        if (kDebugMode) {
+          print(
+              "CustomerEntryMaster data fetched from API and saved to db. $response");
+        }
         // Save the fetched data to the database
         await dbHelper.insertCustomerEntryMasterResponse(response);
 
-        print(
-            "CustomerEntryMaster data fetched from API and saved to db. $response");
+        if (kDebugMode) {
+          print(
+              "CustomerEntryMaster data fetched from API and saved to db. $response");
+        }
         return response;
       } catch (e) {
-        print("Error fetching CustomerEntryMaster data from API: $e");
+        if (kDebugMode) {
+          print("Error fetching CustomerEntryMaster data from API: $e");
+        }
         rethrow;
       }
     }
@@ -282,7 +299,9 @@ class _NewCustomerTradeLibraryForm1State
                     onChanged: (newValue) {
                       setState(() {
                         _selectedKeyCustomer = newValue;
-                        print("_selectedKeyCustomer:$_selectedKeyCustomer");
+                        if (kDebugMode) {
+                          print("_selectedKeyCustomer:$_selectedKeyCustomer");
+                        }
                       });
                     },
                   ),
@@ -295,7 +314,9 @@ class _NewCustomerTradeLibraryForm1State
                     onChanged: (newValue) {
                       setState(() {
                         _selectedKeyCustomer = newValue;
-                        print("_selectedKeyCustomer:$_selectedKeyCustomer");
+                        if (kDebugMode) {
+                          print("_selectedKeyCustomer:$_selectedKeyCustomer");
+                        }
                       });
                     },
                   ),
@@ -313,8 +334,10 @@ class _NewCustomerTradeLibraryForm1State
                     onChanged: (newValue) {
                       setState(() {
                         _selectedCustomerStatus = newValue;
-                        print(
-                            "_selectedCustomerStatus:$_selectedCustomerStatus");
+                        if (kDebugMode) {
+                          print(
+                              "_selectedCustomerStatus:$_selectedCustomerStatus");
+                        }
                       });
                     },
                   ),
@@ -327,8 +350,10 @@ class _NewCustomerTradeLibraryForm1State
                     onChanged: (newValue) {
                       setState(() {
                         _selectedCustomerStatus = newValue;
-                        print(
-                            "_selectedCustomerStatus:$_selectedCustomerStatus");
+                        if (kDebugMode) {
+                          print(
+                              "_selectedCustomerStatus:$_selectedCustomerStatus");
+                        }
                       });
                     },
                   ),
@@ -371,7 +396,7 @@ class _NewCustomerTradeLibraryForm1State
         _toastMessage.showToastMessage("Please select Key Customer");
       } else if (_selectedCustomerStatus == null) {
         _toastMessage.showToastMessage("Please select Customer Status");
-      } else
+      } else {
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -393,6 +418,7 @@ class _NewCustomerTradeLibraryForm1State
             ),
           ),
         );
+      }
     } else {
       // Focus on the first field with an error
       List<FocusNode> focusNodes = [
@@ -463,7 +489,7 @@ class _NewCustomerTradeLibraryForm1State
           focusNode: focusNode,
           decoration: InputDecoration(
               labelText: label,
-              border: OutlineInputBorder(),
+              border: const OutlineInputBorder(),
               alignLabelWithHint: true),
           enabled: enabled,
           maxLines: maxLines,
@@ -541,7 +567,7 @@ class _NewCustomerTradeLibraryForm1State
         },
         decoration: InputDecoration(
           labelText: label,
-          border: OutlineInputBorder(),
+          border: const OutlineInputBorder(),
         ),
         validator: (value) {
           if (value == null || value.city.isEmpty) {
@@ -585,7 +611,7 @@ class _NewCustomerTradeLibraryForm1State
         },
         decoration: InputDecoration(
           labelText: label,
-          border: OutlineInputBorder(),
+          border: const OutlineInputBorder(),
         ),
         validator: (value) {
           if (value == null || value.customerCategoryName.isEmpty) {

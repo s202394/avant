@@ -1,5 +1,6 @@
 import 'package:avant/api/api_service.dart';
 import 'package:avant/service/location_service.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -12,10 +13,10 @@ class PunchInToggleSwitch extends StatefulWidget {
   const PunchInToggleSwitch({super.key});
 
   @override
-  _PunchInToggleSwitchState createState() => _PunchInToggleSwitchState();
+  PunchInToggleSwitchState createState() => PunchInToggleSwitchState();
 }
 
-class _PunchInToggleSwitchState extends State<PunchInToggleSwitch> {
+class PunchInToggleSwitchState extends State<PunchInToggleSwitch> {
   bool isPunchedIn = false;
 
   final ToastMessage _toastMessage = ToastMessage();
@@ -32,7 +33,6 @@ class _PunchInToggleSwitchState extends State<PunchInToggleSwitch> {
   @override
   void initState() {
     super.initState();
-    print('Print statement in initState');
     _initialize();
   }
 
@@ -46,7 +46,9 @@ class _PunchInToggleSwitchState extends State<PunchInToggleSwitch> {
 
   @override
   Widget build(BuildContext context) {
-    print('Print statement in build method');
+    if (kDebugMode) {
+      print('Print statement in build method');
+    }
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 16.0),
       decoration: BoxDecoration(color: Colors.grey[850]),
@@ -72,18 +74,18 @@ class _PunchInToggleSwitchState extends State<PunchInToggleSwitch> {
           _isLoading
               ? const CircularProgressIndicator() // Show progress bar when loading
               : Switch(
-            value: isPunchedIn,
-            onChanged: (value) {
-              setState(() {
-                _submit(value);
-              });
-            },
-            activeColor: Colors.green,
-            // Color when punched in
-            inactiveThumbColor: Colors.red,
-            // Color when not punched in
-            inactiveTrackColor: Colors.grey,
-          ),
+                  value: isPunchedIn,
+                  onChanged: (value) {
+                    setState(() {
+                      _submit(value);
+                    });
+                  },
+                  activeColor: Colors.green,
+                  // Color when punched in
+                  inactiveThumbColor: Colors.red,
+                  // Color when not punched in
+                  inactiveTrackColor: Colors.grey,
+                ),
         ],
       ),
     );

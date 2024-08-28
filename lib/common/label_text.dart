@@ -5,10 +5,10 @@ class LabeledText extends StatelessWidget {
   final String? value;
 
   const LabeledText({
-    Key? key,
+    super.key,
     required this.label,
     this.value,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -17,14 +17,14 @@ class LabeledText extends StatelessWidget {
         children: [
           TextSpan(
             text: '$label: ',
-            style: TextStyle(
+            style: const TextStyle(
               fontWeight: FontWeight.bold,
               color: Colors.black, // Adjust color as needed
             ),
           ),
           TextSpan(
             text: value ?? '',
-            style: TextStyle(
+            style: const TextStyle(
               fontWeight: FontWeight.normal,
               color: Colors.black, // Adjust color as needed
             ),

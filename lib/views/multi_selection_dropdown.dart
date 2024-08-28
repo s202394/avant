@@ -19,10 +19,10 @@ class MultiSelectDropdown<T> extends StatefulWidget {
   });
 
   @override
-  _MultiSelectDropdownState<T> createState() => _MultiSelectDropdownState<T>();
+  MultiSelectDropdownState<T> createState() => MultiSelectDropdownState<T>();
 }
 
-class _MultiSelectDropdownState<T> extends State<MultiSelectDropdown<T>> {
+class MultiSelectDropdownState<T> extends State<MultiSelectDropdown<T>> {
   late List<T> _selectedItems;
 
   @override

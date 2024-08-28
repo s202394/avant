@@ -6,8 +6,11 @@ import 'package:avant/home.dart';
 import 'package:avant/model/customer_entry_master_model.dart';
 import 'package:avant/model/geography_model.dart';
 import 'package:avant/model/login_model.dart';
+import 'package:avant/service/location_service.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -59,10 +62,10 @@ class NewCustomerSchoolForm3 extends StatefulWidget {
       required this.purchaseMode});
 
   @override
-  _NewCustomerSchoolForm3State createState() => _NewCustomerSchoolForm3State();
+  NewCustomerSchoolForm3State createState() => NewCustomerSchoolForm3State();
 }
 
-class _NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
+class NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
   late Future<CustomerEntryMasterResponse> futureData;
   final _formKey = GlobalKey<FormState>();
 
@@ -96,6 +99,7 @@ class _NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
   final ToastMessage _toastMessage = ToastMessage();
 
   DatabaseHelper dbHelper = DatabaseHelper();
+  LocationService locationService = LocationService();
 
   int? executiveId;
   int? userId;
@@ -115,7 +119,7 @@ class _NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
 
   bool _isLoading = false;
 
-  Map<int, String> _classValues = {};
+  final Map<int, String> _classValues = {};
 
   @override
   void initState() {
@@ -151,30 +155,40 @@ class _NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
 
     if (existingData != null && !isEmptyData(existingData)) {
       // Data exists in the database, return it
-      print(
-          "CustomerEntryMaster data found in db: ${existingData.salutationMasterList}");
+      if (kDebugMode) {
+        print(
+            "CustomerEntryMaster data found in db: ${existingData.salutationMasterList}");
+      }
       return existingData;
     } else {
       String downHierarchy = prefs.getString('DownHierarchy') ?? '';
 
       // Data does not exist in the database, fetch from API
-      print("CustomerEntryMaster data not found in db. Fetching from API...");
+      if (kDebugMode) {
+        print("CustomerEntryMaster data not found in db. Fetching from API...");
+      }
 
       try {
         CustomerEntryMasterResponse response =
             await CustomerEntryMasterService()
                 .fetchCustomerEntryMaster(downHierarchy, token);
-        print(
-            "CustomerEntryMaster data fetched from API and saved to db. $response");
+        if (kDebugMode) {
+          print(
+              "CustomerEntryMaster data fetched from API and saved to db. $response");
+        }
         // Save the fetched data to the database
         await dbHelper.insertCustomerEntryMasterResponse(response);
 
-        print(
-            "CustomerEntryMaster data fetched from API and saved to db. $response");
+        if (kDebugMode) {
+          print(
+              "CustomerEntryMaster data fetched from API and saved to db. $response");
+        }
         return response;
       } catch (e) {
         // Handle API fetch error
-        print("Error fetching CustomerEntryMaster data from API: $e");
+        if (kDebugMode) {
+          print("Error fetching CustomerEntryMaster data from API: $e");
+        }
         rethrow; // Re-throw the error if needed
       }
     }
@@ -233,9 +247,13 @@ class _NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
       setState(() {
         _filteredCities = dbData;
       });
-      print("Loaded geography data from the database.");
+      if (kDebugMode) {
+        print("Loaded geography data from the database.");
+      }
     } else {
-      print("No data in DB, fetching from API.");
+      if (kDebugMode) {
+        print("No data in DB, fetching from API.");
+      }
       _fetchGeographyData();
     }
   }
@@ -253,7 +271,9 @@ class _NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
             .toList();
       });
     } catch (e) {
-      print(e);
+      if (kDebugMode) {
+        print(e);
+      }
     }
   }
 
@@ -262,7 +282,7 @@ class _NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
     return Scaffold(
       appBar: AppBar(
         title: Text('New Customer - ${widget.type}'),
-        backgroundColor: Color(0xFFFFF8E1),
+        backgroundColor: const Color(0xFFFFF8E1),
       ),
       body: FutureBuilder<CustomerEntryMasterResponse>(
         future: futureData,
@@ -500,7 +520,9 @@ class _NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
                 GestureDetector(
                   onTap: () {
                     if (_formKey.currentState!.validate()) {
-                      print("Add ${widget.type} data API");
+                      if (kDebugMode) {
+                        print("Add ${widget.type} data API");
+                      }
                       _submitForm(data.classesList);
                     }
                   },
@@ -551,9 +573,19 @@ class _NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
       _isLoading = true;
     });
     try {
-      print("${widget.type} _submitForm clicked");
+      if (kDebugMode) {
+        print("${widget.type} _submitForm clicked");
+      }
+      Position position = await locationService.getCurrentLocation();
+      if (kDebugMode) {
+        print(
+            "Latitude: ${position.latitude}, Longitude: ${position.longitude}");
+      }
+
       String xmlClassName = _generateXmlFromClassValues(classesList);
-      print(xmlClassName);
+      if (kDebugMode) {
+        print(xmlClassName);
+      }
       final responseData = await CreateNewCustomerService().createNewCustomerSchool(
           widget.type,
           widget.customerName,
@@ -580,8 +612,8 @@ class _NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
           int.parse(_contactPinCodeController.text),
           _selectedSalutationId ?? 0,
           _selectedContactDesignationId ?? 0,
-          "28.535517",
-          "77.391029",
+          position.latitude,
+          position.longitude,
           widget.ranking,
           widget.boardId,
           widget.chainSchoolId,
@@ -594,30 +626,40 @@ class _NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
           "",
           xmlClassName,
           _selectedDataSourceId ?? 0,
-          token ?? "");
+          token);
 
       if (responseData.status == 'Success') {
         String s = responseData.s;
-        print(s);
+        if (kDebugMode) {
+          print(s);
+        }
         if (s.isNotEmpty) {
           _toastMessage.showInfoToastMessage(s);
-          Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(builder: (context) => HomePage()),
-            (Route<dynamic> route) => false,
-          );
+          if (mounted) {
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (context) => const HomePage()),
+              (Route<dynamic> route) => false,
+            );
+          }
         } else {
-          print('Add New ${widget.type} Error s empty');
+          if (kDebugMode) {
+            print('Add New ${widget.type} Error s empty');
+          }
           _toastMessage.showToastMessage(
               "An error occurred while adding new ${widget.type}.");
         }
       } else {
-        print('Add New Customer Error ${responseData.status}');
+        if (kDebugMode) {
+          print('Add New Customer Error ${responseData.status}');
+        }
         _toastMessage.showToastMessage(
             "An error occurred while adding new ${widget.type}.");
       }
     } catch (e) {
-      print('Add New Customer Error $e');
+      if (kDebugMode) {
+        print('Add New Customer Error $e');
+      }
       _toastMessage.showToastMessage(
           "An error occurred while adding new ${widget.type}.");
     } finally {

@@ -5,6 +5,7 @@ import 'package:avant/common/toast.dart';
 import 'package:avant/login.dart';
 import 'package:avant/model/change_password_model.dart';
 import 'package:avant/model/forgot_password_model.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -14,10 +15,10 @@ class ChangePasswordScreen extends StatefulWidget {
   const ChangePasswordScreen({super.key, required this.password});
 
   @override
-  _ChangePasswordScreenState createState() => _ChangePasswordScreenState();
+  ChangePasswordScreenState createState() => ChangePasswordScreenState();
 }
 
-class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
+class ChangePasswordScreenState extends State<ChangePasswordScreen> {
   late SharedPreferences prefs;
 
   final _passwordController = TextEditingController();
@@ -63,9 +64,13 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
 
     try {
       await _changePassword(password);
-      print('GOING TO Login Page');
+      if (kDebugMode) {
+        print('GOING TO Login Page');
+      }
     } catch (e) {
-      print('Change Password Error $e');
+      if (kDebugMode) {
+        print('Change Password Error $e');
+      }
       _toastMessage
           .showToastMessage("An error occurred while change password.");
     } finally {
@@ -106,8 +111,9 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   }
 
   Future<void> _changePassword(String newPassword) async {
-    print('Change Password');
-    print('Change Password ${widget.password.toJson()}');
+    if (kDebugMode) {
+      print('Change Password ${widget.password.toJson()}');
+    }
 
     final String ipAddress = await getIpAddress();
     final String deviceInfo = await getDeviceInfo();
@@ -124,28 +130,36 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
       if (responseData.changePasswordModel?.msgText != null &&
           responseData.changePasswordModel?.msgType != null) {
         if (responseData.changePasswordModel?.msgType == 's') {
-          print(
-              'Forgot password successful! ${responseData.changePasswordModel?.msgText}');
+          if (kDebugMode) {
+            print(
+                'Forgot password successful! ${responseData.changePasswordModel?.msgText}');
+          }
           _toastMessage.showToastMessage(
               responseData.changePasswordModel?.msgText ??
                   'Password changed successfully.');
           _navigateToHomePage();
         } else {
-          print(
-              'Forgot password unsuccessful! ${responseData.changePasswordModel?.msgText}');
+          if (kDebugMode) {
+            print(
+                'Forgot password unsuccessful! ${responseData.changePasswordModel?.msgText}');
+          }
           _toastMessage.showToastMessage(
               responseData.changePasswordModel?.msgText ??
                   'There are any issue while forgot your password.');
         }
       } else {
-        print(
-            'Forgot password error! ${responseData.changePasswordModel?.msgType} ${responseData.changePasswordModel?.msgText}');
+        if (kDebugMode) {
+          print(
+              'Forgot password error! ${responseData.changePasswordModel?.msgType} ${responseData.changePasswordModel?.msgText}');
+        }
         _toastMessage.showToastMessage(
             "There are any issue while forgot your password.");
       }
     } else {
-      print(
-          'Forgot password error! ${responseData.changePasswordModel?.msgText}');
+      if (kDebugMode) {
+        print(
+            'Forgot password error! ${responseData.changePasswordModel?.msgText}');
+      }
       _toastMessage
           .showToastMessage("There are any issue while forgot your password.");
     }

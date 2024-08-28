@@ -2,6 +2,7 @@ import 'package:avant/api/api_service.dart';
 import 'package:avant/db/db_helper.dart';
 import 'package:avant/model/geography_model.dart';
 import 'package:avant/visit/customer_search_visit_list.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -9,11 +10,10 @@ class CustomerSearchVisit extends StatefulWidget {
   const CustomerSearchVisit({super.key});
 
   @override
-  _CustomerSearchVisitPageState createState() =>
-      _CustomerSearchVisitPageState();
+  CustomerSearchVisitPageState createState() => CustomerSearchVisitPageState();
 }
 
-class _CustomerSearchVisitPageState extends State<CustomerSearchVisit> {
+class CustomerSearchVisitPageState extends State<CustomerSearchVisit> {
   late SharedPreferences prefs;
   late String token;
   late int executiveId;
@@ -60,9 +60,13 @@ class _CustomerSearchVisitPageState extends State<CustomerSearchVisit> {
       setState(() {
         _filteredCities = dbData;
       });
-      print("Loaded geography data from the database.");
+      if (kDebugMode) {
+        print("Loaded geography data from the database.");
+      }
     } else {
-      print("No data in DB, fetching from API.");
+      if (kDebugMode) {
+        print("No data in DB, fetching from API.");
+      }
       _fetchGeographyData();
     }
   }
@@ -81,7 +85,9 @@ class _CustomerSearchVisitPageState extends State<CustomerSearchVisit> {
         _isLoading = false; // Data loaded, stop loading
       });
     } catch (e) {
-      print(e);
+      if (kDebugMode) {
+        print(e);
+      }
       setState(() {
         _isLoading = false; // Stop loading in case of error
       });
@@ -176,7 +182,9 @@ class _CustomerSearchVisitPageState extends State<CustomerSearchVisit> {
   }
 
   void _submitForm() {
-    print('Form submitted!');
+    if (kDebugMode) {
+      print('Form submitted!');
+    }
 
     Navigator.push(
       context,

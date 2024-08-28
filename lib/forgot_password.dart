@@ -4,6 +4,7 @@ import 'package:avant/change_password.dart';
 import 'package:avant/common/common.dart';
 import 'package:avant/common/toast.dart';
 import 'package:avant/model/forgot_password_model.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -11,10 +12,10 @@ class ForgotPasswordPage extends StatefulWidget {
   const ForgotPasswordPage({super.key});
 
   @override
-  _ForgotPasswordPageState createState() => _ForgotPasswordPageState();
+  ForgotPasswordPageState createState() => ForgotPasswordPageState();
 }
 
-class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
+class ForgotPasswordPageState extends State<ForgotPasswordPage> {
   late SharedPreferences prefs;
 
   final _emailController = TextEditingController();
@@ -53,9 +54,13 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
 
     try {
       await _forgotPassword(email);
-      print('GOING TO Change Password Page');
+      if (kDebugMode) {
+        print('GOING TO Change Password Page');
+      }
     } catch (e) {
-      print('Forgot Password Error $e');
+      if (kDebugMode) {
+        print('Forgot Password Error $e');
+      }
       _toastMessage
           .showToastMessage("An error occurred while forgot password.");
     } finally {
@@ -90,19 +95,25 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   }
 
   Future<void> _forgotPassword(String email) async {
-    print('Forgot Password');
+    if (kDebugMode) {
+      print('Forgot Password');
+    }
 
     final responseData =
         await LoginService().forgotPassword(email, token ?? "");
     if (responseData.password != null &&
         responseData.password!.userName.isNotEmpty) {
-      print(
-          'Forgot password successful! Username: ${responseData.password?.userName}');
+      if (kDebugMode) {
+        print(
+            'Forgot password successful! Username: ${responseData.password?.userName}');
+      }
       if (responseData.password != null) {
         _navigateToChangePasswordPage(responseData.password!);
       }
     } else {
-      print('Forgot password error! User ID: ${responseData.password}');
+      if (kDebugMode) {
+        print('Forgot password error! User ID: ${responseData.password}');
+      }
       _toastMessage
           .showToastMessage("There are any issue while forgot your password.");
     }

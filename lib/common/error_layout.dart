@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 
 class ErrorLayout extends StatelessWidget {
+  const ErrorLayout({super.key});
+
   @override
   Widget build(BuildContext context) {
-    return Column(
+    return const Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Icon(Icons.info, size: 60, color: Colors.red),

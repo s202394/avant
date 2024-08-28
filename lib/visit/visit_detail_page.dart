@@ -1,8 +1,7 @@
 import 'package:avant/api/api_service.dart';
-import 'package:avant/common/toast.dart';
+import 'package:avant/common/label_text.dart';
 import 'package:avant/model/visit_details_model.dart';
 import 'package:avant/visit/dsr_entry.dart';
-import 'package:avant/common/label_text.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -11,20 +10,19 @@ class VisitDetailsPage extends StatefulWidget {
   final int visitId;
   final bool isTodayPlan;
 
-  VisitDetailsPage({
+  const VisitDetailsPage({super.key,
     required this.customerId,
     required this.visitId,
     required this.isTodayPlan,
   });
 
   @override
-  _VisitDetailsPageState createState() => _VisitDetailsPageState();
+  VisitDetailsPageState createState() => VisitDetailsPageState();
 }
 
-class _VisitDetailsPageState extends State<VisitDetailsPage> {
+class VisitDetailsPageState extends State<VisitDetailsPage> {
   late Future<VisitDetailsResponse> futureVisitDetails;
   late SharedPreferences prefs;
-  final ToastMessage _toastMessage = ToastMessage();
 
   @override
   void initState() {
@@ -44,19 +42,19 @@ class _VisitDetailsPageState extends State<VisitDetailsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Last Visit Details'),
+        title: const Text('Last Visit Details'),
       ),
       body: FutureBuilder<VisitDetailsResponse>(
         future: futureVisitDetails,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
+            return const Center(child: CircularProgressIndicator());
           } else if (snapshot.hasError) {
             return Center(child: Text(snapshot.error.toString()));
           } else if (!snapshot.hasData ||
               snapshot.data == null ||
               snapshot.data!.isEmpty()) {
-            return Center(child: Text("No Data Found"));
+            return const Center(child: Text("No Data Found"));
           } else {
             return buildVisitDetails(snapshot.data!);
           }
@@ -67,18 +65,18 @@ class _VisitDetailsPageState extends State<VisitDetailsPage> {
 
   Widget buildVisitDetails(VisitDetailsResponse data) {
     return SingleChildScrollView(
-      padding: EdgeInsets.all(16.0),
+      padding: const EdgeInsets.all(16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           ListTile(
             title: Text(
               data.customerDetails?.customerName ?? '',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
             ),
             subtitle: Text(
               data.customerDetails?.address.replaceAll('<br>', '\n') ?? '',
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 16.0,
                 color: Colors.black,
               ),
@@ -107,8 +105,8 @@ class _VisitDetailsPageState extends State<VisitDetailsPage> {
               ),
             ),
           ),
-          Divider(),
-          SizedBox(height: 16.0),
+          const Divider(),
+          const SizedBox(height: 16.0),
           LabeledText(label: 'Visit Date', value: data.visitDetails?.visitDate),
           LabeledText(
               label: 'Visit By', value: data.visitDetails?.executiveName),
@@ -117,22 +115,22 @@ class _VisitDetailsPageState extends State<VisitDetailsPage> {
           LabeledText(
               label: 'Joint Visit', value: data.visitDetails?.jointVisitWith),
           LabeledText(label: 'Person Met', value: data.visitDetails?.personMet),
-          SizedBox(height: 16.0),
+          const SizedBox(height: 16.0),
           Visibility(
             visible: data.promotionalDetails != null &&
                 data.promotionalDetails!.isNotEmpty,
             child: Column(
               children: [
-                Text('Sampling Done:',
+                const Text('Sampling Done:',
                     style: TextStyle(fontWeight: FontWeight.bold)),
                 for (var sample in data.promotionalDetails ?? [])
                   Text(
                       '${sample.title} - ${sample.samplingType} (${sample.isbn}) Qty: ${sample.requestedQty}'),
-                SizedBox(height: 16.0),
+                const SizedBox(height: 16.0),
               ],
             ),
           ),
-          Text('Visit Feedback:',
+          const Text('Visit Feedback:',
               style: TextStyle(fontWeight: FontWeight.bold)),
           Text(data.visitDetails?.visitFeedback ?? ''),
         ],

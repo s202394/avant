@@ -22,10 +22,10 @@ class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
   @override
-  _SplashScreenState createState() => _SplashScreenState();
+  SplashScreenState createState() => SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> {
+class SplashScreenState extends State<SplashScreen> {
   late SharedPreferences prefs;
 
   bool _isAlreadyLogin = false;
@@ -46,7 +46,9 @@ class _SplashScreenState extends State<SplashScreen> {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-            builder: (context) => _isAlreadyLogin ? HomePage() : LoginPage()),
+          builder: (context) =>
+              _isAlreadyLogin ? const HomePage() : const LoginPage(),
+        ),
       );
     });
   }
@@ -56,7 +58,7 @@ class _SplashScreenState extends State<SplashScreen> {
     return Scaffold(
       body: Container(
         color: Colors.white,
-        child: Center(
+        child: const Center(
           child: Image(image: AssetImage('images/logo.png')),
         ),
       ),

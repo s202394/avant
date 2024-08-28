@@ -1,4 +1,5 @@
 import 'package:avant/visit/visit_dsr_series_title_wise.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -39,10 +40,10 @@ class VisitSeriesSearch extends StatefulWidget {
   });
 
   @override
-  _VisitSeriesSearchPageState createState() => _VisitSeriesSearchPageState();
+  VisitSeriesSearchPageState createState() => VisitSeriesSearchPageState();
 }
 
-class _VisitSeriesSearchPageState extends State<VisitSeriesSearch> {
+class VisitSeriesSearchPageState extends State<VisitSeriesSearch> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
   String? selectedClassLevel;
@@ -79,7 +80,7 @@ class _VisitSeriesSearchPageState extends State<VisitSeriesSearch> {
     try {
       final response = await SeriesAndClassLevelListService()
           .getSeriesAndClassLevelList(
-              executiveId ?? 0, profileCode ?? '', token ?? '');
+              executiveId ?? 0, profileCode ?? '', token);
 
       setState(() {
         classLevelItems = response.classLevelList
@@ -105,7 +106,9 @@ class _VisitSeriesSearchPageState extends State<VisitSeriesSearch> {
       });
     } catch (e) {
       // Handle error
-      print('Error fetching data: $e');
+      if (kDebugMode) {
+        print('Error fetching data: $e');
+      }
       setState(() {
         _isLoading = false;
       });
@@ -122,8 +125,7 @@ class _VisitSeriesSearchPageState extends State<VisitSeriesSearch> {
           title: const Text('DSR Entry'),
         ),
         body: _isLoading
-            ? const Center(
-                child: CircularProgressIndicator()) // Show progress indicator
+            ? const Center(child: CircularProgressIndicator())
             : Form(
                 key: _formKey,
                 child: Column(
@@ -142,9 +144,7 @@ class _VisitSeriesSearchPageState extends State<VisitSeriesSearch> {
                           RichText(
                             text: TextSpan(
                               style: const TextStyle(
-                                color: Colors.black, // Specify the color here
-                                fontSize: 16, // Specify the font size here
-                              ),
+                                  color: Colors.black, fontSize: 16),
                               children: widget.address
                                   .replaceAll('\\r', '')
                                   .split('\\n')
@@ -227,7 +227,9 @@ class _VisitSeriesSearchPageState extends State<VisitSeriesSearch> {
   }
 
   void _submitForm() {
-    print('Form submitted!');
+    if (kDebugMode) {
+      print('Form submitted!');
+    }
 
     Navigator.push(
       context,
@@ -237,7 +239,7 @@ class _VisitSeriesSearchPageState extends State<VisitSeriesSearch> {
           address: widget.address,
           series: selectedSeries ?? '',
           classLevel: selectedClassLevel ?? '',
-          title: titleController.text ?? '',
+          title: titleController.text,
         ),
       ),
     );

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:flutter/material.dart';
@@ -56,19 +57,27 @@ class LocationService {
 
   Future<String> getAddress(double latitude, double longitude) async {
     try {
-      print("latitude:$latitude longitude:$longitude");
+      if (kDebugMode) {
+        print("latitude:$latitude longitude:$longitude");
+      }
       // Get the list of place mark for the coordinates
       List<Placemark> placeMark =
           await placemarkFromCoordinates(latitude, longitude);
-      print("placeMark:${placeMark.length}");
+      if (kDebugMode) {
+        print("placeMark:${placeMark.length}");
+      }
       // Get the first place mark
       Placemark place = placeMark.first;
-      print(
+      if (kDebugMode) {
+        print(
           "address : ${place.street}, ${place.locality}, ${place.administrativeArea}, ${place.country}, ${place.isoCountryCode}");
+      }
       // Format the address
       return '${place.street}, ${place.locality}, ${place.administrativeArea}, ${place.country}, ${place.isoCountryCode}';
     } catch (e) {
-      print('Error occurred while get address: $e');
+      if (kDebugMode) {
+        print('Error occurred while get address: $e');
+      }
       return '';
     }
   }
@@ -100,14 +109,20 @@ class LocationService {
         Placemark place = placemarks[0];
         String address =
          '${place.street}, ${place.locality}, ${place.administrativeArea}, ${place.country}, ${place.postalCode}';
-        print("address : $address");
+        if (kDebugMode) {
+          print("address : $address");
+        }
         return address;
       } else {
-        print("No address found for the given coordinates.");
+        if (kDebugMode) {
+          print("No address found for the given coordinates.");
+        }
         return '';
       }
     } catch (e) {
-      print("Error occurred while getting address: $e");
+      if (kDebugMode) {
+        print("Error occurred while getting address: $e");
+      }
       return '';
     }
   }
