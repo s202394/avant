@@ -1,8 +1,8 @@
-import 'package:flutter/material.dart';
 import 'package:avant/visit/visit_detail_page.dart';
-import 'package:avant/visit/dsr_entry.dart';
 import 'package:avant/visit/visit_series_search.dart';
-import 'package:intl/intl.dart';
+import 'package:flutter/material.dart';
+
+import '../views/rich_text.dart';
 
 class CustomerSearchVisitList extends StatefulWidget {
   final int customerId;
@@ -25,11 +25,11 @@ class CustomerSearchVisitList extends StatefulWidget {
   });
 
   @override
-  _CustomerSearchVisitListPageState createState() =>
-      _CustomerSearchVisitListPageState();
+  CustomerSearchVisitListPageState createState() =>
+      CustomerSearchVisitListPageState();
 }
 
-class _CustomerSearchVisitListPageState extends State<CustomerSearchVisitList> {
+class CustomerSearchVisitListPageState extends State<CustomerSearchVisitList> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -62,15 +62,12 @@ class _CustomerSearchVisitListPageState extends State<CustomerSearchVisitList> {
                 return Column(
                   children: [
                     ListTile(
-                      title: Text('ASN Sr. Secondary School (SCH654)'),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Mayur Vihar Phase 1'),
-                          Text('New Delhi - 110001'),
-                          Text('Delhi'),
-                        ],
+                      title: Text(
+                        widget.customerName,
+                        style: const TextStyle(
+                            fontWeight: FontWeight.bold, fontSize: 18),
                       ),
+                      subtitle: RichTextWidget(label: widget.address),
                       trailing: InkWell(
                         onTap: () {
                           Navigator.push(
@@ -101,7 +98,7 @@ class _CustomerSearchVisitListPageState extends State<CustomerSearchVisitList> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => VisitDetailsPage(
+                            builder: (context) => const VisitDetailsPage(
                               customerId: 0,
                               visitId: 0,
                               isTodayPlan: false,

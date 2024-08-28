@@ -346,7 +346,9 @@ class ApprovalListFormState extends State<ApprovalListForm> {
               "An error occurred while $action ${widget.type}.");
         }
       } else {
-        print('Add ${widget.type} Error: ${response.status}');
+        if (kDebugMode) {
+          print('Add ${widget.type} Error: ${response.status}');
+        }
         _toastMessage.showToastMessage(
             "An error occurred while $action ${widget.type}.");
       }
@@ -355,7 +357,9 @@ class ApprovalListFormState extends State<ApprovalListForm> {
         Navigator.of(context).pop(); // Dismiss the loading dialog
       }
       // Handle the error (e.g., show error message)
-      print('Failed to ${widget.type} $action: $error');
+      if (kDebugMode) {
+        print('Failed to ${widget.type} $action: $error');
+      }
       _toastMessage
           .showToastMessage("An error occurred while $action ${widget.type}.");
     }

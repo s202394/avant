@@ -190,13 +190,13 @@ class CustomerSearchVisitPageState extends State<CustomerSearchVisit> {
       context,
       MaterialPageRoute(
         builder: (context) => CustomerSearchVisitList(
-          customerId:0,
+          customerId: 0,
           customerName: _customerNameController.text,
           customerCode: _customerCodeController.text,
           customerType: _teacherNameController.text,
-          address: _selectedCity?.city??'',
-          city: _selectedCity?.city??'',
-          state: _selectedCity?.city??'',
+          address: _selectedCity?.city ?? '',
+          city: _selectedCity?.city ?? '',
+          state: _selectedCity?.city ?? '',
         ),
       ),
     );

@@ -1,5 +1,5 @@
 import 'package:avant/api/api_service.dart';
-import 'package:avant/common/label_text.dart';
+import 'package:avant/views/label_text.dart';
 import 'package:avant/model/visit_details_model.dart';
 import 'package:avant/visit/dsr_entry.dart';
 import 'package:flutter/material.dart';

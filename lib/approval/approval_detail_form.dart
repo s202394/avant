@@ -7,10 +7,13 @@ import 'package:avant/home.dart';
 import 'package:avant/model/approval_details_model.dart';
 import 'package:avant/model/login_model.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:avant/common/constants.dart';
+
+import '../model/submit_approval_model.dart';
 
 class ApprovalDetailForm extends StatefulWidget {
   final String type;
@@ -27,10 +30,10 @@ class ApprovalDetailForm extends StatefulWidget {
   });
 
   @override
-  _ApprovalDetailFormState createState() => _ApprovalDetailFormState();
+  ApprovalDetailFormState createState() => ApprovalDetailFormState();
 }
 
-class _ApprovalDetailFormState extends State<ApprovalDetailForm> {
+class ApprovalDetailFormState extends State<ApprovalDetailForm> {
   late Future<ApprovalDetailsResponse> futureRequestDetails;
 
   List<TitleDetails> _titleDetails = [];
@@ -90,7 +93,9 @@ class _ApprovalDetailFormState extends State<ApprovalDetailForm> {
           setState(() {
             hasData = response.titleDetails?.isNotEmpty ?? false;
             _titleDetails = response.titleDetails ?? [];
-            print('_titleDetails size:${_titleDetails.length}');
+            if (kDebugMode) {
+              print('_titleDetails size:${_titleDetails.length}');
+            }
             isLoading = false;
           });
           return response;
@@ -99,7 +104,9 @@ class _ApprovalDetailFormState extends State<ApprovalDetailForm> {
             isLoading = false;
             hasData = false;
           });
-          print("Error occurred: $error");
+          if (kDebugMode) {
+            print("Error occurred: $error");
+          }
           return ApprovalDetailsResponse();
         });
       });
@@ -120,7 +127,7 @@ class _ApprovalDetailFormState extends State<ApprovalDetailForm> {
     print('titleDetailsList size:${titleDetailsList.length}');
 
     try {
-      final response;
+      final SubmitRequestApprovalResponse response;
       if (widget.type == CUSTOMER_SAMPLE_APPROVAL) {
         response = await SubmitRequestApprovalService()
             .submitCustomerSamplingRequestApproved(
@@ -154,8 +161,10 @@ class _ApprovalDetailFormState extends State<ApprovalDetailForm> {
       // Close the loading indicator
       Navigator.of(context).pop();
 
-      print(
-          'Approval ${widget.type} successful: ${response.returnMessage.msgText}');
+      if (kDebugMode) {
+        print(
+            'Approval ${widget.type} successful: ${response.returnMessage.msgText}');
+      }
       if (response.status == 'Success') {
         String s = response.returnMessage.msgText;
         if (s.isNotEmpty) {
@@ -166,12 +175,16 @@ class _ApprovalDetailFormState extends State<ApprovalDetailForm> {
             (Route<dynamic> route) => false,
           );
         } else {
-          print('$approvalFor ${widget.type} Error s empty');
+          if (kDebugMode) {
+            print('$approvalFor ${widget.type} Error s empty');
+          }
           _toastMessage.showToastMessage(
               "An error occurred while $approvalFor ${widget.type}.");
         }
       } else {
-        print('Add ${widget.type} Error ${response.status}');
+        if (kDebugMode) {
+          print('Add ${widget.type} Error ${response.status}');
+        }
         _toastMessage.showToastMessage(
             "An error occurred while $approvalFor ${widget.type}.");
       }
@@ -180,7 +193,9 @@ class _ApprovalDetailFormState extends State<ApprovalDetailForm> {
       Navigator.of(context).pop();
 
       // Handle the error (e.g., show error message)
-      print('Failed to approve: $error');
+      if (kDebugMode) {
+        print('Failed to approve: $error');
+      }
       _toastMessage.showToastMessage(
           "An error occurred while $approvalFor ${widget.type}.");
     }
@@ -191,7 +206,7 @@ class _ApprovalDetailFormState extends State<ApprovalDetailForm> {
     return Scaffold(
       appBar: AppBar(
         title: Text('${widget.type} Approval'),
-        backgroundColor: Color(0xFFFFF8E1),
+        backgroundColor: const Color(0xFFFFF8E1),
       ),
       body: Center(
         child: isLoading
@@ -203,7 +218,7 @@ class _ApprovalDetailFormState extends State<ApprovalDetailForm> {
                       if (snapshot.connectionState == ConnectionState.waiting) {
                         return const CircularProgressIndicator();
                       } else if (snapshot.hasError) {
-                        return ErrorLayout();
+                        return const ErrorLayout();
                       } else if (!hasData) {
                         return NoDataLayout();
                       } else if (snapshot.hasData) {
@@ -462,10 +477,9 @@ class _ApprovalDetailFormState extends State<ApprovalDetailForm> {
                                     response.clarificationList![index];
                                 return ListTile(
                                   title: Text(
-                                      clarification.clarificationQuery ?? ''),
+                                      clarification.clarificationQuery),
                                   subtitle: Text(
-                                      clarification.clarificationResponse ??
-                                          ''),
+                                      clarification.clarificationResponse),
                                 );
                               },
                             ),
@@ -574,7 +588,7 @@ class _ApprovalDetailFormState extends State<ApprovalDetailForm> {
             child: ListTile(
               leading: Text(
                 '${position + 1}',
-                style: TextStyle(fontWeight: FontWeight.bold),
+                style: const TextStyle(fontWeight: FontWeight.bold),
               ),
               title: Text(
                 titleDetails.title,
@@ -851,10 +865,10 @@ class NoInternetLayout extends StatefulWidget {
   });
 
   @override
-  _NoInternetLayoutState createState() => _NoInternetLayoutState();
+  NoInternetLayoutState createState() => NoInternetLayoutState();
 }
 
-class _NoInternetLayoutState extends State<NoInternetLayout> {
+class NoInternetLayoutState extends State<NoInternetLayout> {
   @override
   Widget build(BuildContext context) {
     return Center(

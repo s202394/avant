@@ -8,6 +8,7 @@ import 'package:avant/model/get_visit_dsr_model.dart';
 import 'package:avant/model/login_model.dart';
 import 'package:avant/service/location_service.dart';
 import 'package:avant/views/multi_selection_dropdown.dart';
+import 'package:avant/views/rich_text.dart';
 import 'package:avant/visit/visit_series_search.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -167,15 +168,8 @@ class DsrEntryPageState extends State<DsrEntry> {
                               style: const TextStyle(
                                   fontWeight: FontWeight.bold, fontSize: 18),
                             ),
-                            RichText(
-                              text: TextSpan(
-                                style: DefaultTextStyle.of(context).style,
-                                children: visitDsrData.customerSummery.address
-                                    .replaceAll('\\r', '')
-                                    .split('\\n')
-                                    .map((line) => TextSpan(text: '$line\n'))
-                                    .toList(),
-                              ),
+                            RichTextWidget(
+                              label: visitDsrData.customerSummery.address,
                             ),
                             const SizedBox(height: 16),
                             _buildTextField(
@@ -318,9 +312,11 @@ class DsrEntryPageState extends State<DsrEntry> {
       toastMessage.showToastMessage('Please select Sampling Done.');
     } else if (followUpAction == null) {
       toastMessage.showToastMessage('Please select Follow Up Action.');
-    } /*else if (_imageFile == null) {
+    }
+    /*else if (_imageFile == null) {
     toastMessage.showToastMessage('Please capture image first.');
-  }*/ else if (followUpAction == false && samplingDone == false) {
+  }*/
+    else if (followUpAction == false && samplingDone == false) {
       try {
         FocusScope.of(context).unfocus();
 
@@ -400,7 +396,7 @@ class DsrEntryPageState extends State<DsrEntry> {
                   Navigator.pushAndRemoveUntil(
                     context,
                     MaterialPageRoute(builder: (context) => const HomePage()),
-                        (Route<dynamic> route) => false,
+                    (Route<dynamic> route) => false,
                   );
                 }
               } else if (responseData.e.isNotEmpty) {
@@ -446,7 +442,7 @@ class DsrEntryPageState extends State<DsrEntry> {
     } else {
       // Assuming _selectedItems is a list of PersonMet objects
       List<int> selectedIds =
-      _selectedJointVisitWithItems.map((e) => e.customerContactId).toList();
+          _selectedJointVisitWithItems.map((e) => e.customerContactId).toList();
 
       // Convert list of IDs to comma-separated string
       String commaSeparatedIds = selectedIds.join(', ');

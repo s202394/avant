@@ -1,26 +1,41 @@
+import 'package:avant/views/label_text.dart';
 import 'package:flutter/material.dart';
 
+import '../views/rich_text.dart';
+
 class VisitDsrSeriesTitleWise extends StatefulWidget {
-  final String schoolName;
+  final String customerName;
   final String address;
   final String classLevel;
   final String series;
   final String title;
+  final String visitFeedback;
+  final String visitDate;
+  final int visitPurposeId;
+  final String jointVisitWithIds;
+  final bool samplingDone;
+  final bool followUpAction;
 
   const VisitDsrSeriesTitleWise({
     super.key,
-    required this.schoolName,
+    required this.customerName,
     required this.address,
     required this.series,
     required this.classLevel,
     required this.title,
+    required this.visitFeedback,
+    required this.visitDate,
+    required this.visitPurposeId,
+    required this.jointVisitWithIds,
+    required this.samplingDone,
+    required this.followUpAction,
   });
 
   @override
-  _VisitDsrSeriesTitleWise createState() => _VisitDsrSeriesTitleWise();
+  VisitDsrSeriesTitleWiseState createState() => VisitDsrSeriesTitleWiseState();
 }
 
-class _VisitDsrSeriesTitleWise extends State<VisitDsrSeriesTitleWise> {
+class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise> {
   String? selectedSamplingType;
   String? selectedSampleGiven;
   String? selectedSampleTo;
@@ -49,12 +64,14 @@ class _VisitDsrSeriesTitleWise extends State<VisitDsrSeriesTitleWise> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('ASN Sr. Secondary School (SCH654)',
-                        style: TextStyle(fontWeight: FontWeight.bold)),
-                    Text('Mayur Vihar Phase 1\nNew Delhi - 110001\nDelhi'),
-                    SizedBox(height: 8),
-                    Text('Visit Date: 24 Jun 2024',
-                        style: TextStyle(fontWeight: FontWeight.bold)),
+                    Text(
+                      widget.customerName,
+                      style: const TextStyle(
+                          fontWeight: FontWeight.bold, fontSize: 18),
+                    ),
+                    RichTextWidget(label: widget.address),
+                    const SizedBox(height: 8),
+                    LabeledText(label: 'Visit Date', value: widget.visitDate),
                   ],
                 ),
               ),
@@ -63,16 +80,18 @@ class _VisitDsrSeriesTitleWise extends State<VisitDsrSeriesTitleWise> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('Sampling Done: Yes',
-                        style: TextStyle(fontWeight: FontWeight.bold)),
-                    Text('Follow up Action: No',
-                        style: TextStyle(fontWeight: FontWeight.bold)),
+                    LabeledText(
+                        label: 'Sampling Done',
+                        value: widget.samplingDone ? 'Yes' : 'No'),
+                    LabeledText(
+                        label: 'Follow up Action',
+                        value: widget.followUpAction ? 'Yes' : 'No'),
                   ],
                 ),
               ),
               Container(
                 color: Colors.orange,
-                child: TabBar(
+                child: const TabBar(
                   labelColor: Colors.black,
                   indicatorColor: Colors.blue,
                   tabs: [
@@ -106,9 +125,8 @@ class _VisitDsrSeriesTitleWise extends State<VisitDsrSeriesTitleWise> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Series Name: The English Circle',
-                    style: TextStyle(fontWeight: FontWeight.bold)),
-                SizedBox(height: 16),
+                LabeledText(label: 'Series Name', value: widget.series),
+                const SizedBox(height: 16),
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -120,7 +138,7 @@ class _VisitDsrSeriesTitleWise extends State<VisitDsrSeriesTitleWise> {
                           isExpanded: true,
                           decoration: InputDecoration(
                             labelText: 'Sample To',
-                            border: OutlineInputBorder(),
+                            border: const OutlineInputBorder(),
                             errorText: _submitted && selectedSampleTo == null
                                 ? 'Please select Sample To'
                                 : null,
@@ -150,7 +168,7 @@ class _VisitDsrSeriesTitleWise extends State<VisitDsrSeriesTitleWise> {
                           isExpanded: true,
                           decoration: InputDecoration(
                             labelText: 'Sampling Type',
-                            border: OutlineInputBorder(),
+                            border: const OutlineInputBorder(),
                             errorText:
                                 _submitted && selectedSamplingType == null
                                     ? 'Please select Sample Type'
@@ -187,7 +205,7 @@ class _VisitDsrSeriesTitleWise extends State<VisitDsrSeriesTitleWise> {
                           isExpanded: true,
                           decoration: InputDecoration(
                             labelText: 'Sample Given',
-                            border: OutlineInputBorder(),
+                            border: const OutlineInputBorder(),
                             errorText: _submitted && selectedSampleGiven == null
                                 ? 'Please select Sample Given'
                                 : null,
@@ -217,7 +235,7 @@ class _VisitDsrSeriesTitleWise extends State<VisitDsrSeriesTitleWise> {
                           isExpanded: true,
                           decoration: InputDecoration(
                             labelText: 'Ship To',
-                            border: OutlineInputBorder(),
+                            border: const OutlineInputBorder(),
                             errorText: _submitted && selectedShipTo == null
                                 ? 'Please select Ship To'
                                 : null,
@@ -246,7 +264,7 @@ class _VisitDsrSeriesTitleWise extends State<VisitDsrSeriesTitleWise> {
           ),
           ListView.builder(
             shrinkWrap: true,
-            physics: NeverScrollableScrollPhysics(),
+            physics: const NeverScrollableScrollPhysics(),
             itemCount: 5,
             itemBuilder: (context, index) {
               return BookListItem();
@@ -270,9 +288,10 @@ class _VisitDsrSeriesTitleWise extends State<VisitDsrSeriesTitleWise> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.blue,
                 foregroundColor: Colors.white,
-                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               ),
-              child: Row(
+              child: const Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(Icons.shopping_cart),
@@ -312,66 +331,64 @@ class _BookListItemState extends State<BookListItem> {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Container(
-          child: ListTile(
-            leading: Image.asset('images/book.png'),
-            title: Text(
-              'The English Circle 1\nRam Kumar\n9785675765767\nCourse Book\n₹ 280.00',
-              textAlign: TextAlign.left,
-            ),
-            trailing: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                /*Text('Stock Available: 5'),*/
-                Container(
-                  width: 120,
-                  child: _quantity == 0
-                      ? ElevatedButton(
-                          onPressed: () {
-                            setState(() {
-                              _quantity++;
-                            });
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.red,
-                            foregroundColor: Colors.white,
-                          ),
-                          child: Text('Add'),
-                        )
-                      : Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            IconButton(
-                              onPressed: () {
-                                setState(() {
-                                  if (_quantity > 0) {
-                                    _quantity--;
-                                  }
-                                });
-                              },
-                              icon: Icon(Icons.remove),
-                              color: Colors.red,
-                            ),
-                            Text('$_quantity'),
-                            IconButton(
-                              onPressed: () {
-                                setState(() {
-                                  if (_quantity < 10) {
-                                    _quantity++;
-                                  }
-                                });
-                              },
-                              icon: Icon(Icons.add),
-                              color: Colors.red,
-                            ),
-                          ],
+        ListTile(
+          leading: Image.asset('images/book.png'),
+          title: Text(
+            'The English Circle 1\nRam Kumar\n9785675765767\nCourse Book\n₹ 280.00',
+            textAlign: TextAlign.left,
+          ),
+          trailing: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              /*Text('Stock Available: 5'),*/
+              SizedBox(
+                width: 120,
+                child: _quantity == 0
+                    ? ElevatedButton(
+                        onPressed: () {
+                          setState(() {
+                            _quantity++;
+                          });
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red,
+                          foregroundColor: Colors.white,
                         ),
-                ),
-              ],
-            ),
+                        child: const Text('Add'),
+                      )
+                    : Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          IconButton(
+                            onPressed: () {
+                              setState(() {
+                                if (_quantity > 0) {
+                                  _quantity--;
+                                }
+                              });
+                            },
+                            icon: const Icon(Icons.remove),
+                            color: Colors.red,
+                          ),
+                          Text('$_quantity'),
+                          IconButton(
+                            onPressed: () {
+                              setState(() {
+                                if (_quantity < 10) {
+                                  _quantity++;
+                                }
+                              });
+                            },
+                            icon: const Icon(Icons.add),
+                            color: Colors.red,
+                          ),
+                        ],
+                      ),
+              ),
+            ],
           ),
         ),
-        Divider(),
+        const Divider(),
       ],
     );
   }

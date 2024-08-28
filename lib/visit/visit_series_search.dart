@@ -1,3 +1,4 @@
+import 'package:avant/views/rich_text.dart';
 import 'package:avant/visit/visit_dsr_series_title_wise.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -141,17 +142,7 @@ class VisitSeriesSearchPageState extends State<VisitSeriesSearch> {
                             style: const TextStyle(
                                 fontWeight: FontWeight.bold, fontSize: 18),
                           ),
-                          RichText(
-                            text: TextSpan(
-                              style: const TextStyle(
-                                  color: Colors.black, fontSize: 16),
-                              children: widget.address
-                                  .replaceAll('\\r', '')
-                                  .split('\\n')
-                                  .map((line) => TextSpan(text: '$line\n'))
-                                  .toList(),
-                            ),
-                          ),
+                          RichTextWidget(label: widget.address),
                           const Divider(height: 1),
                           const SizedBox(height: 16),
                           _detailText.buildDetailText(
@@ -235,11 +226,17 @@ class VisitSeriesSearchPageState extends State<VisitSeriesSearch> {
       context,
       MaterialPageRoute(
         builder: (context) => VisitDsrSeriesTitleWise(
-          schoolName: widget.customerName,
+          customerName: widget.customerName,
           address: widget.address,
           series: selectedSeries ?? '',
           classLevel: selectedClassLevel ?? '',
           title: titleController.text,
+          visitFeedback: widget.visitFeedback,
+          visitDate: widget.visitDate,
+          visitPurposeId: widget.visitPurposeId,
+          jointVisitWithIds: widget.jointVisitWithIds,
+          samplingDone: widget.samplingDone,
+          followUpAction: widget.followUpAction,
         ),
       ),
     );
