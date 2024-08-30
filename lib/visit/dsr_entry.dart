@@ -51,7 +51,7 @@ class DsrEntryPageState extends State<DsrEntry> {
   bool? followUpAction;
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
-  List<PersonMet> _selectedJointVisitWithItems = [];
+  List<JoinVisit> _selectedJointVisitWithItems = [];
 
   String fetchedAddress = '';
 
@@ -75,8 +75,6 @@ class DsrEntryPageState extends State<DsrEntry> {
   late Future<GetVisitDsrResponse> _visitDsrData;
 
   final TextEditingController _dateController = TextEditingController();
-  final TextEditingController _visitPurposeController = TextEditingController();
-  final TextEditingController _jointVisitController = TextEditingController();
   final TextEditingController _personMetController = TextEditingController();
   final TextEditingController _visitFeedbackController =
       TextEditingController();
@@ -197,34 +195,35 @@ class DsrEntryPageState extends State<DsrEntry> {
                                 });
                               },
                             ),
-                            /* buildDropdownField(
-                          'Joint Visit',
-                          selectedJointVisit,
-                          {
-                            for (var item in visitDsrData.joinVisitList)
-                              item.executiveName: item.executiveId
-                          },
-                          (value) {
-                            setState(() {
-                              selectedJointVisit = value;
-                              selectedJointVisitId = value != null
-                                  ? {
-                                      for (var item
-                                          in visitDsrData.joinVisitList)
-                                        item.executiveName: item.executiveId
-                                    }[value]
-                                  : null;
-                            });
-                          },
-                        ),*/
-                            MultiSelectDropdown<PersonMet>(
+                            MultiSelectDropdown<JoinVisit>(
                               label: 'Joint Visit',
-                              items: visitDsrData.personMetList,
+                              items: visitDsrData.joinVisitList,
                               selectedItems: _selectedJointVisitWithItems,
-                              itemLabelBuilder: (item) =>
-                                  item.customerContactName,
+                              itemLabelBuilder: (item) => item.executiveName,
                               onChanged: _handleSelectionChange,
                               isSubmitted: _submitted,
+                            ),
+                            buildDropdownField(
+                              'Person Met',
+                              selectedPersonMet,
+                              {
+                                for (var item in visitDsrData.personMetList)
+                                  item.customerContactName:
+                                      item.customerContactId
+                              },
+                              (value) {
+                                setState(() {
+                                  selectedPersonMet = value;
+                                  selectedPersonMetId = value != null
+                                      ? {
+                                          for (var item
+                                              in visitDsrData.personMetList)
+                                            item.customerContactName:
+                                                item.customerContactId
+                                        }[value]
+                                      : null;
+                                });
+                              },
                             ),
                             buildRadioButtons('Sampling Done', samplingDone,
                                 (value) {
@@ -301,7 +300,7 @@ class DsrEntryPageState extends State<DsrEntry> {
     );
   }
 
-  void _handleSelectionChange(List<PersonMet> selectedItems) {
+  void _handleSelectionChange(List<JoinVisit> selectedItems) {
     setState(() {
       _selectedJointVisitWithItems = selectedItems;
     });
@@ -331,10 +330,9 @@ class DsrEntryPageState extends State<DsrEntry> {
               position.latitude, position.longitude);
         }
 
-        // Assuming _selectedItems is a list of PersonMet objects
-        List<int> selectedIds = _selectedJointVisitWithItems
-            .map((e) => e.customerContactId)
-            .toList();
+        // Assuming _selectedItems is a list of JointVisit objects
+        List<int> selectedIds =
+            _selectedJointVisitWithItems.map((e) => e.executiveId).toList();
 
         // Convert list of IDs to comma-separated string
         String commaSeparatedIds = selectedIds.join(', ');
@@ -362,7 +360,7 @@ class DsrEntryPageState extends State<DsrEntry> {
                 _visitFeedbackController.text,
                 _dateController.text,
                 selectedVisitPurposeId ?? 0,
-                0,
+                selectedPersonMetId ?? 0,
                 commaSeparatedIds,
                 "",
                 "",
@@ -374,7 +372,7 @@ class DsrEntryPageState extends State<DsrEntry> {
                 userId ?? 0,
                 "",
                 "",
-                false,
+                'No',
                 "",
                 "",
                 false,
@@ -440,9 +438,9 @@ class DsrEntryPageState extends State<DsrEntry> {
         });
       }
     } else {
-      // Assuming _selectedItems is a list of PersonMet objects
+      // Assuming _selectedItems is a list of JoinVisit objects
       List<int> selectedIds =
-          _selectedJointVisitWithItems.map((e) => e.customerContactId).toList();
+          _selectedJointVisitWithItems.map((e) => e.executiveId).toList();
 
       // Convert list of IDs to comma-separated string
       String commaSeparatedIds = selectedIds.join(', ');
@@ -695,8 +693,6 @@ class DsrEntryPageState extends State<DsrEntry> {
   @override
   void dispose() {
     _dateController.dispose();
-    _visitPurposeController.dispose();
-    _jointVisitController.dispose();
     _personMetController.dispose();
     _visitFeedbackController.dispose();
     super.dispose();

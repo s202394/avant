@@ -1,6 +1,6 @@
 class FetchTitlesResponse {
   final String status;
-  final List<TitleList> titleList;
+  final List<TitleList>? titleList;
 
   FetchTitlesResponse({
     required this.status,
@@ -8,12 +8,15 @@ class FetchTitlesResponse {
   });
 
   factory FetchTitlesResponse.fromJson(Map<String, dynamic> json) {
-    var listTitle = json["TitleList"] as List;
-    List<TitleList> list = listTitle.map((i) => TitleList.fromJson(i)).toList();
+    var titleListData = json["TitleList"] as List?;
+    List<TitleList>? titleList;
+    if (titleListData != null && titleListData.isNotEmpty) {
+      titleList = titleListData.map((i) => TitleList.fromJson(i)).toList();
+    }
 
     return FetchTitlesResponse(
       status: json['Status'] ?? '',
-      titleList: list,
+      titleList: titleList,
     );
   }
 
@@ -30,11 +33,12 @@ class TitleList {
   final String title;
   final String isbn;
   final String author;
-  final double price;
+  final String price;
   final double listPrice;
   final String bookNum;
   final String image;
   final String bookType;
+  final int quantity;
 
   TitleList({
     required this.bookId,
@@ -46,6 +50,7 @@ class TitleList {
     required this.bookNum,
     required this.image,
     required this.bookType,
+    required this.quantity,
   });
 
   factory TitleList.fromJson(Map<String, dynamic> json) {
@@ -54,12 +59,17 @@ class TitleList {
       title: json['Title'] ?? '',
       isbn: json['ISBN'] ?? '',
       author: json['Author'] ?? '',
-      price: json['Price'] ?? 0,
+      price: json['Price'] ?? '',
       listPrice: json['ListPrice'] ?? 0,
       bookNum: json['BookNum'] ?? '',
       image: json['Image'] ?? '',
       bookType: json['BookType'] ?? '',
+      quantity: json['Quantity'] ?? 0,
     );
+  }
+
+  set quantity(int quantity) {
+    this.quantity = quantity;
   }
 
   Map<String, dynamic> toJson() {
@@ -73,6 +83,7 @@ class TitleList {
       'BookNum': bookNum,
       'Image': image,
       'BookType': bookType,
+      'Quantity': quantity,
     };
   }
 }

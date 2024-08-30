@@ -18,6 +18,7 @@ const String GET_SERIES_AND_CLASS_LEVEL_LIST_URL =
 const String FOLLOWUP_ACTION_EXECUTIVE_URL = URL + 'apifollowupAction';
 const String VISIT_ENTRY_URL = URL + 'ApiVisitEntry';
 const String FETCH_TITLES_URL = URL + 'FetchTitles';
+const String SAMPLING_DETAILS_URL = URL + 'samplingdetails';
 
 const String CUSTOMER_ENTRY_MASTER_URL = URL + 'CustomerEntryMasterAPI';
 const String CUSTOMER_CREATION_URL = URL + 'CustomerCreationAPI';

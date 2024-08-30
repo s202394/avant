@@ -1,14 +1,25 @@
 import 'package:avant/views/label_text.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
+import '../api/api_service.dart';
+import '../model/fetch_titles_model.dart';
+import '../model/login_model.dart';
+import '../model/sampling_details_response.dart';
 import '../views/rich_text.dart';
 
 class VisitDsrSeriesTitleWise extends StatefulWidget {
+  final int customerId;
   final String customerName;
+  final String customerType;
   final String address;
-  final String classLevel;
   final String series;
+  final int seriesId;
+  final String classLevel;
+  final int classLevelId;
   final String title;
+  final int titleId;
   final String visitFeedback;
   final String visitDate;
   final int visitPurposeId;
@@ -18,11 +29,16 @@ class VisitDsrSeriesTitleWise extends StatefulWidget {
 
   const VisitDsrSeriesTitleWise({
     super.key,
+    required this.customerId,
     required this.customerName,
+    required this.customerType,
     required this.address,
     required this.series,
+    required this.seriesId,
     required this.classLevel,
+    required this.classLevelId,
     required this.title,
+    required this.titleId,
     required this.visitFeedback,
     required this.visitDate,
     required this.visitPurposeId,
@@ -45,6 +61,75 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise> {
 
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
+  List<TitleList> books = [];
+  List<SamplingType> samplingTypes = [];
+  List<SampleGiven> sampleGivens = [];
+
+  bool isLoading = true;
+  String? errorMessage;
+
+  late SharedPreferences prefs;
+  late String token;
+  late int? executiveId;
+  late int? profileId;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchData();
+  }
+
+  Future<void> _fetchData() async {
+    prefs = await SharedPreferences.getInstance();
+    setState(() {
+      token = prefs.getString('token') ?? '';
+    });
+
+    executiveId = await getExecutiveId();
+    profileId = await getProfileId();
+
+    try {
+      // Call both APIs asynchronously
+      final futures = [
+        GetVisitDsrService().fetchTitles(
+          widget.seriesId,
+          widget.classLevelId,
+          widget.title,
+          token,
+        ),
+        GetVisitDsrService().samplingDetails(
+          widget.customerId,
+          'visit',
+          profileId??0,
+          widget.customerType,
+          executiveId??0,
+          widget.seriesId,
+          widget.classLevelId,
+          widget.titleId, // titleId
+          token,
+        ),
+      ];
+
+      final responses = await Future.wait(futures);
+
+      // Process the responses
+      final titlesResponse = responses[0] as FetchTitlesResponse;
+      final samplingResponse = responses[1] as SamplingDetailsResponse;
+
+      setState(() {
+        books = titlesResponse.titleList ?? [];
+        samplingTypes = samplingResponse.samplingType ?? [];
+        sampleGivens = samplingResponse.sampleGiven ?? [];
+        isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        errorMessage = e.toString();
+        isLoading = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
@@ -54,8 +139,12 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise> {
           backgroundColor: Colors.amber[100],
           title: const Text('DSR Entry'),
         ),
-        body: Form(
-          key: _formKey, // Assign the form key
+        body: isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : errorMessage != null
+            ? Center(child: Text('Error: $errorMessage'))
+            : Form(
+          key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -71,12 +160,14 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise> {
                     ),
                     RichTextWidget(label: widget.address),
                     const SizedBox(height: 8),
-                    LabeledText(label: 'Visit Date', value: widget.visitDate),
+                    LabeledText(
+                        label: 'Visit Date', value: widget.visitDate),
                   ],
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.only(left: 16, right: 16, bottom: 8),
+                padding: const EdgeInsets.only(
+                    left: 16, right: 16, bottom: 8),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -116,6 +207,21 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise> {
   }
 
   Widget _buildSeriesTitleTab() {
+    // Convert your data into DropdownMenuItems
+    final samplingTypeItems = samplingTypes.map((type) {
+      return DropdownMenuItem<String>(
+        value: type.samplingTypeValue,
+        child: Text(type.samplingType),
+      );
+    }).toList();
+
+    final sampleGivenItems = sampleGivens.map((given) {
+      return DropdownMenuItem<String>(
+        value: given.sampleGivenValue,
+        child: Text(given.sampleGiven),
+      );
+    }).toList();
+
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -134,7 +240,6 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise> {
                       child: Padding(
                         padding: const EdgeInsets.only(right: 8.0),
                         child: DropdownButtonFormField<String>(
-                          // Set the initial value
                           isExpanded: true,
                           decoration: InputDecoration(
                             labelText: 'Sample To',
@@ -145,12 +250,12 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise> {
                           ),
                           items: ['Mr. Sanjay Banerjee', 'Rajesh Ranjan']
                               .map((label) => DropdownMenuItem(
-                                    value: label,
-                                    child: Text(
-                                      label,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ))
+                            value: label,
+                            child: Text(
+                              label,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ))
                               .toList(),
                           onChanged: (value) {
                             setState(() {
@@ -164,25 +269,16 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise> {
                       child: Padding(
                         padding: const EdgeInsets.only(left: 8.0),
                         child: DropdownButtonFormField<String>(
-                          // Set the initial value
                           isExpanded: true,
                           decoration: InputDecoration(
                             labelText: 'Sampling Type',
                             border: const OutlineInputBorder(),
                             errorText:
-                                _submitted && selectedSamplingType == null
-                                    ? 'Please select Sample Type'
-                                    : null,
+                            _submitted && selectedSamplingType == null
+                                ? 'Please select Sampling Type'
+                                : null,
                           ),
-                          items: ['Home Address', 'Office Address']
-                              .map((label) => DropdownMenuItem(
-                                    value: label,
-                                    child: Text(
-                                      label,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ))
-                              .toList(),
+                          items: samplingTypeItems,
                           onChanged: (value) {
                             setState(() {
                               selectedSamplingType = value;
@@ -193,7 +289,7 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise> {
                     ),
                   ],
                 ),
-                SizedBox(height: 16),
+                const SizedBox(height: 16),
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -201,7 +297,6 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise> {
                       child: Padding(
                         padding: const EdgeInsets.only(right: 8.0),
                         child: DropdownButtonFormField<String>(
-                          // Set the initial value
                           isExpanded: true,
                           decoration: InputDecoration(
                             labelText: 'Sample Given',
@@ -210,15 +305,7 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise> {
                                 ? 'Please select Sample Given'
                                 : null,
                           ),
-                          items: ['Given By Hand', 'By Air']
-                              .map((label) => DropdownMenuItem(
-                                    value: label,
-                                    child: Text(
-                                      label,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ))
-                              .toList(),
+                          items: sampleGivenItems,
                           onChanged: (value) {
                             setState(() {
                               selectedSampleGiven = value;
@@ -231,7 +318,6 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise> {
                       child: Padding(
                         padding: const EdgeInsets.only(left: 8.0),
                         child: DropdownButtonFormField<String>(
-                          // Set the initial value
                           isExpanded: true,
                           decoration: InputDecoration(
                             labelText: 'Ship To',
@@ -242,12 +328,12 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise> {
                           ),
                           items: ['Official Address', 'Personal Address']
                               .map((label) => DropdownMenuItem(
-                                    value: label,
-                                    child: Text(
-                                      label,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ))
+                            value: label,
+                            child: Text(
+                              label,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ))
                               .toList(),
                           onChanged: (value) {
                             setState(() {
@@ -265,9 +351,14 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise> {
           ListView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            itemCount: 5,
+            itemCount: books.length,
             itemBuilder: (context, index) {
-              return BookListItem();
+              return BookListItem(
+                book: books[index],
+                onQuantityChanged: (newQuantity) {
+                  _handleQuantityChange(index, newQuantity);
+                },
+              );
             },
           ),
           Padding(
@@ -277,7 +368,7 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise> {
                 setState(() {
                   _submitted = true;
                 });
-                if (_formKey.currentState!.validate() &&
+                if (_formKey.currentState?.validate() == true &&
                     selectedSampleTo != null &&
                     selectedSampleGiven != null &&
                     selectedSamplingType != null &&
@@ -289,7 +380,7 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise> {
                 backgroundColor: Colors.blue,
                 foregroundColor: Colors.white,
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               ),
               child: const Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -306,90 +397,81 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise> {
     );
   }
 
-  void _submitForm() {
-    // Handle form submission logic here
-    print('Form submitted!');
-    // You can access form fields using their controllers or values stored in state variables
-  }
-
   Widget _buildTitleWiseTab() {
     return Center(
       child: Text('Title wise content goes here'),
     );
   }
+
+  void _handleQuantityChange(int index, int newQuantity) {
+    setState(() {
+      books[index].quantity = newQuantity;
+    });
+  }
+
+  void _submitForm() {
+    if (kDebugMode) {
+      print('Form submitted!');
+    }
+    if (widget.samplingDone) {
+    } else {}
+  }
 }
 
 class BookListItem extends StatefulWidget {
+  final TitleList book;
+  final ValueChanged<int> onQuantityChanged;
+
+  const BookListItem({
+    Key? key,
+    required this.book,
+    required this.onQuantityChanged,
+  }) : super(key: key);
+
   @override
   _BookListItemState createState() => _BookListItemState();
 }
 
 class _BookListItemState extends State<BookListItem> {
-  int _quantity = 0;
+  late int _quantity;
+
+  @override
+  void initState() {
+    super.initState();
+    _quantity = widget.book.quantity;
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        ListTile(
-          leading: Image.asset('images/book.png'),
-          title: Text(
-            'The English Circle 1\nRam Kumar\n9785675765767\nCourse Book\n₹ 280.00',
-            textAlign: TextAlign.left,
+    return ListTile(
+      title: Text(widget.book.title),
+      subtitle: Text('ISBN: ${widget.book.isbn}'),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          IconButton(
+            icon: const Icon(Icons.remove),
+            onPressed: () {
+              if (_quantity > 0) {
+                setState(() {
+                  _quantity--;
+                });
+                widget.onQuantityChanged(_quantity);
+              }
+            },
           ),
-          trailing: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              /*Text('Stock Available: 5'),*/
-              SizedBox(
-                width: 120,
-                child: _quantity == 0
-                    ? ElevatedButton(
-                        onPressed: () {
-                          setState(() {
-                            _quantity++;
-                          });
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red,
-                          foregroundColor: Colors.white,
-                        ),
-                        child: const Text('Add'),
-                      )
-                    : Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          IconButton(
-                            onPressed: () {
-                              setState(() {
-                                if (_quantity > 0) {
-                                  _quantity--;
-                                }
-                              });
-                            },
-                            icon: const Icon(Icons.remove),
-                            color: Colors.red,
-                          ),
-                          Text('$_quantity'),
-                          IconButton(
-                            onPressed: () {
-                              setState(() {
-                                if (_quantity < 10) {
-                                  _quantity++;
-                                }
-                              });
-                            },
-                            icon: const Icon(Icons.add),
-                            color: Colors.red,
-                          ),
-                        ],
-                      ),
-              ),
-            ],
+          Text('$_quantity'),
+          IconButton(
+            icon: const Icon(Icons.add),
+            onPressed: () {
+              setState(() {
+                _quantity++;
+              });
+              widget.onQuantityChanged(_quantity);
+            },
           ),
-        ),
-        const Divider(),
-      ],
+        ],
+      ),
     );
   }
 }

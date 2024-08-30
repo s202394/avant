@@ -19,9 +19,11 @@ import 'package:avant/model/setup_values.dart';
 import 'package:avant/model/submit_approval_model.dart';
 import 'package:avant/model/travel_plan_model.dart';
 import 'package:avant/model/visit_details_model.dart';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../model/sampling_details_response.dart';
 import '../model/series_and_class_level_list_response.dart';
 
 class TokenService {
@@ -35,15 +37,21 @@ class TokenService {
       },
       body: body,
     );
-    print("body:$body");
+    if (kDebugMode) {
+      print("body:$body");
+    }
     if (response.statusCode == 200) {
       final responseData = json.decode(response.body);
-      print('Get token successful! responseData: $responseData');
+      if (kDebugMode) {
+        print('Get token successful! responseData: $responseData');
+      }
       // Store data in SharedPreferences
       final SharedPreferences prefs = await SharedPreferences.getInstance();
       await prefs.setString('token', responseData['Token']);
     } else {
-      print('Get token failure! responseData: ${response.statusCode}');
+      if (kDebugMode) {
+        print('Get token failure! responseData: ${response.statusCode}');
+      }
       throw Exception('Failed to getting token : ${response.reasonPhrase}');
     }
   }
@@ -74,15 +82,21 @@ class LoginService {
     );
     if (response.statusCode == 200) {
       final responseData = json.decode(response.body);
-      print('login successful! responseData: $responseData');
+      if (kDebugMode) {
+        print('login successful! responseData: $responseData');
+      }
       if (responseData['Status'] == 'Success') {
         return responseData;
       } else {
-        print('login failure! responseData: ${response.statusCode}');
+        if (kDebugMode) {
+          print('login failure! responseData: ${response.statusCode}');
+        }
         throw Exception('Failed to log in: ${responseData['Status']}');
       }
     } else {
-      print('login failure!! responseData: ${response.statusCode}');
+      if (kDebugMode) {
+        print('login failure!! responseData: ${response.statusCode}');
+      }
       throw Exception('Failed to log in: ${response.reasonPhrase}');
     }
   }
@@ -100,18 +114,24 @@ class LoginService {
     );
     if (response.statusCode == 200) {
       final responseData = json.decode(response.body);
-      print('logout successful! responseData: $responseData');
+      if (kDebugMode) {
+        print('logout successful! responseData: $responseData');
+      }
       if (responseData['Status'] == 'Success') {
         return responseData;
       } else {
-        print('logout failure! responseData: ${response.statusCode}');
+        if (kDebugMode) {
+          print('logout failure! responseData: ${response.statusCode}');
+        }
         throw Exception('Failed to log out: ${responseData['Status']}');
       }
     } else if (response.statusCode == 401) {
       // Token is invalid or expired, refresh the token and retry
       return await refreshAndRetryLogin(userId);
     } else {
-      print('logout failure!! responseData: ${response.statusCode}');
+      if (kDebugMode) {
+        print('logout failure!! responseData: ${response.statusCode}');
+      }
       throw Exception('Failed to log out: ${response.reasonPhrase}');
     }
   }
@@ -149,11 +169,11 @@ class LoginService {
       },
       body: body,
     );
-
-    print('Response status: ${response.statusCode}');
-    print('Response body: ${response.body}');
-    print('Request body: ${body}');
-
+    if (kDebugMode) {
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}');
+      print('Request body: $body');
+    }
     if (response.statusCode == 200) {
       final jsonResponse = json.decode(response.body);
       return ForgotPasswordResponse.fromJson(jsonResponse);
@@ -210,11 +230,11 @@ class LoginService {
       },
       body: body,
     );
-
-    print('Response status: ${response.statusCode}');
-    print('Response body: ${response.body}');
-    print('Request body: ${body}');
-
+    if (kDebugMode) {
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}');
+      print('Request body: $body');
+    }
     if (response.statusCode == 200) {
       final jsonResponse = json.decode(response.body);
       return ChangePasswordResponse.fromJson(jsonResponse);
@@ -262,7 +282,9 @@ class MenuService {
 
     if (response.statusCode == 200) {
       final responseData = json.decode(response.body);
-      print('Get menu successful! responseData: $responseData');
+      if (kDebugMode) {
+        print('Get menu successful! responseData: $responseData');
+      }
       if (responseData['Status'] == 'Success') {
         if (responseData['Success'] != null &&
             responseData['Success'] is List) {
@@ -279,11 +301,15 @@ class MenuService {
 
           return menus;
         } else {
-          print('Menu data is null or not a list');
+          if (kDebugMode) {
+            print('Menu data is null or not a list');
+          }
           return await getMenuDataFromDB();
         }
       } else {
-        print('Status is not Success');
+        if (kDebugMode) {
+          print('Status is not Success');
+        }
         return await getMenuDataFromDB();
       }
     } else if (response.statusCode == 401) {
@@ -334,7 +360,9 @@ class SetupValuesService {
 
     if (response.statusCode == 200) {
       final responseData = json.decode(response.body);
-      print('Get setup values successful! responseData: $responseData');
+      if (kDebugMode) {
+        print('Get setup values successful! responseData: $responseData');
+      }
       if (responseData['Status'] == 'Success') {
         if (responseData['SetupValue'] != null &&
             responseData['SetupValue'] is List) {
@@ -349,11 +377,15 @@ class SetupValuesService {
 
           return setupData;
         } else {
-          print('SetupValue data is null or not a list');
+          if (kDebugMode) {
+            print('SetupValue data is null or not a list');
+          }
           return await getSetupValuesDataFromDB();
         }
       } else {
-        print('SetupValue Status is not Success');
+        if (kDebugMode) {
+          print('SetupValue Status is not Success');
+        }
         return await getSetupValuesDataFromDB();
       }
     } else if (response.statusCode == 401) {
@@ -401,10 +433,10 @@ class TravelPlanService {
         'ExecutiveId': executiveId,
       }),
     );
-
-    print('Response status: ${response.statusCode}');
-    print('Response body: ${response.body}');
-
+    if (kDebugMode) {
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}');
+    }
     if (response.statusCode == 200) {
       final jsonResponse = json.decode(response.body);
       return PlanResponse.fromJson(jsonResponse);
@@ -452,12 +484,12 @@ class VisitDetailsService {
       },
       body: body,
     );
-
-    print('Response status: ${response.statusCode}');
-    print('Response body: ${response.body}');
-    print('Request body: ${body}');
-    print('Request body: ${response.request?.url}');
-
+    if (kDebugMode) {
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}');
+      print('Request body: $body');
+      print('Request body: ${response.request?.url}');
+    }
     if (response.statusCode == 200) {
       final jsonResponse = json.decode(response.body);
       return VisitDetailsResponse.fromJson(jsonResponse);
@@ -513,10 +545,10 @@ class GetVisitDsrService {
         'Customerid': customerId,
       }),
     );
-
-    print('Response status: ${response.statusCode}');
-    print('Response body: ${response.body}');
-
+    if (kDebugMode) {
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}');
+    }
     if (response.statusCode == 200) {
       final jsonResponse = json.decode(response.body);
       return GetVisitDsrResponse.fromJson(jsonResponse);
@@ -556,18 +588,15 @@ class GetVisitDsrService {
   }
 
   Future<FetchTitlesResponse> fetchTitles(
-      int seriesId, String classLevel, String isbn, String token) async {
+      int seriesId, int classLevel, String isbn, String token) async {
     final String body;
     if (isbn.isNotEmpty) {
       body = jsonEncode(<String, dynamic>{
         'BookISBN': isbn,
       });
-    } else if (classLevel.isNotEmpty) {
-      body = jsonEncode(<String, dynamic>{
-        'ClassLevel': classLevel,
-      });
     } else {
       body = jsonEncode(<String, dynamic>{
+        'ClassLevel': classLevel,
         'SeriesId': seriesId,
       });
     }
@@ -579,11 +608,11 @@ class GetVisitDsrService {
       },
       body: body,
     );
-
-    print('Response status: ${response.statusCode}');
-    print('Response body: ${response.body}');
-    print('Request body: $body');
-
+    if (kDebugMode) {
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}');
+      print('Request body: $body');
+    }
     if (response.statusCode == 200) {
       final jsonResponse = json.decode(response.body);
       return FetchTitlesResponse.fromJson(jsonResponse);
@@ -596,7 +625,7 @@ class GetVisitDsrService {
   }
 
   Future<FetchTitlesResponse> refreshAndRetryFetchTitles(
-      int seriesId, String classLevel, String isbn) async {
+      int seriesId, int classLevel, String isbn) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String username = prefs.getString('token_username') ?? '';
     String password = prefs.getString('password') ?? '';
@@ -607,6 +636,96 @@ class GetVisitDsrService {
 
       if (newToken != null && newToken.isNotEmpty) {
         return await fetchTitles(seriesId, classLevel, isbn, newToken);
+      } else {
+        throw Exception('Failed to retrieve new token');
+      }
+    } else {
+      throw Exception(
+          'Username or password is not stored in SharedPreferences');
+    }
+  }
+
+  Future<SamplingDetailsResponse> samplingDetails(
+      int customerId,
+      String requestType,
+      int profileId,
+      String customerType,
+      int executiveId,
+      int seriesId,
+      int classLevelId,
+      int titleId,
+      String token) async {
+    final String body = jsonEncode(<String, dynamic>{
+      'CustomerId': customerId,
+      'RequestType': requestType,
+      'ProfileId': profileId,
+      'CustomerType': customerType,
+      'ExecutiveId': executiveId,
+      'SeriesId': seriesId,
+      'ClassLavelId': classLevelId,
+      'TitleId': titleId,
+    });
+    final response = await http.post(
+      Uri.parse(SAMPLING_DETAILS_URL),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+        'Authorization': 'Bearer $token',
+      },
+      body: body,
+    );
+    if (kDebugMode) {
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}');
+      print('Request body: $body');
+    }
+    if (response.statusCode == 200) {
+      final jsonResponse = json.decode(response.body);
+      return SamplingDetailsResponse.fromJson(jsonResponse);
+    } else if (response.statusCode == 401) {
+      // Token is invalid or expired, refresh the token and retry
+      return await refreshAndRetrySamplingDetails(
+        customerId,
+        requestType,
+        profileId,
+        customerType,
+        executiveId,
+        seriesId,
+        classLevelId,
+        titleId,
+      );
+    } else {
+      throw Exception('Failed to load fetch titles');
+    }
+  }
+
+  Future<SamplingDetailsResponse> refreshAndRetrySamplingDetails(
+      int customerId,
+      String requestType,
+      int profileId,
+      String customerType,
+      int executiveId,
+      int seriesId,
+      int classLevelId,
+      int titleId) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String username = prefs.getString('token_username') ?? '';
+    String password = prefs.getString('password') ?? '';
+
+    if (username.isNotEmpty && password.isNotEmpty) {
+      await TokenService().token(username, password);
+      String? newToken = prefs.getString('token');
+
+      if (newToken != null && newToken.isNotEmpty) {
+        return await samplingDetails(
+            customerId,
+            requestType,
+            profileId,
+            customerType,
+            executiveId,
+            seriesId,
+            classLevelId,
+            titleId,
+            newToken);
       } else {
         throw Exception('Failed to retrieve new token');
       }
@@ -631,8 +750,10 @@ class FollowupActionExecutiveService {
       }),
     );
 
-    print('Response status: ${response.statusCode}');
-    print('Response body: ${response.body}');
+    if (kDebugMode) {
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}');
+    }
 
     if (response.statusCode == 200) {
       final jsonResponse = json.decode(response.body);
@@ -694,7 +815,7 @@ class VisitEntryService {
       int enteredBy,
       String followUpActionXML,
       String visitDetailsXMLForSampleGiven,
-      bool webEntry,
+      String webEntry,
       String mailBody,
       String mailContentType,
       bool sendThankYouMail,
@@ -738,7 +859,9 @@ class VisitEntryService {
       if (visitDetailsXMLForToBeDispatched.isNotEmpty)
         'VisitDetailsXMLforToBeDispatched': visitDetailsXMLForToBeDispatched,
     });
-    print("Request body : $body");
+    if (kDebugMode) {
+      print("Request body : $body");
+    }
     final response = await http.post(
       Uri.parse(VISIT_ENTRY_URL),
       headers: <String, String>{
@@ -747,11 +870,11 @@ class VisitEntryService {
       },
       body: body,
     );
-
-    print('Request URL: ${response.request?.url}');
-    print('Response status: ${response.statusCode}');
-    print('Response body: ${response.body}');
-
+    if (kDebugMode) {
+      print('Request URL: ${response.request?.url}');
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}');
+    }
     if (response.statusCode == 200) {
       final jsonResponse = json.decode(response.body);
       return EntryResponse.fromJson(jsonResponse);
@@ -818,7 +941,7 @@ class VisitEntryService {
       int enteredBy,
       String followUpActionXML,
       String visitDetailsXMLForSampleGiven,
-      bool webEntry,
+      String webEntry,
       String mailBody,
       String mailContentType,
       bool sendThankYouMail,
@@ -889,10 +1012,10 @@ class GeographyService {
         'ExecutiveId': executiveId,
       }),
     );
-
-    print('Response status: ${response.statusCode}');
-    print('Response body: ${response.body}');
-
+    if (kDebugMode) {
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}');
+    }
     if (response.statusCode == 200) {
       final jsonResponse = json.decode(response.body);
       final geographyResponse = GeographyResponse.fromJson(jsonResponse);
@@ -949,12 +1072,12 @@ class CustomerEntryMasterService {
       },
       body: body,
     );
-
-    print('Response status: ${response.statusCode}');
-    print('Response body: ${response.body}');
-    print('URL: ${response.request?.url}');
-    print('Request body: ${body}');
-
+    if (kDebugMode) {
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}');
+      print('URL: ${response.request?.url}');
+      print('Request body: $body');
+    }
     if (response.statusCode == 200) {
       final jsonResponse = json.decode(response.body);
       return CustomerEntryMasterResponse.fromJson(jsonResponse);
@@ -963,8 +1086,10 @@ class CustomerEntryMasterService {
       return await refreshAndRetry(downHierarchy);
     } else {
       // Print the status code and response body for debugging
-      print('Error: ${response.statusCode}');
-      print('Response Body: ${response.body}');
+      if (kDebugMode) {
+        print('Error: ${response.statusCode}');
+        print('Response Body: ${response.body}');
+      }
       throw Exception('Failed to load plans');
     }
   }
@@ -1009,13 +1134,13 @@ class CustomerSamplingApprovalListService {
       },
       body: body,
     );
-
-    print('type: $type');
-    print('Response status: ${response.statusCode}');
-    print('Response body: ${response.body}');
-    print('Request: ${response.request?.url}');
-    print('Request body: ${body}');
-
+    if (kDebugMode) {
+      print('type: $type');
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}');
+      print('Request: ${response.request?.url}');
+      print('Request body: $body');
+    }
     if (response.statusCode == 200) {
       final jsonResponse = json.decode(response.body);
       return ApprovalListResponse.fromJson(jsonResponse);
@@ -1081,11 +1206,11 @@ class ApprovalDetailsService {
       },
       body: body,
     );
-
-    print('Request body: $body');
-    print('Response status: ${response.statusCode}');
-    print('Response body: ${response.body}');
-
+    if (kDebugMode) {
+      print('Request body: $body');
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}');
+    }
     if (response.statusCode == 200) {
       final jsonResponse = json.decode(response.body);
       return ApprovalDetailsResponse.fromJson(jsonResponse);
@@ -1163,18 +1288,22 @@ class SubmitRequestApprovalService {
       },
       body: body,
     );
-
-    print(' url: ${url}');
-    print(' body: ${body}');
-    print('Response status: ${response.statusCode}');
-    print('Response body: ${response.body}');
-
+    if (kDebugMode) {
+      print(' url: $url');
+      print(' body: $body');
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}');
+    }
     if (response.statusCode == 200) {
-      print('Request: success');
+      if (kDebugMode) {
+        print('Request: success');
+      }
       final jsonResponse = json.decode(response.body);
       return SubmitRequestApprovalResponse.fromJson(jsonResponse);
     } else if (response.statusCode == 401) {
-      print('Request: 401 going to take new token');
+      if (kDebugMode) {
+        print('Request: 401 going to take new token');
+      }
       // Token is invalid or expired, refresh the token and retry
       return await refreshAndRetrySamplingRequestApprove(
           type,
@@ -1208,9 +1337,13 @@ class SubmitRequestApprovalService {
     if (username.isNotEmpty && password.isNotEmpty) {
       await TokenService().token(username, password);
       String? newToken = prefs.getString('token');
-      print('re request newToken : $newToken');
+      if (kDebugMode) {
+        print('re request newToken : $newToken');
+      }
       if (newToken != null && newToken.isNotEmpty) {
-        print('re request again with new token');
+        if (kDebugMode) {
+          print('re request again with new token');
+        }
         return await submitCustomerSamplingRequestApproved(
             type,
             isBulkApproval,
@@ -1272,18 +1405,22 @@ class SubmitRequestApprovalService {
       },
       body: body,
     );
-
-    print(' url: ${url}');
-    print(' body: ${body}');
-    print('Response status: ${response.statusCode}');
-    print('Response body: ${response.body}');
-
+    if (kDebugMode) {
+      print(' url: $url');
+      print(' body: $body');
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}');
+    }
     if (response.statusCode == 200) {
-      print('Request: success');
+      if (kDebugMode) {
+        print('Request: success');
+      }
       final jsonResponse = json.decode(response.body);
       return SubmitRequestApprovalResponse.fromJson(jsonResponse);
     } else if (response.statusCode == 401) {
-      print('Request: 401 going to take new token');
+      if (kDebugMode) {
+        print('Request: 401 going to take new token');
+      }
       // Token is invalid or expired, refresh the token and retry
       return await refreshAndRetrySelfStockApprove(
           type,
@@ -1317,9 +1454,13 @@ class SubmitRequestApprovalService {
     if (username.isNotEmpty && password.isNotEmpty) {
       await TokenService().token(username, password);
       String? newToken = prefs.getString('token');
-      print('re request newToken : $newToken');
+      if (kDebugMode) {
+        print('re request newToken : $newToken');
+      }
       if (newToken != null && newToken.isNotEmpty) {
-        print('re request again with new token');
+        if (kDebugMode) {
+          print('re request again with new token');
+        }
         return await submitSelfStockRequestApproved(
             type,
             isBulkApproval,
@@ -1409,12 +1550,12 @@ class CreateNewCustomerService {
       },
       body: body,
     );
+    if (kDebugMode) {
+      print("Request Body: $body");
 
-    print("Request Body: $body");
-
-    print('Response status: ${response.statusCode}');
-    print('Response body: ${response.body}');
-
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}');
+    }
     if (response.statusCode == 200) {
       final jsonResponse = json.decode(response.body);
       return EntryResponse.fromJson(jsonResponse);
@@ -1620,13 +1761,13 @@ class CreateNewCustomerService {
       },
       body: body,
     );
+    if (kDebugMode) {
+      print("Request Body: $body");
 
-    print("Request Body: $body");
-
-    print('Response status: ${response.statusCode}');
-    print('Response body: ${response.body}');
-    print('Request URL body: ${response.request?.url}');
-
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}');
+      print('Request URL body: ${response.request?.url}');
+    }
     if (response.statusCode == 200) {
       final jsonResponse = json.decode(response.body);
       return EntryResponse.fromJson(jsonResponse);
@@ -1798,18 +1939,20 @@ class CheckInCheckOutService {
       'LatEntry': latEntry,
       'EnteredBy': enteredBy,
     });
-    print('Request body: $body');
+    if (kDebugMode) {
+      print('Request body: $body');
+    }
     final response = await http.post(Uri.parse(CHECK_IN_CHECK_OUT_URL),
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
           'Authorization': 'Bearer $token',
         },
         body: body);
-
-    print('Request URL: ${response.request?.url}');
-    print('Response status: ${response.statusCode}');
-    print('Response body: ${response.body}');
-
+    if (kDebugMode) {
+      print('Request URL: ${response.request?.url}');
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}');
+    }
     if (response.statusCode == 200) {
       final jsonResponse = json.decode(response.body);
       return CheckInCheckOutResponse.fromJson(jsonResponse);
@@ -1858,7 +2001,9 @@ class SeriesAndClassLevelListService {
       'ProfileId': profileId,
       'ExecutiveId': executiveId,
     });
-    print("Request body : $body");
+    if (kDebugMode) {
+      print("Request body : $body");
+    }
     final response = await http.post(
       Uri.parse(GET_SERIES_AND_CLASS_LEVEL_LIST_URL),
       headers: <String, String>{
@@ -1867,11 +2012,11 @@ class SeriesAndClassLevelListService {
       },
       body: body,
     );
-
-    print('Request URL: ${response.request?.url}');
-    print('Response status: ${response.statusCode}');
-    print('Response body: ${response.body}');
-
+    if (kDebugMode) {
+      print('Request URL: ${response.request?.url}');
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}');
+    }
     if (response.statusCode == 200) {
       final jsonResponse = json.decode(response.body);
       return SeriesAndClassLevelListResponse.fromJson(jsonResponse);

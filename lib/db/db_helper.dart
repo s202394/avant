@@ -1,12 +1,11 @@
+import 'package:avant/model/customer_entry_master_model.dart';
+import 'package:avant/model/geography_model.dart';
 import 'package:avant/model/login_model.dart';
 import 'package:avant/model/menu_model.dart';
-import 'package:avant/model/geography_model.dart';
-import 'package:avant/model/customer_entry_master_model.dart';
 import 'package:avant/model/setup_values.dart';
+import 'package:flutter/foundation.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
-import 'dart:convert';
-import 'package:json_annotation/json_annotation.dart';
 
 abstract class JsonSerializable {
   Map<String, dynamic> toJson();
@@ -39,105 +38,145 @@ class DatabaseHelper {
         await database.execute(
           "CREATE TABLE applicationSetup(key TEXT PRIMARY KEY, keyValue TEXT)",
         );
-        print("applicationSetup table successfully created.");
+        if (kDebugMode) {
+          print("applicationSetup table successfully created.");
+        }
         await database.execute(
           "CREATE TABLE menuData(MenuName TEXT, ChildMenuName TEXT, LinkURL TEXT)",
         );
-        print("menuData table successfully created.");
+        if (kDebugMode) {
+          print("menuData table successfully created.");
+        }
 
         //Start Create tables for each list in the CustomerEntryMasterResponse
         await database.execute(
           "CREATE TABLE BoardMaster(BoardId INTEGER PRIMARY KEY, BoardName TEXT)",
         );
-        print("BoardMaster table successfully created.");
+        if (kDebugMode) {
+          print("BoardMaster table successfully created.");
+        }
 
         await database.execute(
           "CREATE TABLE Classes(ClassNumId INTEGER PRIMARY KEY, ClassName TEXT)",
         );
-        print("Classes table successfully created.");
+        if (kDebugMode) {
+          print("Classes table successfully created.");
+        }
 
         await database.execute(
           "CREATE TABLE DataSource(DataSourceId INTEGER PRIMARY KEY, DataSourceName TEXT)",
         );
-        print("DataSource table successfully created.");
+        if (kDebugMode) {
+          print("DataSource table successfully created.");
+        }
 
         await database.execute(
           "CREATE TABLE ChainSchool(ChainSchoolId INTEGER PRIMARY KEY, ChainSchoolName TEXT)",
         );
-        print("ChainSchool table successfully created.");
+        if (kDebugMode) {
+          print("ChainSchool table successfully created.");
+        }
 
         await database.execute(
           "CREATE TABLE AccountableExecutive(SNo INTEGER PRIMARY KEY, ExecutiveName TEXT)",
         );
-        print("AccountableExecutive table successfully created.");
+        if (kDebugMode) {
+          print("AccountableExecutive table successfully created.");
+        }
 
         await database.execute(
           "CREATE TABLE SalutationMaster(SalutationId INTEGER PRIMARY KEY, SalutationName TEXT)",
         );
-        print("SalutationMaster table successfully created.");
+        if (kDebugMode) {
+          print("SalutationMaster table successfully created.");
+        }
 
         await database.execute(
           "CREATE TABLE ContactDesignation(ContactDesignationId INTEGER PRIMARY KEY, ContactDesignationName TEXT)",
         );
-        print("ContactDesignation table successfully created.");
+        if (kDebugMode) {
+          print("ContactDesignation table successfully created.");
+        }
 
         await database.execute(
           "CREATE TABLE Subject(SubjectId INTEGER PRIMARY KEY, SubjectName TEXT)",
         );
-        print("Subject table successfully created.");
+        if (kDebugMode) {
+          print("Subject table successfully created.");
+        }
 
         await database.execute(
           "CREATE TABLE Department(DepartmentId INTEGER PRIMARY KEY, DepartmentName TEXT)",
         );
-        print("Department table successfully created.");
+        if (kDebugMode) {
+          print("Department table successfully created.");
+        }
 
         await database.execute(
           "CREATE TABLE AdoptionRoleMaster(AdoptionRoleId INTEGER PRIMARY KEY, AdoptionRole TEXT)",
         );
-        print("AdoptionRoleMaster table successfully created.");
+        if (kDebugMode) {
+          print("AdoptionRoleMaster table successfully created.");
+        }
 
         await database.execute(
           "CREATE TABLE CustomerCategory(CustomerCategoryId INTEGER PRIMARY KEY, CustomerCategoryName TEXT)",
         );
-        print("CustomerCategory table successfully created.");
+        if (kDebugMode) {
+          print("CustomerCategory table successfully created.");
+        }
 
         await database.execute(
           "CREATE TABLE Months(ID INTEGER PRIMARY KEY, Name TEXT)",
         );
-        print("Months table successfully created.");
+        if (kDebugMode) {
+          print("Months table successfully created.");
+        }
 
         await database.execute(
           "CREATE TABLE PurchaseMode(ModeValue TEXT PRIMARY KEY, ModeName TEXT)",
         );
-        print("PurchaseMode table successfully created.");
+        if (kDebugMode) {
+          print("PurchaseMode table successfully created.");
+        }
 
         await database.execute(
           "CREATE TABLE InstituteType(ID TEXT PRIMARY KEY, InstituteType TEXT)",
         );
-        print("InstituteType table successfully created.");
+        if (kDebugMode) {
+          print("InstituteType table successfully created.");
+        }
 
         await database.execute(
           "CREATE TABLE InstituteLevel(ID TEXT PRIMARY KEY, InstituteLevel TEXT)",
         );
-        print("InstituteLevel table successfully created.");
+        if (kDebugMode) {
+          print("InstituteLevel table successfully created.");
+        }
 
         await database.execute(
           "CREATE TABLE AffiliateType(ID TEXT PRIMARY KEY, AffiliateType TEXT)",
         );
-        print("AffiliateType table successfully created.");
+        if (kDebugMode) {
+          print("AffiliateType table successfully created.");
+        }
         // End Create tables for each list in the CustomerEntryMasterResponse
 
         //Create table for Geography
         await database.execute(
           "CREATE TABLE Geography(CountryId Int, Country TEXT, StateId Int, State TEXT, CityId Int, City TEXT)",
         );
-        print("Geography table successfully created.");
+        if (kDebugMode) {
+          print("Geography table successfully created.");
+        }
 
         //Create table for SetupValues
         await database.execute(
           "CREATE TABLE SetupValues (Id INTEGER PRIMARY KEY, KeyName TEXT NOT NULL, KeyValue TEXT NOT NULL, KeyStatus INTEGER NOT NULL, KeyDescription TEXT)",
         );
-        print("SetupValues table successfully created.");
+        if (kDebugMode) {
+          print("SetupValues table successfully created.");
+        }
       },
       version: 1,
     );
@@ -172,7 +211,9 @@ class DatabaseHelper {
     final db = await database;
     await db.insert('applicationSetup', data.toJson(),
         conflictAlgorithm: ConflictAlgorithm.replace);
-    print("${data.key}:${data.keyValue} successfully inserted into db.");
+    if (kDebugMode) {
+      print("${data.key}:${data.keyValue} successfully inserted into db.");
+    }
   }
 
 //Retrieve Executive Data from the Database
@@ -198,9 +239,13 @@ class DatabaseHelper {
     final db = await database;
     await db.insert('menuData', data.toJson(),
         conflictAlgorithm: ConflictAlgorithm.replace);
-    print('Inserting into DB: ${data.toJson()}');
-    print(
+    if (kDebugMode) {
+      print('Inserting into DB: ${data.toJson()}');
+    }
+    if (kDebugMode) {
+      print(
         "${data.menuName}:${data.childMenuName} successfully inserted into db.");
+    }
   }
 
   //Retrieve Menu Data from the Database
@@ -208,15 +253,21 @@ class DatabaseHelper {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query('menuData');
 
-    print("Getting menu data from db.");
+    if (kDebugMode) {
+      print("Getting menu data from db.");
+    }
     if (maps.isEmpty) {
-      print('No data found in DB.');
+      if (kDebugMode) {
+        print('No data found in DB.');
+      }
       return []; // Return an empty list instead of null
     }
 
     return List.generate(maps.length, (i) {
       final menuData = MenuData.fromJson(maps[i]);
-      print('Parsed MenuData: ${menuData.toJson()}');
+      if (kDebugMode) {
+        print('Parsed MenuData: ${menuData.toJson()}');
+      }
       return menuData;
     });
   }
@@ -224,16 +275,22 @@ class DatabaseHelper {
   Future<void> checkMenuData() async {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query('menuData');
-    print("Menu Data from DB:");
+    if (kDebugMode) {
+      print("Menu Data from DB:");
+    }
     for (var map in maps) {
-      print(map);
+      if (kDebugMode) {
+        print(map);
+      }
     }
   }
 
   Future<void> clearMenuDataDatabase() async {
     final db = await database;
     await db.delete('menuData');
-    print("Menu Data successfully deleted.");
+    if (kDebugMode) {
+      print("Menu Data successfully deleted.");
+    }
   }
 
 // Insert BoardMaster Data into the Database
@@ -241,15 +298,19 @@ class DatabaseHelper {
     final db = await database;
     await db.insert('BoardMaster', data.toJson(),
         conflictAlgorithm: ConflictAlgorithm.replace);
-    print(
+    if (kDebugMode) {
+      print(
         "BoardMaster ${data.boardId}:${data.boardName} successfully inserted into db.");
+    }
   }
 
   //Retrieve BoardMaster Data from the Database
   Future<List<BoardMaster>> getBoardMasterFromDB() async {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query('BoardMaster');
-    print("Getting BoardMaster from db.");
+    if (kDebugMode) {
+      print("Getting BoardMaster from db.");
+    }
     return List.generate(maps.length, (i) {
       final data = BoardMaster.fromJson(maps[i]);
       return data;
@@ -267,7 +328,9 @@ class DatabaseHelper {
   Future<List<Classes>> getClassesFromDB() async {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query('Classes');
-    print("Getting Classes from db.");
+    if (kDebugMode) {
+      print("Getting Classes from db.");
+    }
     return List.generate(maps.length, (i) {
       final data = Classes.fromJson(maps[i]);
       return data;
@@ -285,7 +348,9 @@ class DatabaseHelper {
   Future<List<DataSource>> getDataSourceFromDB() async {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query('DataSource');
-    print("Getting DataSource from db.");
+    if (kDebugMode) {
+      print("Getting DataSource from db.");
+    }
     return List.generate(maps.length, (i) {
       final data = DataSource.fromJson(maps[i]);
       return data;
@@ -303,7 +368,9 @@ class DatabaseHelper {
   Future<List<ChainSchool>> getChainSchoolFromDB() async {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query('ChainSchool');
-    print("Getting ChainSchool from db.");
+    if (kDebugMode) {
+      print("Getting ChainSchool from db.");
+    }
     return List.generate(maps.length, (i) {
       final data = ChainSchool.fromJson(maps[i]);
       return data;
@@ -322,7 +389,9 @@ class DatabaseHelper {
     final db = await database;
     final List<Map<String, dynamic>> maps =
         await db.query('AccountableExecutive');
-    print("Getting AccountableExecutive from db.");
+    if (kDebugMode) {
+      print("Getting AccountableExecutive from db.");
+    }
     return List.generate(maps.length, (i) {
       final data = AccountableExecutive.fromJson(maps[i]);
       return data;
@@ -340,7 +409,9 @@ class DatabaseHelper {
   Future<List<SalutationMaster>> getSalutationMasterFromDB() async {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query('SalutationMaster');
-    print("Getting SalutationMaster from db.");
+    if (kDebugMode) {
+      print("Getting SalutationMaster from db.");
+    }
     return List.generate(maps.length, (i) {
       final data = SalutationMaster.fromJson(maps[i]);
       return data;
@@ -359,7 +430,9 @@ class DatabaseHelper {
     final db = await database;
     final List<Map<String, dynamic>> maps =
         await db.query('ContactDesignation');
-    print("Getting ContactDesignation from db.");
+    if (kDebugMode) {
+      print("Getting ContactDesignation from db.");
+    }
     return List.generate(maps.length, (i) {
       final data = ContactDesignation.fromJson(maps[i]);
       return data;
@@ -377,7 +450,9 @@ class DatabaseHelper {
   Future<List<Subject>> getSubjectFromDB() async {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query('Subject');
-    print("Getting Subject from db.");
+    if (kDebugMode) {
+      print("Getting Subject from db.");
+    }
     return List.generate(maps.length, (i) {
       final data = Subject.fromJson(maps[i]);
       return data;
@@ -395,7 +470,9 @@ class DatabaseHelper {
   Future<List<Department>> getDepartmentFromDB() async {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query('Department');
-    print("Getting Department from db.");
+    if (kDebugMode) {
+      print("Getting Department from db.");
+    }
     return List.generate(maps.length, (i) {
       final data = Department.fromJson(maps[i]);
       return data;
@@ -414,7 +491,9 @@ class DatabaseHelper {
     final db = await database;
     final List<Map<String, dynamic>> maps =
         await db.query('AdoptionRoleMaster');
-    print("Getting AdoptionRoleMaster from db.");
+    if (kDebugMode) {
+      print("Getting AdoptionRoleMaster from db.");
+    }
     return List.generate(maps.length, (i) {
       final data = AdoptionRoleMaster.fromJson(maps[i]);
       return data;
@@ -432,7 +511,9 @@ class DatabaseHelper {
   Future<List<CustomerCategory>> getCustomerCategoryFromDB() async {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query('CustomerCategory');
-    print("Getting CustomerCategory from db.");
+    if (kDebugMode) {
+      print("Getting CustomerCategory from db.");
+    }
     return List.generate(maps.length, (i) {
       final data = CustomerCategory.fromJson(maps[i]);
       return data;
@@ -450,7 +531,9 @@ class DatabaseHelper {
   Future<List<Months>> getMonthsFromDB() async {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query('Months');
-    print("Getting Months from db.");
+    if (kDebugMode) {
+      print("Getting Months from db.");
+    }
     return List.generate(maps.length, (i) {
       final data = Months.fromJson(maps[i]);
       return data;
@@ -468,7 +551,9 @@ class DatabaseHelper {
   Future<List<PurchaseMode>> getPurchaseModeFromDB() async {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query('PurchaseMode');
-    print("Getting PurchaseMode from db.");
+    if (kDebugMode) {
+      print("Getting PurchaseMode from db.");
+    }
     return List.generate(maps.length, (i) {
       final data = PurchaseMode.fromJson(maps[i]);
       return data;
@@ -486,7 +571,9 @@ class DatabaseHelper {
   Future<List<InstituteType>> getInstituteTypeFromDB() async {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query('InstituteType');
-    print("Getting InstituteType from db.");
+    if (kDebugMode) {
+      print("Getting InstituteType from db.");
+    }
     return List.generate(maps.length, (i) {
       final data = InstituteType.fromJson(maps[i]);
       return data;
@@ -504,7 +591,9 @@ class DatabaseHelper {
   Future<List<InstituteLevel>> getInstituteLevelFromDB() async {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query('InstituteLevel');
-    print("Getting InstituteLevel from db.");
+    if (kDebugMode) {
+      print("Getting InstituteLevel from db.");
+    }
     return List.generate(maps.length, (i) {
       final data = InstituteLevel.fromJson(maps[i]);
       return data;
@@ -522,7 +611,9 @@ class DatabaseHelper {
   Future<List<AffiliateType>> getAffiliateTypeFromDB() async {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query('AffiliateType');
-    print("Getting AffiliateType from db.");
+    if (kDebugMode) {
+      print("Getting AffiliateType from db.");
+    }
     return List.generate(maps.length, (i) {
       final data = AffiliateType.fromJson(maps[i]);
       return data;
@@ -531,8 +622,6 @@ class DatabaseHelper {
 
   Future<void> insertCustomerEntryMasterResponse(
       CustomerEntryMasterResponse response) async {
-    final db = await database;
-
     // Insert BoardMaster List
     for (var boardMaster in response.boardMasterList) {
       await insertBoardMaster(boardMaster);
@@ -605,19 +694,7 @@ class DatabaseHelper {
     }
   }
 
-  Future<void> _insertList<T extends JsonSerializable>(
-      Database db, String tableName, List<T> list) async {
-    for (var item in list) {
-      await db.insert(tableName, item.toJson(),
-          conflictAlgorithm: ConflictAlgorithm.replace);
-      print("$tableName $item successfully inserted");
-    }
-  }
-
   Future<CustomerEntryMasterResponse?> getCustomerEntryMasterResponse() async {
-    final db = await database;
-
-    // Retrieve data from respective tables
     var boardMasterList = await getBoardMasterFromDB();
     var classesList = await getClassesFromDB();
     var chainSchoolList = await getChainSchoolFromDB();
@@ -634,51 +711,9 @@ class DatabaseHelper {
     var instituteTypeList = await getInstituteTypeFromDB();
     var instituteLevelList = await getInstituteLevelFromDB();
     var affiliateTypeList = await getAffiliateTypeFromDB();
-    // var boardMasterList = await _getList<BoardMaster>(db, 'BoardMaster');
-    // var classesList = await _getList<Classes>(db, 'Classes');
-    // var chainSchoolList = await _getList<ChainSchool>(db, 'ChainSchool');
-    // var dataSourceList = await _getList<DataSource>(db, 'DataSource');
-    // var accountableExecutiveList =
-    //     await _getList<AccountableExecutive>(db, 'AccountableExecutive');
-    // var salutationMasterList =
-    //     await _getList<SalutationMaster>(db, 'SalutationMaster');
-    // var contactDesignationList =
-    //     await _getList<ContactDesignation>(db, 'ContactDesignation');
-    // var subjectList = await _getList<Subject>(db, 'Subject');
-    // var departmentList = await _getList<Department>(db, 'Department');
-    // var adoptionRoleMasterList =
-    //     await _getList<AdoptionRoleMaster>(db, 'AdoptionRoleMaster');
-    // var customerCategoryList =
-    //     await _getList<CustomerCategory>(db, 'CustomerCategory');
-    // var monthsList = await _getList<Months>(db, 'Months');
-    // var purchaseModeList = await _getList<PurchaseMode>(db, 'PurchaseMode');
-    // var instituteTypeList = await _getList<InstituteType>(db, 'InstituteType');
-    // var instituteLevelList =
-    //     await _getList<InstituteLevel>(db, 'InstituteLevel');
-    // var affiliateTypeList = await _getList<AffiliateType>(db, 'AffiliateType');
-
-    // Debugging print statements
-    print("Retrieved from DB:");
-    // print("BoardMaster: $boardMasterList");
-    // print("Classes: $classesList");
-    // print("ChainSchool: $chainSchoolList");
-    // print("DataSource: $dataSourceList");
-    // print("AccountableExecutive: $accountableExecutiveList");
-    print("SalutationMaster: $salutationMasterList");
-    // print("ContactDesignation: $contactDesignationList");
-    // print("Subject: $subjectList");
-    // print("Department: $departmentList");
-    // print("AdoptionRoleMaster: $adoptionRoleMasterList");
-    // print("CustomerCategory: $customerCategoryList");
-    // print("Months: $monthsList");
-    // print("PurchaseMode: $purchaseModeList");
-    // print("InstituteType: $instituteTypeList");
-    // print("InstituteLevel: $instituteLevelList");
-    // print("AffiliateType: $affiliateTypeList");
 
     return CustomerEntryMasterResponse(
       status: 'success',
-      // Adjust this based on your needs
       boardMasterList: boardMasterList,
       classesList: classesList,
       chainSchoolList: chainSchoolList,
@@ -697,66 +732,23 @@ class DatabaseHelper {
       affiliateTypeList: affiliateTypeList,
     );
   }
-
-  Future<List<T>> _getList<T>(Database db, String tableName) async {
-    final List<Map<String, dynamic>> maps = await db.query(tableName);
-    return List.generate(maps.length, (i) {
-      return _fromJson<T>(maps[i]);
-    });
-  }
-
-  T _fromJson<T>(Map<String, dynamic> json) {
-    switch (T) {
-      case BoardMaster:
-        return BoardMaster.fromJson(json) as T;
-      case Classes:
-        return Classes.fromJson(json) as T;
-      case ChainSchool:
-        return ChainSchool.fromJson(json) as T;
-      case DataSource:
-        return DataSource.fromJson(json) as T;
-      case AccountableExecutive:
-        return AccountableExecutive.fromJson(json) as T;
-      case SalutationMaster:
-        return SalutationMaster.fromJson(json) as T;
-      case ContactDesignation:
-        return ContactDesignation.fromJson(json) as T;
-      case Subject:
-        return Subject.fromJson(json) as T;
-      case Department:
-        return Department.fromJson(json) as T;
-      case AdoptionRoleMaster:
-        return AdoptionRoleMaster.fromJson(json) as T;
-      case CustomerCategory:
-        return CustomerCategory.fromJson(json) as T;
-      case Months:
-        return Months.fromJson(json) as T;
-      case PurchaseMode:
-        return PurchaseMode.fromJson(json) as T;
-      case InstituteType:
-        return InstituteType.fromJson(json) as T;
-      case InstituteLevel:
-        return InstituteLevel.fromJson(json) as T;
-      case AffiliateType:
-        return AffiliateType.fromJson(json) as T;
-      default:
-        throw Exception('Unknown class type');
-    }
-  }
-
   //Save Geography Data to the Database
   Future<void> insertGeographyData(Geography data) async {
     final db = await database;
     await db.insert('Geography', data.toJson(),
         conflictAlgorithm: ConflictAlgorithm.replace);
-    print('Inserting into DB: ${data.toJson()}');
+    if (kDebugMode) {
+      print('Inserting into DB: ${data.toJson()}');
+    }
   }
 
   //Retrieve Geography Data from the Database
   Future<List<Geography>> getGeographyDataFromDB() async {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query('Geography');
-    print("Getting Geography data from db.");
+    if (kDebugMode) {
+      print("Getting Geography data from db.");
+    }
     return List.generate(maps.length, (i) {
       return Geography.fromJson(maps[i]);
     });
@@ -767,15 +759,18 @@ class DatabaseHelper {
     final db = await database;
     await db.insert('SetupValues', data.toJson(),
         conflictAlgorithm: ConflictAlgorithm.replace);
-    print('Inserting into DB: ${data.toJson()}');
-    print("${data.keyName}:${data.keyValue} successfully inserted into db.");
+    if (kDebugMode) {
+      print("${data.keyName}:${data.keyValue} successfully inserted into db.");
+    }
   }
 
   //Retrieve SetupValues Data from the Database
   Future<List<SetupValues>> getSetupValuesDataFromDB() async {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query('SetupValues');
-    print("Getting SetupValues data from db.");
+    if (kDebugMode) {
+      print("Getting SetupValues data from db.");
+    }
     return List.generate(maps.length, (i) {
       return SetupValues.fromJson(maps[i]);
     });

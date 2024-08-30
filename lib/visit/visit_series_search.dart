@@ -48,10 +48,14 @@ class VisitSeriesSearchPageState extends State<VisitSeriesSearch> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
   String? selectedClassLevel;
+  int? selectedClassLevelId;
   String? selectedSeries;
+  int? selectedSeriesId;
+  int? selectedTitleId;
 
   List<DropdownMenuItem<String>> classLevelItems = [];
   List<DropdownMenuItem<String>> seriesItems = [];
+  List<String> titleSuggestions = [];
 
   late SharedPreferences prefs;
   late String token;
@@ -60,15 +64,20 @@ class VisitSeriesSearchPageState extends State<VisitSeriesSearch> {
 
   bool _submitted = false;
   bool _isLoading = true;
+  bool _isFetchingTitles = false; // To handle loading state for autocomplete
 
   final DetailText _detailText = DetailText();
 
   final TextEditingController titleController = TextEditingController();
+  final TextEditingController _autocompleteController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _fetchSeriesAndClassLevels();
+    _autocompleteController.addListener(() {
+      _fetchTitlesSuggestions(_autocompleteController.text);
+    });
   }
 
   Future<void> _fetchSeriesAndClassLevels() async {
@@ -86,8 +95,9 @@ class VisitSeriesSearchPageState extends State<VisitSeriesSearch> {
       setState(() {
         classLevelItems = response.classLevelList
                 ?.map(
-                  (e) => DropdownMenuItem(
+                  (e) => DropdownMenuItem<String>(
                     value: e.classLevelName,
+                    key: ValueKey(e.classLevelId),
                     child: Text(e.classLevelName),
                   ),
                 )
@@ -96,8 +106,9 @@ class VisitSeriesSearchPageState extends State<VisitSeriesSearch> {
 
         seriesItems = response.seriesList
                 ?.map(
-                  (e) => DropdownMenuItem(
+                  (e) => DropdownMenuItem<String>(
                     value: e.seriesName,
+                    key: ValueKey(e.seriesId),
                     child: Text(e.seriesName),
                   ),
                 )
@@ -106,12 +117,46 @@ class VisitSeriesSearchPageState extends State<VisitSeriesSearch> {
         _isLoading = false;
       });
     } catch (e) {
-      // Handle error
       if (kDebugMode) {
         print('Error fetching data: $e');
       }
       setState(() {
         _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _fetchTitlesSuggestions(String query) async {
+    if (query.isEmpty) {
+      setState(() {
+        titleSuggestions = [];
+      });
+      return;
+    }
+
+    setState(() {
+      _isFetchingTitles = true;
+    });
+
+    try {
+      final response = await GetVisitDsrService().fetchTitles(
+        selectedSeriesId ?? 0,
+        selectedClassLevelId ?? 0,
+        query,
+        token,
+      );
+
+      setState(() {
+        titleSuggestions =
+            response.titleList?.map((e) => e.title).toList() ?? [];
+        _isFetchingTitles = false;
+      });
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error fetching titles: $e');
+      }
+      setState(() {
+        _isFetchingTitles = false;
       });
     }
   }
@@ -184,8 +229,8 @@ class VisitSeriesSearchPageState extends State<VisitSeriesSearch> {
                                 _submitted = true;
                               });
                               if (_formKey.currentState!.validate() &&
-                                  selectedClassLevel != null &&
-                                  selectedSeries != null) {
+                                  (selectedClassLevel != null ||
+                                      titleController.text.isNotEmpty)) {
                                 _submitForm();
                               }
                             },
@@ -226,11 +271,16 @@ class VisitSeriesSearchPageState extends State<VisitSeriesSearch> {
       context,
       MaterialPageRoute(
         builder: (context) => VisitDsrSeriesTitleWise(
+          customerId: widget.customerId,
           customerName: widget.customerName,
+          customerType: widget.customerType,
           address: widget.address,
           series: selectedSeries ?? '',
+          seriesId: selectedSeriesId ?? 0,
           classLevel: selectedClassLevel ?? '',
+          classLevelId: selectedClassLevelId ?? 0,
           title: titleController.text,
+          titleId: selectedTitleId ?? 0,
           visitFeedback: widget.visitFeedback,
           visitDate: widget.visitDate,
           visitPurposeId: widget.visitPurposeId,
@@ -249,24 +299,36 @@ class VisitSeriesSearchPageState extends State<VisitSeriesSearch> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            buildDropdownField('Series', selectedSeries, seriesItems, (value) {
-              setState(() {
-                selectedSeries = value;
-                if (_submitted) {
-                  // Clear error messages if a valid selection is made
-                  _formKey.currentState?.validate();
-                }
-              });
-            }),
             buildDropdownField(
-                'Class Level', selectedClassLevel, classLevelItems, (value) {
-              setState(() {
-                selectedClassLevel = value;
-                if (_submitted) {
-                  _formKey.currentState?.validate();
-                }
-              });
-            }),
+                'Series',
+                selectedSeries,
+                seriesItems,
+                (value) {
+                  setState(() {
+                    selectedSeries = value;
+                  });
+                },
+                selectedId: selectedSeriesId,
+                onIdChanged: (id) {
+                  setState(() {
+                    selectedSeriesId = id;
+                  });
+                }),
+            buildDropdownField(
+                'Class Level',
+                selectedClassLevel,
+                classLevelItems,
+                (value) {
+                  setState(() {
+                    selectedClassLevel = value;
+                  });
+                },
+                selectedId: selectedClassLevelId,
+                onIdChanged: (id) {
+                  setState(() {
+                    selectedClassLevelId = id;
+                  });
+                }),
           ],
         ),
       ),
@@ -280,8 +342,28 @@ class VisitSeriesSearchPageState extends State<VisitSeriesSearch> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            buildTextField('Title / ISBN', titleController,
-                initialValue: '', enabled: true),
+            buildTextField('Title / ISBN', _autocompleteController,
+                enabled: true),
+            if (_isFetchingTitles)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 16.0),
+                child: Center(child: CircularProgressIndicator()),
+              ),
+            if (titleSuggestions.isNotEmpty)
+              ...titleSuggestions.map(
+                (title) => ListTile(
+                  title: Text(title),
+                  onTap: () {
+                    setState(() {
+                      if (kDebugMode) {
+                        print(title);
+                      }
+                      titleController.text = title;
+                      titleSuggestions = [];
+                    });
+                  },
+                ),
+              ),
           ],
         ),
       ),
@@ -289,9 +371,7 @@ class VisitSeriesSearchPageState extends State<VisitSeriesSearch> {
   }
 
   Widget buildTextField(String label, TextEditingController controller,
-      {String initialValue = '', bool enabled = true, int maxLines = 1}) {
-    controller = TextEditingController(text: initialValue);
-
+      {bool enabled = true, int maxLines = 1}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: TextFormField(
@@ -323,17 +403,17 @@ class VisitSeriesSearchPageState extends State<VisitSeriesSearch> {
   }
 
   Widget buildDropdownField(String label, String? selectedValue,
-      List<DropdownMenuItem<String>> items, ValueChanged<String?> onChanged) {
+      List<DropdownMenuItem<String>> items, ValueChanged<String?> onChanged,
+      {required int? selectedId, required ValueChanged<int?> onIdChanged}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: InputDecorator(
         decoration: InputDecoration(
           labelText: label,
           border: const OutlineInputBorder(),
-          errorText:
-              _submitted && selectedSeries == null && selectedClassLevel == null
-                  ? 'Please select a $label'
-                  : null,
+          errorText: _submitted && (selectedValue == null || selectedId == null)
+              ? 'Please select a $label'
+              : null,
         ),
         child: DropdownButtonHideUnderline(
           child: DropdownButton<String>(
@@ -341,7 +421,13 @@ class VisitSeriesSearchPageState extends State<VisitSeriesSearch> {
             value: selectedValue,
             items: items,
             onChanged: (value) {
+              if (value == null) return;
+
               onChanged(value);
+              final selectedItem =
+                  items.firstWhere((item) => item.value == value);
+              onIdChanged((selectedItem.key as ValueKey).value as int);
+
               setState(() {
                 if (_submitted) {
                   _formKey.currentState?.validate();
