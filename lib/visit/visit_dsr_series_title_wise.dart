@@ -398,7 +398,7 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise> {
   }
 
   Widget _buildTitleWiseTab() {
-    return Center(
+    return const Center(
       child: Text('Title wise content goes here'),
     );
   }
@@ -423,16 +423,16 @@ class BookListItem extends StatefulWidget {
   final ValueChanged<int> onQuantityChanged;
 
   const BookListItem({
-    Key? key,
+    super.key,
     required this.book,
     required this.onQuantityChanged,
-  }) : super(key: key);
+  });
 
   @override
-  _BookListItemState createState() => _BookListItemState();
+  BookListItemState createState() => BookListItemState();
 }
 
-class _BookListItemState extends State<BookListItem> {
+class BookListItemState extends State<BookListItem> {
   late int _quantity;
 
   @override

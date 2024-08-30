@@ -124,7 +124,9 @@ class ApprovalDetailFormState extends State<ApprovalDetailForm> {
       },
     );
 
-    print('titleDetailsList size:${titleDetailsList.length}');
+    if (kDebugMode) {
+      print('titleDetailsList size:${titleDetailsList.length}');
+    }
 
     try {
       final SubmitRequestApprovalResponse response;
@@ -159,7 +161,9 @@ class ApprovalDetailFormState extends State<ApprovalDetailForm> {
       }
 
       // Close the loading indicator
-      Navigator.of(context).pop();
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
 
       if (kDebugMode) {
         print(
@@ -169,11 +173,13 @@ class ApprovalDetailFormState extends State<ApprovalDetailForm> {
         String s = response.returnMessage.msgText;
         if (s.isNotEmpty) {
           _toastMessage.showInfoToastMessage(s);
-          Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(builder: (context) => const HomePage()),
-            (Route<dynamic> route) => false,
-          );
+          if (mounted) {
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (context) => const HomePage()),
+              (Route<dynamic> route) => false,
+            );
+          }
         } else {
           if (kDebugMode) {
             print('$approvalFor ${widget.type} Error s empty');
@@ -190,8 +196,9 @@ class ApprovalDetailFormState extends State<ApprovalDetailForm> {
       }
     } catch (error) {
       // Close the loading indicator
-      Navigator.of(context).pop();
-
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
       // Handle the error (e.g., show error message)
       if (kDebugMode) {
         print('Failed to approve: $error');
@@ -476,10 +483,9 @@ class ApprovalDetailFormState extends State<ApprovalDetailForm> {
                                 var clarification =
                                     response.clarificationList![index];
                                 return ListTile(
-                                  title: Text(
-                                      clarification.clarificationQuery),
-                                  subtitle: Text(
-                                      clarification.clarificationResponse),
+                                  title: Text(clarification.clarificationQuery),
+                                  subtitle:
+                                      Text(clarification.clarificationResponse),
                                 );
                               },
                             ),

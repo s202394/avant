@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 
 class NoDataLayout extends StatelessWidget {
+  const NoDataLayout({super.key});
+
   @override
   Widget build(BuildContext context) {
-    return Center(
+    return const Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [

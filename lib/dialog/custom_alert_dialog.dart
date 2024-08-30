@@ -6,7 +6,8 @@ class CustomAlertDialog extends StatelessWidget {
   final VoidCallback onConfirm;
   final VoidCallback onCancel;
 
-  CustomAlertDialog({
+  const CustomAlertDialog({
+    super.key,
     required this.title,
     required this.content,
     required this.onConfirm,
@@ -21,35 +22,37 @@ class CustomAlertDialog extends StatelessWidget {
       actions: <Widget>[
         ElevatedButton(
           onPressed: onCancel,
-          child: Text("Cancel"),
+          child: const Text("Cancel"),
         ),
         ElevatedButton(
           onPressed: onConfirm,
-          child: Text("Confirm"),
+          child: const Text("Confirm"),
         ),
       ],
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(15.0),
       ),
       backgroundColor: Colors.white,
-      titleTextStyle: TextStyle(
+      titleTextStyle: const TextStyle(
         color: Colors.blue,
         fontSize: 24.0,
         fontWeight: FontWeight.bold,
       ),
-      contentTextStyle: TextStyle(
+      contentTextStyle: const TextStyle(
         color: Colors.black,
         fontSize: 18.0,
       ),
     );
   }
 }
+
 class SingleAlertDialog extends StatelessWidget {
   final String title;
   final String content;
   final VoidCallback onOk;
 
-  SingleAlertDialog({
+  const SingleAlertDialog({
+    super.key,
     required this.title,
     required this.content,
     required this.onOk,
@@ -63,19 +66,19 @@ class SingleAlertDialog extends StatelessWidget {
       actions: <Widget>[
         ElevatedButton(
           onPressed: onOk,
-          child: Text("OK"),
+          child: const Text("OK"),
         ),
       ],
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(15.0),
       ),
       backgroundColor: Colors.white,
-      titleTextStyle: TextStyle(
+      titleTextStyle: const TextStyle(
         color: Colors.blue,
         fontSize: 24.0,
         fontWeight: FontWeight.bold,
       ),
-      contentTextStyle: TextStyle(
+      contentTextStyle: const TextStyle(
         color: Colors.black,
         fontSize: 18.0,
       ),

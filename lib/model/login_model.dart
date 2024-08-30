@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:avant/db/db_helper.dart';
 
@@ -36,7 +37,9 @@ class LoginResponse {
         await DatabaseHelper().insertApplicationSetup(setup);
       }
     } else {
-      print('ApplicationSetup data is null or not a list');
+      if (kDebugMode) {
+        print('ApplicationSetup data is null or not a list');
+      }
     }
 
     // Store ProductDivision data in SharedPreferences

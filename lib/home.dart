@@ -142,7 +142,7 @@ class HomePageState extends State<HomePage> {
     if (mounted) {
       Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(builder: (context) => LoginPage()),
+        MaterialPageRoute(builder: (context) => const LoginPage()),
         (Route<dynamic> route) => false,
       );
     }
@@ -261,7 +261,7 @@ class HomePageState extends State<HomePage> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                                builder: (context) => ApprovalListForm(
+                                builder: (context) => const ApprovalListForm(
                                     type: CUSTOMER_SAMPLE_APPROVAL)),
                           );
                         },
@@ -273,7 +273,7 @@ class HomePageState extends State<HomePage> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                                builder: (context) => ApprovalListForm(
+                                builder: (context) => const ApprovalListForm(
                                     type: 'Self Stock Request Approval')),
                           );
                         },

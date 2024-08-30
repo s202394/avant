@@ -99,13 +99,12 @@ class ApprovalListFormState extends State<ApprovalListForm> {
           setState(() {
             isLoading = false;
           });
-          // Handle error if necessary
+          return <ApprovalList>[];
         });
       });
     }
   }
 
-  @override
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -124,7 +123,7 @@ class ApprovalListFormState extends State<ApprovalListForm> {
                     } else if (snapshot.hasError) {
                       return const ErrorLayout();
                     } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                      return NoDataLayout(); // Ensures it is centered
+                      return const NoDataLayout(); // Ensures it is centered
                     } else {
                       return SingleChildScrollView(
                         child: Column(
@@ -241,15 +240,14 @@ class ApprovalListFormState extends State<ApprovalListForm> {
   }
 
   void _handleRequest(BuildContext context, String action) async {
+    // Validate inputs
     setState(() {
-      // Validate comment field
       if (_commentController.text.isEmpty) {
         _commentError = 'Please enter a comment before $action.';
       } else {
         _commentError = null;
       }
 
-      // Validate that at least one item is selected
       if (checkedRequests.isEmpty) {
         _selectionError = 'Please select at least one item to $action.';
       } else {
@@ -257,14 +255,12 @@ class ApprovalListFormState extends State<ApprovalListForm> {
       }
     });
 
-    // Stop if there are validation errors
     if (_commentError != null || _selectionError != null) {
       return;
     }
 
     if (checkedRequests.isEmpty) {
-      _toastMessage
-          .showToastMessage("Please select any item to take an action.");
+      _toastMessage.showToastMessage("Please select any item to take an action.");
       return;
     }
 
@@ -272,10 +268,13 @@ class ApprovalListFormState extends State<ApprovalListForm> {
 
     if (!await _checkInternetConnection()) return;
 
+    // Capture context for later use
+    final BuildContext dialogContext = context;
+
     // Show loading indicator
     if (mounted) {
       showDialog(
-        context: context,
+        context: dialogContext,
         barrierDismissible: false,
         builder: (BuildContext context) {
           return const Center(child: CircularProgressIndicator());
@@ -284,13 +283,11 @@ class ApprovalListFormState extends State<ApprovalListForm> {
     }
 
     try {
-      String requestIds =
-          checkedRequests.map((request) => request.requestId).join(',');
+      String requestIds = checkedRequests.map((request) => request.requestId).join(',');
 
       final SubmitRequestApprovalResponse response;
       if (widget.type == CUSTOMER_SAMPLE_APPROVAL) {
-        response = await SubmitRequestApprovalService()
-            .submitCustomerSamplingRequestApproved(
+        response = await SubmitRequestApprovalService().submitCustomerSamplingRequestApproved(
           widget.type,
           true,
           action,
@@ -303,8 +300,7 @@ class ApprovalListFormState extends State<ApprovalListForm> {
           token,
         );
       } else {
-        response =
-            await SubmitRequestApprovalService().submitSelfStockRequestApproved(
+        response = await SubmitRequestApprovalService().submitSelfStockRequestApproved(
           widget.type,
           true,
           action,
@@ -318,13 +314,13 @@ class ApprovalListFormState extends State<ApprovalListForm> {
         );
       }
 
+      // Dismiss the loading dialog if mounted
       if (mounted) {
-        Navigator.of(context).pop(); // Dismiss the loading dialog
+        Navigator.of(dialogContext).pop(); // Dismiss the loading dialog
       }
 
       if (kDebugMode) {
-        print(
-            'Approval ${widget.type} successful: ${response.returnMessage.msgText}');
+        print('Approval ${widget.type} successful: ${response.returnMessage.msgText}');
       }
 
       if (response.status == 'Success') {
@@ -335,33 +331,30 @@ class ApprovalListFormState extends State<ApprovalListForm> {
             Navigator.pushAndRemoveUntil(
               context,
               MaterialPageRoute(builder: (context) => const HomePage()),
-              (Route<dynamic> route) => false,
+                  (Route<dynamic> route) => false,
             );
           }
         } else {
           if (kDebugMode) {
             print('$action ${widget.type} Error: message is empty');
           }
-          _toastMessage.showToastMessage(
-              "An error occurred while $action ${widget.type}.");
+          _toastMessage.showToastMessage("An error occurred while $action ${widget.type}.");
         }
       } else {
         if (kDebugMode) {
           print('Add ${widget.type} Error: ${response.status}');
         }
-        _toastMessage.showToastMessage(
-            "An error occurred while $action ${widget.type}.");
+        _toastMessage.showToastMessage("An error occurred while $action ${widget.type}.");
       }
     } catch (error) {
+      // Dismiss the loading dialog if mounted
       if (mounted) {
-        Navigator.of(context).pop(); // Dismiss the loading dialog
+        Navigator.of(dialogContext).pop(); // Dismiss the loading dialog
       }
-      // Handle the error (e.g., show error message)
       if (kDebugMode) {
         print('Failed to ${widget.type} $action: $error');
       }
-      _toastMessage
-          .showToastMessage("An error occurred while $action ${widget.type}.");
+      _toastMessage.showToastMessage("An error occurred while $action ${widget.type}.");
     }
   }
 

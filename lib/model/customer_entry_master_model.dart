@@ -1,5 +1,3 @@
-import 'package:json_annotation/json_annotation.dart';
-import 'package:avant/model/customer_entry_master_model.dart';
 class CustomerEntryMasterResponse {
   final String status;
   final List<BoardMaster> boardMasterList;
@@ -144,12 +142,13 @@ class CustomerEntryMasterResponse {
       'AdoptionRoleMaster': adoptionRoleMasterList,
       'CustomerCategory': customerCategoryList,
       'InstituteType': instituteTypeList,
-      'InstituteType': instituteLevelList,
+      'InstituteLevel': instituteLevelList,
       'PurchaseMode': purchaseModeList,
       'AffiliateType': affiliateTypeList,
     };
   }
 }
+
 abstract class JsonSerializable {
   Map<String, dynamic> toJson();
 }
@@ -170,6 +169,7 @@ class BoardMaster implements JsonSerializable {
     );
   }
 
+  @override
   Map<String, dynamic> toJson() {
     return {
       'BoardId': boardId,
@@ -194,6 +194,7 @@ class Classes implements JsonSerializable {
     );
   }
 
+  @override
   Map<String, dynamic> toJson() {
     return {
       'ClassNumId': classNumId,
@@ -218,6 +219,7 @@ class ChainSchool implements JsonSerializable {
     );
   }
 
+  @override
   Map<String, dynamic> toJson() {
     return {
       'ChainSchoolId': chainSchoolId,
@@ -242,6 +244,7 @@ class DataSource implements JsonSerializable {
     );
   }
 
+  @override
   Map<String, dynamic> toJson() {
     return {
       'DataSourceId': dataSourceId,
@@ -266,6 +269,7 @@ class AccountableExecutive implements JsonSerializable {
     );
   }
 
+  @override
   Map<String, dynamic> toJson() {
     return {
       'SNo': sNo,
@@ -290,6 +294,7 @@ class SalutationMaster implements JsonSerializable {
     );
   }
 
+  @override
   Map<String, dynamic> toJson() {
     return {
       'SalutationId': salutationId,
@@ -314,6 +319,7 @@ class ContactDesignation implements JsonSerializable {
     );
   }
 
+  @override
   Map<String, dynamic> toJson() {
     return {
       'ContactDesignationId': contactDesignationId,
@@ -338,6 +344,7 @@ class Subject implements JsonSerializable {
     );
   }
 
+  @override
   Map<String, dynamic> toJson() {
     return {
       'SubjectId': subjectId,
@@ -362,6 +369,7 @@ class Department implements JsonSerializable {
     );
   }
 
+  @override
   Map<String, dynamic> toJson() {
     return {
       'DepartmentId': departmentId,
@@ -386,6 +394,7 @@ class AdoptionRoleMaster implements JsonSerializable {
     );
   }
 
+  @override
   Map<String, dynamic> toJson() {
     return {
       'AdoptionRoleId': adoptionRoleId,
@@ -410,6 +419,7 @@ class CustomerCategory implements JsonSerializable {
     );
   }
 
+  @override
   Map<String, dynamic> toJson() {
     return {
       'CustomerCategoryId': customerCategoryId,
@@ -434,6 +444,7 @@ class Months implements JsonSerializable {
     );
   }
 
+  @override
   Map<String, dynamic> toJson() {
     return {
       'ID': id,
@@ -458,6 +469,7 @@ class PurchaseMode implements JsonSerializable {
     );
   }
 
+  @override
   Map<String, dynamic> toJson() {
     return {
       'ModeValue': modeValue,
@@ -482,6 +494,7 @@ class InstituteType implements JsonSerializable {
     );
   }
 
+  @override
   Map<String, dynamic> toJson() {
     return {
       'ID': id,
@@ -506,6 +519,7 @@ class InstituteLevel implements JsonSerializable {
     );
   }
 
+  @override
   Map<String, dynamic> toJson() {
     return {
       'ID': id,
@@ -530,6 +544,7 @@ class AffiliateType implements JsonSerializable {
     );
   }
 
+  @override
   Map<String, dynamic> toJson() {
     return {
       'ID': id,
