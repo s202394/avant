@@ -3,12 +3,14 @@ class SamplingDetailsResponse {
   final List<SamplingType>? samplingType;
   final List<SampleGiven>? sampleGiven;
   final List<SamplingTitleList>? titleList;
+  final List<SampleTo>? sampleTo;
 
   SamplingDetailsResponse({
     required this.status,
     required this.samplingType,
     required this.sampleGiven,
     required this.titleList,
+    required this.sampleTo,
   });
 
   factory SamplingDetailsResponse.fromJson(Map<String, dynamic> json) {
@@ -27,7 +29,13 @@ class SamplingDetailsResponse {
     var titleListData = json["TitleList"] as List?;
     List<SamplingTitleList>? titleList;
     if (titleListData != null && titleListData.isNotEmpty) {
-      titleList = titleListData.map((i) => SamplingTitleList.fromJson(i)).toList();
+      titleList =
+          titleListData.map((i) => SamplingTitleList.fromJson(i)).toList();
+    }
+    var sampleToData = json["SampleTo"] as List?;
+    List<SampleTo>? sampleTo;
+    if (sampleToData != null && sampleToData.isNotEmpty) {
+      sampleTo = sampleToData.map((i) => SampleTo.fromJson(i)).toList();
     }
 
     return SamplingDetailsResponse(
@@ -35,6 +43,7 @@ class SamplingDetailsResponse {
       samplingType: samplingType,
       sampleGiven: sampleGiven,
       titleList: titleList,
+      sampleTo: sampleTo,
     );
   }
 
@@ -44,6 +53,7 @@ class SamplingDetailsResponse {
       'SamplingType': samplingType?.map((e) => e.toJson()).toList(),
       'SampleGiven': sampleGiven?.map((e) => e.toJson()).toList(),
       'TitleList': titleList?.map((e) => e.toJson()).toList(),
+      'SampleTo': sampleTo?.map((e) => e.toJson()).toList(),
     };
   }
 }
@@ -140,6 +150,30 @@ class SamplingTitleList {
       'PhysicalQty': physicalQty,
       'BookType': bookType,
       'MaxSamplingQty': maxSamplingQty,
+    };
+  }
+}
+
+class SampleTo {
+  final String customerName;
+  final int customerContactId;
+
+  SampleTo({
+    required this.customerName,
+    required this.customerContactId,
+  });
+
+  factory SampleTo.fromJson(Map<String, dynamic> json) {
+    return SampleTo(
+      customerName: json['CustomerName'] ?? '',
+      customerContactId: json['CustomerContactId'] ?? 0,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'CustomerName': customerName,
+      'CustomerContactId': customerContactId,
     };
   }
 }

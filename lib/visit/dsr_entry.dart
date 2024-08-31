@@ -460,6 +460,7 @@ class DsrEntryPageState extends State<DsrEntry> {
             visitDate: _dateController.text,
             visitPurposeId: selectedVisitPurposeId ?? 0,
             jointVisitWithIds: commaSeparatedIds,
+            personMetId: selectedPersonMetId??0,
             samplingDone: samplingDone ?? false,
             followUpAction: followUpAction ?? false,
           ),

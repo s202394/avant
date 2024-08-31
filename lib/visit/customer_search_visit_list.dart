@@ -85,6 +85,7 @@ class CustomerSearchVisitListPageState extends State<CustomerSearchVisitList> {
                                 visitDate: '',
                                 visitPurposeId: 0,
                                 jointVisitWithIds: '',
+                                personMetId: 0,
                                 samplingDone: false,
                                 followUpAction: false,
                               ),

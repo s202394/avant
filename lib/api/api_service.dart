@@ -16,6 +16,7 @@ import 'package:avant/model/geography_model.dart';
 import 'package:avant/model/get_visit_dsr_model.dart';
 import 'package:avant/model/menu_model.dart';
 import 'package:avant/model/setup_values.dart';
+import 'package:avant/model/ship_to_response.dart';
 import 'package:avant/model/submit_approval_model.dart';
 import 'package:avant/model/travel_plan_model.dart';
 import 'package:avant/model/visit_details_model.dart';
@@ -587,10 +588,10 @@ class GetVisitDsrService {
     }
   }
 
-  Future<FetchTitlesResponse> fetchTitles(
-      int seriesId, int classLevel, String isbn, String token) async {
+  Future<FetchTitlesResponse> fetchTitles(int selectedIndex, int seriesId,
+      int classLevel, String isbn, String token) async {
     final String body;
-    if (isbn.isNotEmpty) {
+    if (selectedIndex == 1) {
       body = jsonEncode(<String, dynamic>{
         'BookISBN': isbn,
       });
@@ -618,14 +619,15 @@ class GetVisitDsrService {
       return FetchTitlesResponse.fromJson(jsonResponse);
     } else if (response.statusCode == 401) {
       // Token is invalid or expired, refresh the token and retry
-      return await refreshAndRetryFetchTitles(seriesId, classLevel, isbn);
+      return await refreshAndRetryFetchTitles(
+          selectedIndex, seriesId, classLevel, isbn);
     } else {
       throw Exception('Failed to load fetch titles');
     }
   }
 
   Future<FetchTitlesResponse> refreshAndRetryFetchTitles(
-      int seriesId, int classLevel, String isbn) async {
+      int selectedIndex, int seriesId, int classLevel, String isbn) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String username = prefs.getString('token_username') ?? '';
     String password = prefs.getString('password') ?? '';
@@ -635,7 +637,8 @@ class GetVisitDsrService {
       String? newToken = prefs.getString('token');
 
       if (newToken != null && newToken.isNotEmpty) {
-        return await fetchTitles(seriesId, classLevel, isbn, newToken);
+        return await fetchTitles(
+            selectedIndex, seriesId, classLevel, isbn, newToken);
       } else {
         throw Exception('Failed to retrieve new token');
       }
@@ -726,6 +729,61 @@ class GetVisitDsrService {
             classLevelId,
             titleId,
             newToken);
+      } else {
+        throw Exception('Failed to retrieve new token');
+      }
+    } else {
+      throw Exception(
+          'Username or password is not stored in SharedPreferences');
+    }
+  }
+
+  Future<ShipToResponse> getShipTo(int customerId, int customerContactId,
+      String sampleGiven, int executiveId, String token) async {
+    final String body = jsonEncode(<String, dynamic>{
+      'CustomerId': customerId,
+      'CustomerContactId': customerContactId,
+      'SampleGiven': sampleGiven,
+      'ExecutiveId': executiveId,
+    });
+    final response = await http.post(
+      Uri.parse(SHIP_TO_URL),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+        'Authorization': 'Bearer $token',
+      },
+      body: body,
+    );
+    if (kDebugMode) {
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}');
+      print('Request body: $body');
+    }
+    if (response.statusCode == 200) {
+      final jsonResponse = json.decode(response.body);
+      return ShipToResponse.fromJson(jsonResponse);
+    } else if (response.statusCode == 401) {
+      // Token is invalid or expired, refresh the token and retry
+      return await refreshAndRetryShipTo(
+          customerId, customerContactId, sampleGiven, executiveId);
+    } else {
+      throw Exception('Failed to load fetch titles');
+    }
+  }
+
+  Future<ShipToResponse> refreshAndRetryShipTo(int customerId,
+      int customerContactId, String sampleGiven, int executiveId) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String username = prefs.getString('token_username') ?? '';
+    String password = prefs.getString('password') ?? '';
+
+    if (username.isNotEmpty && password.isNotEmpty) {
+      await TokenService().token(username, password);
+      String? newToken = prefs.getString('token');
+
+      if (newToken != null && newToken.isNotEmpty) {
+        return await getShipTo(
+            customerId, customerContactId, sampleGiven, executiveId, newToken);
       } else {
         throw Exception('Failed to retrieve new token');
       }

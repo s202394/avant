@@ -6,7 +6,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../api/api_service.dart';
 import '../common/common_text.dart';
+import '../model/fetch_titles_model.dart';
 import '../model/login_model.dart';
+import '../model/series_and_class_level_list_response.dart';
 
 class VisitSeriesSearch extends StatefulWidget {
   final int customerId;
@@ -20,6 +22,7 @@ class VisitSeriesSearch extends StatefulWidget {
   final String visitDate;
   final int visitPurposeId;
   final String jointVisitWithIds;
+  final int personMetId;
   final bool samplingDone;
   final bool followUpAction;
 
@@ -35,8 +38,9 @@ class VisitSeriesSearch extends StatefulWidget {
     required this.visitFeedback,
     required this.visitDate,
     required this.visitPurposeId,
-    required this.samplingDone,
     required this.jointVisitWithIds,
+    required this.personMetId,
+    required this.samplingDone,
     required this.followUpAction,
   });
 
@@ -44,18 +48,18 @@ class VisitSeriesSearch extends StatefulWidget {
   VisitSeriesSearchPageState createState() => VisitSeriesSearchPageState();
 }
 
-class VisitSeriesSearchPageState extends State<VisitSeriesSearch> {
+class VisitSeriesSearchPageState extends State<VisitSeriesSearch>
+    with SingleTickerProviderStateMixin {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  late TabController _tabController;
 
-  String? selectedClassLevel;
-  int? selectedClassLevelId;
-  String? selectedSeries;
-  int? selectedSeriesId;
-  int? selectedTitleId;
+  ClassLevelList? selectedClassLevel;
+  SeriesList? selectedSeries;
+  TitleList? selectedTitle;
 
-  List<DropdownMenuItem<String>> classLevelItems = [];
-  List<DropdownMenuItem<String>> seriesItems = [];
-  List<String> titleSuggestions = [];
+  List<DropdownMenuItem<ClassLevelList>> classLevelItems = [];
+  List<DropdownMenuItem<SeriesList>> seriesItems = [];
+  List<TitleList> titleSuggestions = [];
 
   late SharedPreferences prefs;
   late String token;
@@ -64,7 +68,7 @@ class VisitSeriesSearchPageState extends State<VisitSeriesSearch> {
 
   bool _submitted = false;
   bool _isLoading = true;
-  bool _isFetchingTitles = false; // To handle loading state for autocomplete
+  bool _isFetchingTitles = false;
 
   final DetailText _detailText = DetailText();
 
@@ -74,10 +78,17 @@ class VisitSeriesSearchPageState extends State<VisitSeriesSearch> {
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 2, vsync: this);
     _fetchSeriesAndClassLevels();
     _autocompleteController.addListener(() {
       _fetchTitlesSuggestions(_autocompleteController.text);
     });
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
   }
 
   Future<void> _fetchSeriesAndClassLevels() async {
@@ -95,8 +106,8 @@ class VisitSeriesSearchPageState extends State<VisitSeriesSearch> {
       setState(() {
         classLevelItems = response.classLevelList
                 ?.map(
-                  (e) => DropdownMenuItem<String>(
-                    value: e.classLevelName,
+                  (e) => DropdownMenuItem<ClassLevelList>(
+                    value: e,
                     key: ValueKey(e.classLevelId),
                     child: Text(e.classLevelName),
                   ),
@@ -106,8 +117,8 @@ class VisitSeriesSearchPageState extends State<VisitSeriesSearch> {
 
         seriesItems = response.seriesList
                 ?.map(
-                  (e) => DropdownMenuItem<String>(
-                    value: e.seriesName,
+                  (e) => DropdownMenuItem<SeriesList>(
+                    value: e,
                     key: ValueKey(e.seriesId),
                     child: Text(e.seriesName),
                   ),
@@ -140,15 +151,15 @@ class VisitSeriesSearchPageState extends State<VisitSeriesSearch> {
 
     try {
       final response = await GetVisitDsrService().fetchTitles(
-        selectedSeriesId ?? 0,
-        selectedClassLevelId ?? 0,
+        1,
+        selectedSeries?.seriesId ?? 0,
+        selectedClassLevel?.classLevelId ?? 0,
         query,
         token,
       );
 
       setState(() {
-        titleSuggestions =
-            response.titleList?.map((e) => e.title).toList() ?? [];
+        titleSuggestions = response.titleList ?? [];
         _isFetchingTitles = false;
       });
     } catch (e) {
@@ -203,10 +214,11 @@ class VisitSeriesSearchPageState extends State<VisitSeriesSearch> {
                     ),
                     Container(
                       color: Colors.orange,
-                      child: const TabBar(
+                      child: TabBar(
+                        controller: _tabController,
                         labelColor: Colors.black,
                         indicatorColor: Colors.blue,
-                        tabs: [
+                        tabs: const [
                           Tab(text: 'Series/ Title'),
                           Tab(text: 'Title wise'),
                         ],
@@ -214,6 +226,7 @@ class VisitSeriesSearchPageState extends State<VisitSeriesSearch> {
                     ),
                     Expanded(
                       child: TabBarView(
+                        controller: _tabController,
                         children: [
                           _buildSeriesTitleTab(),
                           _buildTitleWiseTab(),
@@ -267,24 +280,25 @@ class VisitSeriesSearchPageState extends State<VisitSeriesSearch> {
       print('Form submitted!');
     }
 
+    int selectedIndex = _tabController.index;
+
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => VisitDsrSeriesTitleWise(
+          selectedIndex: selectedIndex,
           customerId: widget.customerId,
           customerName: widget.customerName,
           customerType: widget.customerType,
           address: widget.address,
-          series: selectedSeries ?? '',
-          seriesId: selectedSeriesId ?? 0,
-          classLevel: selectedClassLevel ?? '',
-          classLevelId: selectedClassLevelId ?? 0,
-          title: titleController.text,
-          titleId: selectedTitleId ?? 0,
+          selectedSeries: selectedSeries,
+          selectedClassLevel: selectedClassLevel,
+          selectedTitle: selectedTitle,
           visitFeedback: widget.visitFeedback,
           visitDate: widget.visitDate,
           visitPurposeId: widget.visitPurposeId,
           jointVisitWithIds: widget.jointVisitWithIds,
+          personMetId: widget.personMetId,
           samplingDone: widget.samplingDone,
           followUpAction: widget.followUpAction,
         ),
@@ -299,22 +313,7 @@ class VisitSeriesSearchPageState extends State<VisitSeriesSearch> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            buildDropdownField(
-                'Series',
-                selectedSeries,
-                seriesItems,
-                (value) {
-                  setState(() {
-                    selectedSeries = value;
-                  });
-                },
-                selectedId: selectedSeriesId,
-                onIdChanged: (id) {
-                  setState(() {
-                    selectedSeriesId = id;
-                  });
-                }),
-            buildDropdownField(
+            buildDropdownField<ClassLevelList>(
                 'Class Level',
                 selectedClassLevel,
                 classLevelItems,
@@ -323,11 +322,22 @@ class VisitSeriesSearchPageState extends State<VisitSeriesSearch> {
                     selectedClassLevel = value;
                   });
                 },
-                selectedId: selectedClassLevelId,
+                selectedId: selectedClassLevel?.classLevelId,
                 onIdChanged: (id) {
+                  // No longer needed
+                }),
+            buildDropdownField<SeriesList>(
+                'Series',
+                selectedSeries,
+                seriesItems,
+                (value) {
                   setState(() {
-                    selectedClassLevelId = id;
+                    selectedSeries = value;
                   });
+                },
+                selectedId: selectedSeries?.seriesId,
+                onIdChanged: (id) {
+                  // No longer needed
                 }),
           ],
         ),
@@ -352,13 +362,14 @@ class VisitSeriesSearchPageState extends State<VisitSeriesSearch> {
             if (titleSuggestions.isNotEmpty)
               ...titleSuggestions.map(
                 (title) => ListTile(
-                  title: Text(title),
+                  title: Text(title.title),
                   onTap: () {
                     setState(() {
                       if (kDebugMode) {
-                        print(title);
+                        print(title.title);
                       }
-                      titleController.text = title;
+                      selectedTitle = title;
+                      titleController.text = title.title;
                       titleSuggestions = [];
                     });
                   },
@@ -379,10 +390,8 @@ class VisitSeriesSearchPageState extends State<VisitSeriesSearch> {
         decoration: InputDecoration(
           labelText: label,
           border: const OutlineInputBorder(),
-          contentPadding: const EdgeInsets.symmetric(
-            vertical: 12.0,
-            horizontal: 12.0,
-          ),
+          contentPadding:
+              const EdgeInsets.symmetric(vertical: 12.0, horizontal: 12.0),
           alignLabelWithHint: true,
         ),
         enabled: enabled,
@@ -402,8 +411,8 @@ class VisitSeriesSearchPageState extends State<VisitSeriesSearch> {
     );
   }
 
-  Widget buildDropdownField(String label, String? selectedValue,
-      List<DropdownMenuItem<String>> items, ValueChanged<String?> onChanged,
+  Widget buildDropdownField<T>(String label, T? selectedValue,
+      List<DropdownMenuItem<T>> items, ValueChanged<T?> onChanged,
       {required int? selectedId, required ValueChanged<int?> onIdChanged}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
@@ -411,12 +420,12 @@ class VisitSeriesSearchPageState extends State<VisitSeriesSearch> {
         decoration: InputDecoration(
           labelText: label,
           border: const OutlineInputBorder(),
-          errorText: _submitted && (selectedValue == null || selectedId == null)
+          errorText: _submitted && selectedValue == null
               ? 'Please select a $label'
               : null,
         ),
         child: DropdownButtonHideUnderline(
-          child: DropdownButton<String>(
+          child: DropdownButton<T>(
             isDense: true,
             value: selectedValue,
             items: items,

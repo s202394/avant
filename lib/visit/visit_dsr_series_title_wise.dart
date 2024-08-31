@@ -7,42 +7,41 @@ import '../api/api_service.dart';
 import '../model/fetch_titles_model.dart';
 import '../model/login_model.dart';
 import '../model/sampling_details_response.dart';
+import '../model/series_and_class_level_list_response.dart';
 import '../views/rich_text.dart';
 
 class VisitDsrSeriesTitleWise extends StatefulWidget {
+  final int selectedIndex;
   final int customerId;
   final String customerName;
   final String customerType;
   final String address;
-  final String series;
-  final int seriesId;
-  final String classLevel;
-  final int classLevelId;
-  final String title;
-  final int titleId;
+  final SeriesList? selectedSeries;
+  final ClassLevelList? selectedClassLevel;
+  final TitleList? selectedTitle;
   final String visitFeedback;
   final String visitDate;
   final int visitPurposeId;
   final String jointVisitWithIds;
+  final int personMetId;
   final bool samplingDone;
   final bool followUpAction;
 
   const VisitDsrSeriesTitleWise({
     super.key,
+    required this.selectedIndex,
     required this.customerId,
     required this.customerName,
     required this.customerType,
     required this.address,
-    required this.series,
-    required this.seriesId,
-    required this.classLevel,
-    required this.classLevelId,
-    required this.title,
-    required this.titleId,
+    required this.selectedSeries,
+    required this.selectedClassLevel,
+    required this.selectedTitle,
     required this.visitFeedback,
     required this.visitDate,
     required this.visitPurposeId,
     required this.jointVisitWithIds,
+    required this.personMetId,
     required this.samplingDone,
     required this.followUpAction,
   });
@@ -51,7 +50,10 @@ class VisitDsrSeriesTitleWise extends StatefulWidget {
   VisitDsrSeriesTitleWiseState createState() => VisitDsrSeriesTitleWiseState();
 }
 
-class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise> {
+class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+
   String? selectedSamplingType;
   String? selectedSampleGiven;
   String? selectedSampleTo;
@@ -64,7 +66,11 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise> {
   List<TitleList> books = [];
   List<SamplingType> samplingTypes = [];
   List<SampleGiven> sampleGivens = [];
+  List<SampleTo> sampleTos = [];
 
+  List<String> shipToOptions = [];
+
+  bool isFetchingShipTo = false;
   bool isLoading = true;
   String? errorMessage;
 
@@ -76,7 +82,15 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise> {
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+    _tabController.index = widget.selectedIndex;
     _fetchData();
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
   }
 
   Future<void> _fetchData() async {
@@ -92,20 +106,21 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise> {
       // Call both APIs asynchronously
       final futures = [
         GetVisitDsrService().fetchTitles(
-          widget.seriesId,
-          widget.classLevelId,
-          widget.title,
+          widget.selectedIndex,
+          widget.selectedSeries?.seriesId ?? 0,
+          widget.selectedClassLevel?.classLevelId ?? 0,
+          widget.selectedTitle?.title ?? '',
           token,
         ),
         GetVisitDsrService().samplingDetails(
           widget.customerId,
           'visit',
-          profileId??0,
+          profileId ?? 0,
           widget.customerType,
-          executiveId??0,
-          widget.seriesId,
-          widget.classLevelId,
-          widget.titleId, // titleId
+          executiveId ?? 0,
+          widget.selectedSeries?.seriesId ?? 0,
+          widget.selectedClassLevel?.classLevelId ?? 0,
+          widget.selectedTitle?.bookId ?? 0,
           token,
         ),
       ];
@@ -120,12 +135,55 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise> {
         books = titlesResponse.titleList ?? [];
         samplingTypes = samplingResponse.samplingType ?? [];
         sampleGivens = samplingResponse.sampleGiven ?? [];
+        sampleTos = samplingResponse.sampleTo ?? [];
         isLoading = false;
       });
     } catch (e) {
       setState(() {
         errorMessage = e.toString();
         isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _fetchShipToData() async {
+    if (selectedSampleGiven == null) {
+      return; // No need to fetch if no sampleGiven is selected
+    }
+
+    setState(() {
+      isFetchingShipTo = true;
+    });
+
+    try {
+      final response = await GetVisitDsrService().getShipTo(
+        widget.customerId,
+        widget.personMetId,
+        selectedSampleGiven ?? '',
+        executiveId ?? 0,
+        token,
+      );
+
+      // Initialize the shipToOptions list
+      shipToOptions = [];
+
+      // Safely access and check the properties
+      final resAddress = response.shipTo?.resAddress;
+      final officeAddress = response.shipTo?.officeAddress;
+
+      if (resAddress != null && resAddress.isNotEmpty) {
+        shipToOptions.add("Residential Address");
+      }
+      if (officeAddress != null && officeAddress.isNotEmpty) {
+        shipToOptions.add("Official Address");
+      }
+    } catch (e) {
+      setState(() {
+        errorMessage = e.toString();
+      });
+    } finally {
+      setState(() {
+        isFetchingShipTo = false;
       });
     }
   }
@@ -142,66 +200,68 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise> {
         body: isLoading
             ? const Center(child: CircularProgressIndicator())
             : errorMessage != null
-            ? Center(child: Text('Error: $errorMessage'))
-            : Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      widget.customerName,
-                      style: const TextStyle(
-                          fontWeight: FontWeight.bold, fontSize: 18),
+                ? Center(child: Text('Error: $errorMessage'))
+                : Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                widget.customerName,
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.bold, fontSize: 18),
+                              ),
+                              RichTextWidget(label: widget.address),
+                              const SizedBox(height: 8),
+                              LabeledText(
+                                  label: 'Visit Date', value: widget.visitDate),
+                            ],
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.only(
+                              left: 16, right: 16, bottom: 8),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              LabeledText(
+                                  label: 'Sampling Done',
+                                  value: widget.samplingDone ? 'Yes' : 'No'),
+                              LabeledText(
+                                  label: 'Follow up Action',
+                                  value: widget.followUpAction ? 'Yes' : 'No'),
+                            ],
+                          ),
+                        ),
+                        Container(
+                          color: Colors.orange,
+                          child: TabBar(
+                            controller: _tabController,
+                            labelColor: Colors.black,
+                            indicatorColor: Colors.blue,
+                            tabs: const [
+                              Tab(text: 'Series/ Title'),
+                              Tab(text: 'Title wise'),
+                            ],
+                          ),
+                        ),
+                        Expanded(
+                          child: TabBarView(
+                            controller: _tabController,
+                            children: [
+                              _buildSeriesTitleTab(),
+                              _buildTitleWiseTab(),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
-                    RichTextWidget(label: widget.address),
-                    const SizedBox(height: 8),
-                    LabeledText(
-                        label: 'Visit Date', value: widget.visitDate),
-                  ],
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.only(
-                    left: 16, right: 16, bottom: 8),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    LabeledText(
-                        label: 'Sampling Done',
-                        value: widget.samplingDone ? 'Yes' : 'No'),
-                    LabeledText(
-                        label: 'Follow up Action',
-                        value: widget.followUpAction ? 'Yes' : 'No'),
-                  ],
-                ),
-              ),
-              Container(
-                color: Colors.orange,
-                child: const TabBar(
-                  labelColor: Colors.black,
-                  indicatorColor: Colors.blue,
-                  tabs: [
-                    Tab(text: 'Series/ Title'),
-                    Tab(text: 'Title wise'),
-                  ],
-                ),
-              ),
-              Expanded(
-                child: TabBarView(
-                  children: [
-                    _buildSeriesTitleTab(),
-                    _buildTitleWiseTab(),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
+                  ),
       ),
     );
   }
@@ -222,6 +282,13 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise> {
       );
     }).toList();
 
+    final sampleToItems = sampleTos.map((value) {
+      return DropdownMenuItem<String>(
+        value: value.customerName,
+        child: Text(value.customerName),
+      );
+    }).toList();
+
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -231,7 +298,9 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                LabeledText(label: 'Series Name', value: widget.series),
+                LabeledText(
+                    label: 'Series Name',
+                    value: widget.selectedSeries?.seriesName ?? ''),
                 const SizedBox(height: 16),
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -248,15 +317,7 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise> {
                                 ? 'Please select Sample To'
                                 : null,
                           ),
-                          items: ['Mr. Sanjay Banerjee', 'Rajesh Ranjan']
-                              .map((label) => DropdownMenuItem(
-                            value: label,
-                            child: Text(
-                              label,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ))
-                              .toList(),
+                          items: sampleToItems,
                           onChanged: (value) {
                             setState(() {
                               selectedSampleTo = value;
@@ -274,9 +335,9 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise> {
                             labelText: 'Sampling Type',
                             border: const OutlineInputBorder(),
                             errorText:
-                            _submitted && selectedSamplingType == null
-                                ? 'Please select Sampling Type'
-                                : null,
+                                _submitted && selectedSamplingType == null
+                                    ? 'Please select Sampling Type'
+                                    : null,
                           ),
                           items: samplingTypeItems,
                           onChanged: (value) {
@@ -309,6 +370,11 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise> {
                           onChanged: (value) {
                             setState(() {
                               selectedSampleGiven = value;
+                              // Fetch ship-to data when a sample given is selected
+                              setState(() {
+                                selectedShipTo = null;
+                              });
+                              _fetchShipToData();
                             });
                           },
                         ),
@@ -326,15 +392,24 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise> {
                                 ? 'Please select Ship To'
                                 : null,
                           ),
-                          items: ['Official Address', 'Personal Address']
-                              .map((label) => DropdownMenuItem(
-                            value: label,
-                            child: Text(
-                              label,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ))
-                              .toList(),
+                          items: shipToOptions.isEmpty
+                              ? [
+                                  const DropdownMenuItem<String>(
+                                    value: '',
+                                    child: Text('Ship To not available'),
+                                  ),
+                                ]
+                              : shipToOptions
+                                  .map(
+                                    (address) => DropdownMenuItem<String>(
+                                      value: address,
+                                      child: Text(
+                                        address,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  )
+                                  .toList(),
                           onChanged: (value) {
                             setState(() {
                               selectedShipTo = value;
@@ -380,7 +455,7 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise> {
                 backgroundColor: Colors.blue,
                 foregroundColor: Colors.white,
                 padding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               ),
               child: const Row(
                 mainAxisAlignment: MainAxisAlignment.center,
