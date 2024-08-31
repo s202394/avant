@@ -42,13 +42,13 @@ class BookListItemState extends State<BookListItem> {
                 errorBuilder: (context, error, stackTrace) {
                   return Image.asset(
                     'images/book.png',
-                    width: 100,
+                    width: 80,
                     height: 120,
                     fit: BoxFit.cover,
                   );
                 },
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 8),
               // Book Details
               Expanded(
                 child: Column(
@@ -57,35 +57,35 @@ class BookListItemState extends State<BookListItem> {
                     Text(
                       widget.book.title,
                       style: const TextStyle(
-                        fontSize: 16,
+                        fontSize: 15,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                     Text(
                       widget.book.author,
                       style: const TextStyle(
-                        fontSize: 14,
+                        fontSize: 13,
                         color: Colors.grey,
                       ),
                     ),
                     Text(
                       widget.book.isbn,
                       style: const TextStyle(
-                        fontSize: 14,
+                        fontSize: 13,
                         color: Colors.grey,
                       ),
                     ),
                     Text(
                       widget.book.bookType,
                       style: const TextStyle(
-                        fontSize: 14,
+                        fontSize: 13,
                         color: Colors.grey,
                       ),
                     ),
                     Text(
                       widget.book.price,
                       style: const TextStyle(
-                        fontSize: 14,
+                        fontSize: 13,
                         color: Colors.grey,
                       ),
                     ),
@@ -93,66 +93,92 @@ class BookListItemState extends State<BookListItem> {
                 ),
               ),
               const SizedBox(width: 8),
-              _quantity == 0
-                  ? SizedBox(
-                      width: 115,
-                      height: 40,
-                      child: ElevatedButton(
-                        onPressed: () {
-                          setState(() {
-                            _quantity++;
-                          });
-                          widget.onQuantityChanged(_quantity);
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red,
-                          foregroundColor: Colors.white,
-                          minimumSize: const Size(115, 40),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8.0),
-                          ),
-                        ),
-                        child: const Text('Add'),
-                      ),
-                    )
-                  : SizedBox(
-                      width: 115,
-                      height: 40,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.grey),
-                          borderRadius: BorderRadius.circular(8.0),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.remove, size: 18),
-                              onPressed: () {
-                                if (_quantity > 0) {
-                                  setState(() {
-                                    _quantity--;
-                                  });
-                                  widget.onQuantityChanged(_quantity);
-                                }
-                              },
-                            ),
-                            Text('$_quantity'),
-                            IconButton(
-                              icon: const Icon(Icons.add, size: 18),
+              // Stack to overlay Add button and Quantity control
+              SizedBox(
+                width: 100,
+                height: 40,
+                child: Stack(
+                  children: [
+                    _quantity == 0
+                        ? Positioned.fill(
+                            child: ElevatedButton(
                               onPressed: () {
                                 setState(() {
-                                  if (_quantity < 10) {
-                                    _quantity++;
-                                  }
+                                  _quantity++;
                                 });
                                 widget.onQuantityChanged(_quantity);
                               },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.red,
+                                foregroundColor: Colors.white,
+                                minimumSize: const Size(100, 40),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8.0),
+                                ),
+                              ),
+                              child: const Text('Add'),
                             ),
-                          ],
-                        ),
-                      ),
-                    ),
+                          )
+                        : Positioned.fill(
+                            child: Container(
+                              decoration: BoxDecoration(
+                                border: Border.all(color: Colors.red),
+                                borderRadius: BorderRadius.circular(8.0),
+                              ),
+                              child: Row(
+                                children: [
+                                  SizedBox(
+                                    width: 30,
+                                    height: 40,
+                                    child: IconButton(
+                                      icon: const Icon(Icons.remove,
+                                          size: 18, color: Colors.red),
+                                      onPressed: () {
+                                        if (_quantity > 0) {
+                                          setState(() {
+                                            _quantity--;
+                                          });
+                                          widget.onQuantityChanged(_quantity);
+                                        }
+                                      },
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: Container(
+                                      height: 40,
+                                      alignment: Alignment.center,
+                                      color: Colors.red,
+                                      child: Text(
+                                        '$_quantity',
+                                        style: const TextStyle(
+                                            color: Colors.white),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    ),
+                                  ),
+                                  SizedBox(
+                                    width: 30,
+                                    height: 40,
+                                    child: IconButton(
+                                      icon: const Icon(Icons.add,
+                                          size: 18, color: Colors.red),
+                                      onPressed: () {
+                                        setState(() {
+                                          if (_quantity < 10) {
+                                            _quantity++;
+                                          }
+                                        });
+                                        widget.onQuantityChanged(_quantity);
+                                      },
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                  ],
+                ),
+              ),
             ],
           ),
         ),

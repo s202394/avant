@@ -181,6 +181,7 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
       });
     }
   }
+
   void _handleTabChange(int newIndex) {
     if (widget.selectedIndex == 0 && newIndex == 1) {
       // Prevent switching to the second tab if selectedIndex is 0
@@ -190,6 +191,7 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
       _tabController.index = 1;
     }
   }
+
   Future<void> _fetchShipToData() async {
     if (selectedSampleGiven == null) {
       return; // No need to fetch if no sampleGiven is selected
@@ -290,17 +292,18 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
                             indicatorColor: Colors.blue,
                             tabs: [
                               AbsorbPointer(
-                                absorbing: widget.selectedIndex == 1, // Disable if selectedIndex is 1
+                                absorbing: widget.selectedIndex == 1,
+                                // Disable if selectedIndex is 1
                                 child: Tab(text: 'Series/ Title'),
                               ),
                               AbsorbPointer(
-                                absorbing: widget.selectedIndex == 0, // Disable if selectedIndex is 0
+                                absorbing: widget.selectedIndex == 0,
+                                // Disable if selectedIndex is 0
                                 child: Tab(text: 'Title wise'),
                               ),
                             ],
                           ),
                         ),
-
                         Expanded(
                           child: TabBarView(
                             controller: _tabController,
@@ -310,7 +313,6 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
                             ],
                           ),
                         ),
-
                       ],
                     ),
                   ),
@@ -319,7 +321,6 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
   }
 
   Widget _buildSeriesTitleTab() {
-    // Convert your data into DropdownMenuItems
     final samplingTypeItems = samplingTypes.map((type) {
       return DropdownMenuItem<String>(
         value: type.samplingTypeValue,
@@ -342,134 +343,129 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
     }).toList();
 
     return Scaffold(
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Visibility(
-                visible: widget.selectedIndex == 0,
-                child: LabeledText(
-                    label: 'Series Name',
-                    value: widget.selectedSeries?.seriesName ?? ''),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.only(right: 8.0),
-                      child: DropdownButtonFormField<String>(
-                        isExpanded: true,
-                        decoration: InputDecoration(
-                          labelText: 'Sample To',
-                          border: const OutlineInputBorder(),
-                          errorText: _submitted && selectedSampleTo == null
-                              ? 'Please select Sample To'
-                              : null,
-                        ),
-                        items: sampleToItems,
-                        onChanged: (value) {
-                          setState(() {
-                            selectedSampleTo = value;
-                          });
-                        },
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Visibility(
+              visible: widget.selectedIndex == 0,
+              child: LabeledText(
+                  label: 'Series Name',
+                  value: widget.selectedSeries?.seriesName ?? ''),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.only(right: 8.0),
+                    child: DropdownButtonFormField<String>(
+                      isExpanded: true,
+                      decoration: InputDecoration(
+                        labelText: 'Sample To',
+                        border: const OutlineInputBorder(),
+                        errorText: _submitted && selectedSampleTo == null
+                            ? 'Please select Sample To'
+                            : null,
                       ),
+                      items: sampleToItems,
+                      onChanged: (value) {
+                        setState(() {
+                          selectedSampleTo = value;
+                        });
+                      },
                     ),
                   ),
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.only(left: 8.0),
-                      child: DropdownButtonFormField<String>(
-                        isExpanded: true,
-                        decoration: InputDecoration(
-                          labelText: 'Sampling Type',
-                          border: const OutlineInputBorder(),
-                          errorText: _submitted && selectedSamplingType == null
-                              ? 'Please select Sampling Type'
-                              : null,
-                        ),
-                        items: samplingTypeItems,
-                        onChanged: (value) {
-                          setState(() {
-                            selectedSamplingType = value;
-                          });
-                        },
+                ),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: 8.0),
+                    child: DropdownButtonFormField<String>(
+                      isExpanded: true,
+                      decoration: InputDecoration(
+                        labelText: 'Sampling Type',
+                        border: const OutlineInputBorder(),
+                        errorText: _submitted && selectedSamplingType == null
+                            ? 'Please select Sampling Type'
+                            : null,
                       ),
+                      items: samplingTypeItems,
+                      onChanged: (value) {
+                        setState(() {
+                          selectedSamplingType = value;
+                        });
+                      },
                     ),
                   ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.only(right: 8.0),
-                      child: DropdownButtonFormField<String>(
-                        isExpanded: true,
-                        decoration: InputDecoration(
-                          labelText: 'Sample Given',
-                          border: const OutlineInputBorder(),
-                          errorText: _submitted && selectedSampleGiven == null
-                              ? 'Please select Sample Given'
-                              : null,
-                        ),
-                        items: sampleGivenItems,
-                        onChanged: (value) {
-                          setState(() {
-                            selectedSampleGiven = value;
-                            // Clear Ship To dropdown and reset the selected value
-                            selectedShipTo = null;
-                            shipToOptions.clear();
-                            _fetchShipToData(); // Fetch new options based on selected Sample Given
-                          });
-                        },
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.only(right: 8.0),
+                    child: DropdownButtonFormField<String>(
+                      isExpanded: true,
+                      decoration: InputDecoration(
+                        labelText: 'Sample Given',
+                        border: const OutlineInputBorder(),
+                        errorText: _submitted && selectedSampleGiven == null
+                            ? 'Please select Sample Given'
+                            : null,
                       ),
+                      items: sampleGivenItems,
+                      onChanged: (value) {
+                        setState(() {
+                          selectedSampleGiven = value;
+                          selectedShipTo = null;
+                          shipToOptions.clear();
+                          _fetchShipToData();
+                        });
+                      },
                     ),
                   ),
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.only(left: 8.0),
-                      child: DropdownButtonFormField<String>(
-                        isExpanded: true,
-                        decoration: InputDecoration(
-                          labelText: 'Ship To',
-                          border: const OutlineInputBorder(),
-                          errorText: _submitted && selectedShipTo == null
-                              ? 'Please select Ship To'
-                              : null,
-                        ),
-                        items: shipToOptions
-                            .map(
-                              (address) => DropdownMenuItem<String>(
-                                value: address,
-                                child: Text(
-                                  address,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
+                ),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: 8.0),
+                    child: DropdownButtonFormField<String>(
+                      isExpanded: true,
+                      decoration: InputDecoration(
+                        labelText: 'Ship To',
+                        border: const OutlineInputBorder(),
+                        errorText: _submitted && selectedShipTo == null
+                            ? 'Please select Ship To'
+                            : null,
+                      ),
+                      items: shipToOptions
+                          .map(
+                            (address) => DropdownMenuItem<String>(
+                              value: address,
+                              child: Text(
+                                address,
+                                overflow: TextOverflow.ellipsis,
                               ),
-                            )
-                            .toList(),
-                        onChanged: (value) {
-                          setState(() {
-                            selectedShipTo = value;
-                          });
-                        },
-                      ),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (value) {
+                        setState(() {
+                          selectedShipTo = value;
+                        });
+                      },
                     ),
                   ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              (books.isEmpty)
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Expanded(
+              child: (books.isEmpty)
                   ? _noDataLayout()
                   : ListView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
                       itemCount: books.length,
                       itemBuilder: (context, index) {
                         return BookListItem(
@@ -480,8 +476,8 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
                         );
                       },
                     ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
       bottomNavigationBar: Padding(
@@ -540,8 +536,6 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
       print('Form submitted!');
     }
     if (widget.samplingDone) {
-    } else {
-
-    }
+    } else {}
   }
 }
