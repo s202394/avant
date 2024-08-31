@@ -38,7 +38,7 @@ class TitleList {
   final String bookNum;
   final String image;
   final String bookType;
-  final int quantity;
+  int quantity;
 
   TitleList({
     required this.bookId,
@@ -66,10 +66,6 @@ class TitleList {
       bookType: json['BookType'] ?? '',
       quantity: json['Quantity'] ?? 0,
     );
-  }
-
-  set quantity(int quantity) {
-    this.quantity = quantity;
   }
 
   Map<String, dynamic> toJson() {

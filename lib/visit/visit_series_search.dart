@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../api/api_service.dart';
 import '../common/common_text.dart';
+import '../common/toast.dart';
 import '../model/fetch_titles_model.dart';
 import '../model/login_model.dart';
 import '../model/series_and_class_level_list_response.dart';
@@ -71,6 +72,7 @@ class VisitSeriesSearchPageState extends State<VisitSeriesSearch>
   bool _isFetchingTitles = false;
 
   final DetailText _detailText = DetailText();
+  final ToastMessage _toastMessage = ToastMessage();
 
   final TextEditingController titleController = TextEditingController();
   final TextEditingController _autocompleteController = TextEditingController();
@@ -241,9 +243,7 @@ class VisitSeriesSearchPageState extends State<VisitSeriesSearch>
                               setState(() {
                                 _submitted = true;
                               });
-                              if (_formKey.currentState!.validate() &&
-                                  (selectedClassLevel != null ||
-                                      titleController.text.isNotEmpty)) {
+                              if (_formKey.currentState!.validate()) {
                                 _submitForm();
                               }
                             },
@@ -281,29 +281,34 @@ class VisitSeriesSearchPageState extends State<VisitSeriesSearch>
     }
 
     int selectedIndex = _tabController.index;
-
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => VisitDsrSeriesTitleWise(
-          selectedIndex: selectedIndex,
-          customerId: widget.customerId,
-          customerName: widget.customerName,
-          customerType: widget.customerType,
-          address: widget.address,
-          selectedSeries: selectedSeries,
-          selectedClassLevel: selectedClassLevel,
-          selectedTitle: selectedTitle,
-          visitFeedback: widget.visitFeedback,
-          visitDate: widget.visitDate,
-          visitPurposeId: widget.visitPurposeId,
-          jointVisitWithIds: widget.jointVisitWithIds,
-          personMetId: widget.personMetId,
-          samplingDone: widget.samplingDone,
-          followUpAction: widget.followUpAction,
+    if (selectedIndex == 0 && selectedSeries == null) {
+      _toastMessage.showToastMessage("Please select series");
+    } else if (selectedIndex == 1 && titleController.text.isNotEmpty) {
+      _toastMessage.showToastMessage("Please select title");
+    } else {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => VisitDsrSeriesTitleWise(
+            selectedIndex: selectedIndex,
+            customerId: widget.customerId,
+            customerName: widget.customerName,
+            customerType: widget.customerType,
+            address: widget.address,
+            selectedSeries: selectedSeries,
+            selectedClassLevel: selectedClassLevel,
+            selectedTitle: selectedTitle,
+            visitFeedback: widget.visitFeedback,
+            visitDate: widget.visitDate,
+            visitPurposeId: widget.visitPurposeId,
+            jointVisitWithIds: widget.jointVisitWithIds,
+            personMetId: widget.personMetId,
+            samplingDone: widget.samplingDone,
+            followUpAction: widget.followUpAction,
+          ),
         ),
-      ),
-    );
+      );
+    }
   }
 
   Widget _buildSeriesTitleTab() {
@@ -420,7 +425,7 @@ class VisitSeriesSearchPageState extends State<VisitSeriesSearch>
         decoration: InputDecoration(
           labelText: label,
           border: const OutlineInputBorder(),
-          errorText: _submitted && selectedValue == null
+          errorText: _submitted && selectedValue == null && label == 'Series'
               ? 'Please select a $label'
               : null,
         ),
