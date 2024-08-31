@@ -283,7 +283,7 @@ class VisitSeriesSearchPageState extends State<VisitSeriesSearch>
     int selectedIndex = _tabController.index;
     if (selectedIndex == 0 && selectedSeries == null) {
       _toastMessage.showToastMessage("Please select series");
-    } else if (selectedIndex == 1 && titleController.text.isNotEmpty) {
+    } else if (selectedIndex == 1 && _autocompleteController.text.isEmpty) {
       _toastMessage.showToastMessage("Please select title");
     } else {
       Navigator.push(
@@ -374,7 +374,7 @@ class VisitSeriesSearchPageState extends State<VisitSeriesSearch>
                         print(title.title);
                       }
                       selectedTitle = title;
-                      titleController.text = title.title;
+                      _autocompleteController.text = title.title;
                       titleSuggestions = [];
                     });
                   },

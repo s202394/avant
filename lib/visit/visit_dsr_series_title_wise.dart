@@ -85,6 +85,14 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     _tabController.index = widget.selectedIndex;
+
+    // Listen to tab changes
+    _tabController.addListener(() {
+      if (_tabController.indexIsChanging) {
+        _handleTabChange(_tabController.index);
+      }
+    });
+
     _fetchData();
   }
 
@@ -104,16 +112,45 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
     profileId = await getProfileId();
 
     try {
-      // Call both APIs asynchronously
-      final futures = [
-        GetVisitDsrService().fetchTitles(
-          widget.selectedIndex,
-          widget.selectedSeries?.seriesId ?? 0,
-          widget.selectedClassLevel?.classLevelId ?? 0,
-          widget.selectedTitle?.title ?? '',
-          token,
-        ),
-        GetVisitDsrService().samplingDetails(
+      if (widget.selectedIndex == 0) {
+        // Call both APIs asynchronously
+        final futures = [
+          GetVisitDsrService().fetchTitles(
+            widget.selectedIndex,
+            widget.selectedSeries?.seriesId ?? 0,
+            widget.selectedClassLevel?.classLevelId ?? 0,
+            widget.selectedTitle?.title ?? '',
+            token,
+          ),
+          GetVisitDsrService().samplingDetails(
+            widget.customerId,
+            'visit',
+            profileId ?? 0,
+            widget.customerType,
+            executiveId ?? 0,
+            widget.selectedSeries?.seriesId ?? 0,
+            widget.selectedClassLevel?.classLevelId ?? 0,
+            widget.selectedTitle?.bookId ?? 0,
+            token,
+          ),
+        ];
+
+        final responses = await Future.wait(futures);
+
+        // Process the responses
+        final titlesResponse = responses[0] as FetchTitlesResponse;
+        final samplingResponse = responses[1] as SamplingDetailsResponse;
+
+        setState(() {
+          books = titlesResponse.titleList ?? [];
+          samplingTypes = samplingResponse.samplingType ?? [];
+          sampleGivens = samplingResponse.sampleGiven ?? [];
+          sampleTos = samplingResponse.sampleTo ?? [];
+          isLoading = false;
+        });
+      } else {
+        // Await the sampling details API call
+        final samplingResponse = await GetVisitDsrService().samplingDetails(
           widget.customerId,
           'visit',
           profileId ?? 0,
@@ -123,22 +160,20 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
           widget.selectedClassLevel?.classLevelId ?? 0,
           widget.selectedTitle?.bookId ?? 0,
           token,
-        ),
-      ];
+        );
 
-      final responses = await Future.wait(futures);
+        setState(() {
+          // Add selected title to the books list
+          if (widget.selectedTitle != null) {
+            books = List.from(books)..add(widget.selectedTitle!);
+          }
 
-      // Process the responses
-      final titlesResponse = responses[0] as FetchTitlesResponse;
-      final samplingResponse = responses[1] as SamplingDetailsResponse;
-
-      setState(() {
-        books = titlesResponse.titleList ?? [];
-        samplingTypes = samplingResponse.samplingType ?? [];
-        sampleGivens = samplingResponse.sampleGiven ?? [];
-        sampleTos = samplingResponse.sampleTo ?? [];
-        isLoading = false;
-      });
+          samplingTypes = samplingResponse.samplingType ?? [];
+          sampleGivens = samplingResponse.sampleGiven ?? [];
+          sampleTos = samplingResponse.sampleTo ?? [];
+          isLoading = false;
+        });
+      }
     } catch (e) {
       setState(() {
         errorMessage = e.toString();
@@ -146,7 +181,15 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
       });
     }
   }
-
+  void _handleTabChange(int newIndex) {
+    if (widget.selectedIndex == 0 && newIndex == 1) {
+      // Prevent switching to the second tab if selectedIndex is 0
+      _tabController.index = 0;
+    } else if (widget.selectedIndex == 1 && newIndex == 0) {
+      // Prevent switching to the first tab if selectedIndex is 1
+      _tabController.index = 1;
+    }
+  }
   Future<void> _fetchShipToData() async {
     if (selectedSampleGiven == null) {
       return; // No need to fetch if no sampleGiven is selected
@@ -245,21 +288,29 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
                             controller: _tabController,
                             labelColor: Colors.black,
                             indicatorColor: Colors.blue,
-                            tabs: const [
-                              Tab(text: 'Series/ Title'),
-                              Tab(text: 'Title wise'),
+                            tabs: [
+                              AbsorbPointer(
+                                absorbing: widget.selectedIndex == 1, // Disable if selectedIndex is 1
+                                child: Tab(text: 'Series/ Title'),
+                              ),
+                              AbsorbPointer(
+                                absorbing: widget.selectedIndex == 0, // Disable if selectedIndex is 0
+                                child: Tab(text: 'Title wise'),
+                              ),
                             ],
                           ),
                         ),
+
                         Expanded(
                           child: TabBarView(
                             controller: _tabController,
                             children: [
                               _buildSeriesTitleTab(),
-                              _buildTitleWiseTab(),
+                              _buildSeriesTitleTab(),
                             ],
                           ),
                         ),
+
                       ],
                     ),
                   ),
@@ -297,9 +348,12 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              LabeledText(
-                  label: 'Series Name',
-                  value: widget.selectedSeries?.seriesName ?? ''),
+              Visibility(
+                visible: widget.selectedIndex == 0,
+                child: LabeledText(
+                    label: 'Series Name',
+                    value: widget.selectedSeries?.seriesName ?? ''),
+              ),
               const SizedBox(height: 16),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -411,24 +465,21 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
                 ],
               ),
               const SizedBox(height: 16),
-              ListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: books.length,
-                itemBuilder: (context, index) {
-                  return BookListItem(
-                    book: books[index],
-                    onQuantityChanged: (newQuantity) {
-                      _handleQuantityChange(index, newQuantity);
-                    },
-                  ); /*BookListItem(
-                    book: books[index],
-                    onQuantityChanged: (newQuantity) {
-                      _handleQuantityChange(index, newQuantity);
-                    },
-                  );*/
-                },
-              ),
+              (books.isEmpty)
+                  ? _noDataLayout()
+                  : ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: books.length,
+                      itemBuilder: (context, index) {
+                        return BookListItem(
+                          book: books[index],
+                          onQuantityChanged: (newQuantity) {
+                            _handleQuantityChange(index, newQuantity);
+                          },
+                        );
+                      },
+                    ),
             ],
           ),
         ),
@@ -466,9 +517,15 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
     );
   }
 
-  Widget _buildTitleWiseTab() {
+  Widget _noDataLayout() {
     return const Center(
-      child: Text('Title wise content goes here'),
+      child: Padding(
+        padding: EdgeInsets.all(16.0),
+        child: Text(
+          'No data found.',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+      ),
     );
   }
 
@@ -483,66 +540,8 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
       print('Form submitted!');
     }
     if (widget.samplingDone) {
-    } else {}
+    } else {
+
+    }
   }
 }
-
-/*
-class BookListItem extends StatefulWidget {
-  final TitleList book;
-  final ValueChanged<int> onQuantityChanged;
-
-  const BookListItem({
-    super.key,
-    required this.book,
-    required this.onQuantityChanged,
-  });
-
-  @override
-  BookListItemState createState() => BookListItemState();
-}
-
-class BookListItemState extends State<BookListItem> {
-  late int _quantity;
-
-  @override
-  void initState() {
-    super.initState();
-    _quantity = widget.book.quantity;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return ListTile(
-      title: Text(widget.book.title),
-      subtitle: Text('ISBN: ${widget.book.isbn}'),
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          IconButton(
-            icon: const Icon(Icons.remove),
-            onPressed: () {
-              if (_quantity > 0) {
-                setState(() {
-                  _quantity--;
-                });
-                widget.onQuantityChanged(_quantity);
-              }
-            },
-          ),
-          Text('$_quantity'),
-          IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: () {
-              setState(() {
-                _quantity++;
-              });
-              widget.onQuantityChanged(_quantity);
-            },
-          ),
-        ],
-      ),
-    );
-  }
-}
-*/
