@@ -8,6 +8,7 @@ import 'package:avant/views/rich_text.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../model/followup_action_model.dart';
@@ -160,6 +161,7 @@ class FollowUpActionState extends State<FollowUpAction> {
                             }
                           },
                         ),
+                        const SizedBox(height: 16),
                         buildDropdownField(
                           'Executive',
                           selectedExecutive,
@@ -179,6 +181,7 @@ class FollowUpActionState extends State<FollowUpAction> {
                             });
                           },
                         ),
+                        const SizedBox(height: 8),
                         _buildTextField(
                             'Action Date', _dateController, _dateFieldKey),
                         _buildTextField(
@@ -252,12 +255,15 @@ class FollowUpActionState extends State<FollowUpAction> {
         token ?? '',
       );
 
-      // Initialize the executivesList list
-      executivesList = [];
+      setState(() {
+        executivesList.clear();
+        executivesList = response.executiveList;
+      });
 
-      final executiveList = response.executiveList;
-
-      executivesList = executiveList;
+      setState(() {
+        selectedExecutive = null;
+        selectedExecutiveId = null;
+      });
     } catch (e) {
       setState(() {
         errorMessage = e.toString();
@@ -283,6 +289,11 @@ class FollowUpActionState extends State<FollowUpAction> {
         if (kDebugMode) {
           print("_submitForm clicked");
         }
+
+        String followUpAction =
+            "<DocumentElement><FollowUpAction><Department>$selectedDepartmentId</Department><FollowUpExecutive>$selectedExecutiveId</FollowUpExecutive><FollowUpAction>${_visitFollowUpActionController
+            .text}</FollowUpAction><FollowUpDate>${_dateController
+            .text}</FollowUpDate></FollowUpAction></DocumentElement>";
         final responseData = await VisitEntryService().visitEntry(
             executiveId ?? 0,
             widget.customerType,
@@ -306,7 +317,7 @@ class FollowUpActionState extends State<FollowUpAction> {
             0,
             0,
             userId ?? 0,
-            "",
+            followUpAction,
             "",
             'No',
             "",
@@ -399,22 +410,64 @@ class FollowUpActionState extends State<FollowUpAction> {
   }
 
   Widget _buildTextField(
-      String label, TextEditingController controller, GlobalKey key,
-      {int maxLines = 1}) {
-    return TextFormField(
-      key: key,
-      controller: controller,
-      maxLines: maxLines,
-      decoration: InputDecoration(
-        labelText: label,
-        border: const OutlineInputBorder(),
+    String label,
+    TextEditingController controller,
+    GlobalKey<FormFieldState> fieldKey, {
+    int maxLines = 1,
+  }) {
+    bool isDateField = label == "Action Date";
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: InkWell(
+        onTap: isDateField
+            ? () async {
+                final DateTime? picked = await showDatePicker(
+                  context: context,
+                  initialDate: DateTime.now(),
+                  firstDate: DateTime(1970, 1, 1),
+                  lastDate: DateTime.now(),
+                  builder: (BuildContext context, Widget? child) {
+                    return Theme(
+                      data: ThemeData.light(),
+                      child: child!,
+                    );
+                  },
+                );
+
+                if (picked != null) {
+                  controller.text = DateFormat('dd MMM yyyy').format(picked);
+                  fieldKey.currentState?.validate();
+                }
+              }
+            : null,
+        child: IgnorePointer(
+          ignoring: isDateField,
+          child: TextFormField(
+            key: fieldKey,
+            controller: controller,
+            decoration: InputDecoration(
+              labelText: label,
+              border: const OutlineInputBorder(),
+              alignLabelWithHint: true,
+              suffixIcon: isDateField ? const Icon(Icons.calendar_month) : null,
+            ),
+            textAlign: TextAlign.start,
+            maxLines: maxLines,
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Please select $label';
+              }
+              return null;
+            },
+            onChanged: (value) {
+              if (value.isNotEmpty) {
+                fieldKey.currentState?.validate();
+              }
+            },
+          ),
+        ),
       ),
-      validator: (value) {
-        if (_submitted && (value == null || value.isEmpty)) {
-          return 'Please enter $label';
-        }
-        return null;
-      },
     );
   }
 
