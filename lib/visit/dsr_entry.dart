@@ -9,6 +9,7 @@ import 'package:avant/model/login_model.dart';
 import 'package:avant/service/location_service.dart';
 import 'package:avant/views/multi_selection_dropdown.dart';
 import 'package:avant/views/rich_text.dart';
+import 'package:avant/visit/follow_up_action.dart';
 import 'package:avant/visit/visit_series_search.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -262,7 +263,7 @@ class DsrEntryPageState extends State<DsrEntry> {
                                 _submitted = true;
                               });
                               if (_formKey.currentState!.validate()) {
-                                _submitForm();
+                                _submitForm(visitDsrData);
                               }
                             },
                             child: Container(
@@ -306,7 +307,13 @@ class DsrEntryPageState extends State<DsrEntry> {
     });
   }
 
-  void _submitForm() async {
+  void _submitForm(GetVisitDsrResponse visitDsrData) async {
+    List<int> selectedIds =
+        _selectedJointVisitWithItems.map((e) => e.executiveId).toList();
+
+    // Convert list of IDs to comma-separated string
+    String commaSeparatedIds = selectedIds.join(', ');
+
     if (samplingDone == null) {
       toastMessage.showToastMessage('Please select Sampling Done.');
     } else if (followUpAction == null) {
@@ -329,13 +336,6 @@ class DsrEntryPageState extends State<DsrEntry> {
           address = await locationService.getAddress(
               position.latitude, position.longitude);
         }
-
-        // Assuming _selectedItems is a list of JointVisit objects
-        List<int> selectedIds =
-            _selectedJointVisitWithItems.map((e) => e.executiveId).toList();
-
-        // Convert list of IDs to comma-separated string
-        String commaSeparatedIds = selectedIds.join(', ');
 
         // Print the result
         if (kDebugMode) {
@@ -437,14 +437,7 @@ class DsrEntryPageState extends State<DsrEntry> {
           _isLoading = false;
         });
       }
-    } else {
-      // Assuming _selectedItems is a list of JoinVisit objects
-      List<int> selectedIds =
-          _selectedJointVisitWithItems.map((e) => e.executiveId).toList();
-
-      // Convert list of IDs to comma-separated string
-      String commaSeparatedIds = selectedIds.join(', ');
-
+    } else if (samplingDone == true) {
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -460,7 +453,30 @@ class DsrEntryPageState extends State<DsrEntry> {
             visitDate: _dateController.text,
             visitPurposeId: selectedVisitPurposeId ?? 0,
             jointVisitWithIds: commaSeparatedIds,
-            personMetId: selectedPersonMetId??0,
+            personMetId: selectedPersonMetId ?? 0,
+            samplingDone: samplingDone ?? false,
+            followUpAction: followUpAction ?? false,
+          ),
+        ),
+      );
+    } else {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => FollowUpAction(
+            visitDsrData: visitDsrData,
+            customerId: widget.customerId,
+            customerName: widget.customerName,
+            customerCode: widget.customerCode,
+            customerType: widget.customerType,
+            address: fetchedAddress,
+            city: widget.city,
+            state: widget.state,
+            visitFeedback: _visitFeedbackController.text,
+            visitDate: _dateController.text,
+            visitPurposeId: selectedVisitPurposeId ?? 0,
+            jointVisitWithIds: commaSeparatedIds,
+            personMetId: selectedPersonMetId ?? 0,
             samplingDone: samplingDone ?? false,
             followUpAction: followUpAction ?? false,
           ),

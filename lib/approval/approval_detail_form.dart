@@ -85,7 +85,7 @@ class ApprovalDetailFormState extends State<ApprovalDetailForm> {
                 widget.customerId,
                 widget.customerType,
                 widget.requestId,
-                widget.type == CUSTOMER_SAMPLE_APPROVAL
+                widget.type == customerSampleApproval
                     ? 'CustomerSampling'
                     : 'Approval',
                 token)
@@ -130,7 +130,7 @@ class ApprovalDetailFormState extends State<ApprovalDetailForm> {
 
     try {
       final SubmitRequestApprovalResponse response;
-      if (widget.type == CUSTOMER_SAMPLE_APPROVAL) {
+      if (widget.type == customerSampleApproval) {
         response = await SubmitRequestApprovalService()
             .submitCustomerSamplingRequestApproved(
           widget.type,
@@ -227,7 +227,7 @@ class ApprovalDetailFormState extends State<ApprovalDetailForm> {
                       } else if (snapshot.hasError) {
                         return const ErrorLayout();
                       } else if (!hasData) {
-                        return NoDataLayout();
+                        return const NoDataLayout();
                       } else if (snapshot.hasData) {
                         var response = snapshot.data!;
                         return ListView(

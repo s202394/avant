@@ -255,14 +255,14 @@ class HomePageState extends State<HomePage> {
                         );
                       }),
                       ListTile(
-                        title: const Text(CUSTOMER_SAMPLE_APPROVAL),
+                        title: const Text(customerSampleApproval),
                         onTap: () {
                           Navigator.pop(context);
                           Navigator.push(
                             context,
                             MaterialPageRoute(
                                 builder: (context) => const ApprovalListForm(
-                                    type: CUSTOMER_SAMPLE_APPROVAL)),
+                                    type: customerSampleApproval)),
                           );
                         },
                       ),

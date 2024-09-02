@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../api/api_constants.dart';
 import '../model/fetch_titles_model.dart';
 
 class BookListItem extends StatefulWidget {
@@ -34,22 +35,23 @@ class BookListItemState extends State<BookListItem> {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Image.network(
-                widget.book.image,
+              // Ensure the image has a fixed size and does not overflow
+              SizedBox(
                 width: 100,
                 height: 120,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Image.asset(
-                    'images/book.png',
-                    width: 80,
-                    height: 120,
-                    fit: BoxFit.cover,
-                  );
-                },
+                child: Image.network(
+                  '$imageUrl${widget.book.image}',
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Image.asset(
+                      'images/book.png',
+                      fit: BoxFit.cover,
+                    );
+                  },
+                ),
               ),
               const SizedBox(width: 8),
-              // Book Details
+              // Book Details in an Expanded widget to take up available space
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -126,6 +128,7 @@ class BookListItemState extends State<BookListItem> {
                                 borderRadius: BorderRadius.circular(8.0),
                               ),
                               child: Row(
+                                mainAxisSize: MainAxisSize.min,
                                 children: [
                                   SizedBox(
                                     width: 30,

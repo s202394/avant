@@ -32,7 +32,7 @@ class TokenService {
     final body = jsonEncode(
         <String, String>{'username': username, 'password': password});
     final response = await http.post(
-      Uri.parse(TOKEN_URL),
+      Uri.parse(tokenUrl),
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
       },
@@ -67,7 +67,7 @@ class LoginService {
       String deviceInfo,
       String token) async {
     final response = await http.post(
-      Uri.parse(LOGIN_URL),
+      Uri.parse(loginUrl),
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
         'Authorization': 'Bearer $token',
@@ -104,7 +104,7 @@ class LoginService {
 
   Future<Map<String, dynamic>> logout(int userId, String token) async {
     final response = await http.post(
-      Uri.parse(LOGOUT_URL),
+      Uri.parse(logoutUrl),
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
         'Authorization': 'Bearer $token',
@@ -163,7 +163,7 @@ class LoginService {
       'EmailId': emailId,
     });
     final response = await http.post(
-      Uri.parse(FORGOT_PASSWORD_URL),
+      Uri.parse(forgotPasswordUrl),
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
         'Authorization': 'Bearer $token',
@@ -189,8 +189,8 @@ class LoginService {
   Future<ForgotPasswordResponse> refreshAndRetryForgotPassword(
       String emailId) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    String username = TOKEN_USERNAME;
-    String password = TOKEN_PASSWORD;
+    String username = tokenUsername;
+    String password = tokenPassword;
 
     if (username.isNotEmpty && password.isNotEmpty) {
       await TokenService().token(username, password);
@@ -224,7 +224,7 @@ class LoginService {
       'EnteredBy': enteredBy,
     });
     final response = await http.post(
-      Uri.parse(CHANGE_PASSWORD_URL),
+      Uri.parse(changePasswordUrl),
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
         'Authorization': 'Bearer $token',
@@ -256,7 +256,7 @@ class LoginService {
       String browserInformation,
       int enteredBy) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    await TokenService().token(TOKEN_USERNAME, TOKEN_PASSWORD);
+    await TokenService().token(tokenUsername, tokenPassword);
     String? newToken = prefs.getString('token');
 
     if (newToken != null && newToken.isNotEmpty) {
@@ -271,7 +271,7 @@ class LoginService {
 class MenuService {
   Future<List<MenuData>> getMenus(int profileId, String token) async {
     final response = await http.post(
-      Uri.parse(MENU_URL),
+      Uri.parse(menuUrl),
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
         'Authorization': 'Bearer $token',
@@ -349,7 +349,7 @@ class MenuService {
 class SetupValuesService {
   Future<List<SetupValues>> setupValues(String token) async {
     final response = await http.post(
-      Uri.parse(SETUP_VALUES_URL),
+      Uri.parse(setupValuesUrl),
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
         'Authorization': 'Bearer $token',
@@ -425,7 +425,7 @@ class SetupValuesService {
 class TravelPlanService {
   Future<PlanResponse> fetchTravelPlans(int executiveId, String token) async {
     final response = await http.post(
-      Uri.parse(TRAVEL_PLAN_URL),
+      Uri.parse(travelPlanUrl),
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
         'Authorization': 'Bearer $token',
@@ -478,7 +478,7 @@ class VisitDetailsService {
       'VisitId': visitId,
     });
     final response = await http.post(
-      Uri.parse(VISIT_DETAILS_URL),
+      Uri.parse(visitDetailsUrl),
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
         'Authorization': 'Bearer $token',
@@ -533,7 +533,7 @@ class GetVisitDsrService {
       String downHierarchy,
       String token) async {
     final response = await http.post(
-      Uri.parse(GET_DSR_ENTRY_URL),
+      Uri.parse(getDsrEntryUrl),
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
         'Authorization': 'Bearer $token',
@@ -602,7 +602,7 @@ class GetVisitDsrService {
       });
     }
     final response = await http.post(
-      Uri.parse(FETCH_TITLES_URL),
+      Uri.parse(fetchTitlesUrl),
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
         'Authorization': 'Bearer $token',
@@ -669,7 +669,7 @@ class GetVisitDsrService {
       'TitleId': titleId,
     });
     final response = await http.post(
-      Uri.parse(SAMPLING_DETAILS_URL),
+      Uri.parse(samplingDetailsUrl),
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
         'Authorization': 'Bearer $token',
@@ -747,7 +747,7 @@ class GetVisitDsrService {
       'ExecutiveId': executiveId,
     });
     final response = await http.post(
-      Uri.parse(SHIP_TO_URL),
+      Uri.parse(shipToUrl),
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
         'Authorization': 'Bearer $token',
@@ -798,7 +798,7 @@ class FollowupActionExecutiveService {
   Future<FollowupActionExecutiveResponse> getFollowupActionExecutives(
       int executiveDepartmentId, String token) async {
     final response = await http.post(
-      Uri.parse(FOLLOWUP_ACTION_EXECUTIVE_URL),
+      Uri.parse(followupActionExecutiveUrl),
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
         'Authorization': 'Bearer $token',
@@ -921,7 +921,7 @@ class VisitEntryService {
       print("Request body : $body");
     }
     final response = await http.post(
-      Uri.parse(VISIT_ENTRY_URL),
+      Uri.parse(visitEntryUrl),
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
         'Authorization': 'Bearer $token',
@@ -1060,7 +1060,7 @@ class GeographyService {
   Future<GeographyResponse> fetchGeographyData(
       String cityAccess, int executiveId, String token) async {
     final response = await http.post(
-      Uri.parse(GEOGRAPHY_URL),
+      Uri.parse(geographyUrl),
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
         'Authorization': 'Bearer $token',
@@ -1123,7 +1123,7 @@ class CustomerEntryMasterService {
       'DownHierarchy': downHierarchy,
     });
     final response = await http.post(
-      Uri.parse(CUSTOMER_ENTRY_MASTER_URL),
+      Uri.parse(customerEntryMasterUrl),
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
         'Authorization': 'Bearer $token',
@@ -1183,9 +1183,9 @@ class CustomerSamplingApprovalListService {
     });
 
     final response = await http.post(
-      Uri.parse(type == CUSTOMER_SAMPLE_APPROVAL
-          ? CUSTOMER_SAMPLING_APPROVAL_LIST_URL
-          : SELF_STOCK_APPROVAL_LIST_URL),
+      Uri.parse(type == customerSampleApproval
+          ? customerSamplingApprovalListUrl
+          : selfStockApprovalListUrl),
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
         'Authorization': 'Bearer $token',
@@ -1251,13 +1251,13 @@ class ApprovalDetailsService {
       'RequestId': requestId,
       'Module': module,
     });
-    final body = (type == CUSTOMER_SAMPLE_APPROVAL)
+    final body = (type == customerSampleApproval)
         ? bodyCustomerSampleApproval
         : bodySelfStockRequest;
     final response = await http.post(
-      Uri.parse(type == CUSTOMER_SAMPLE_APPROVAL
-          ? CUSTOMER_SAMPLING_APPROVAL_DETAILS_URL
-          : SELF_STOCK_APPROVAL_DETAILS_URL),
+      Uri.parse(type == customerSampleApproval
+          ? customerSamplingApprovalDetailsUrl
+          : selfStockApprovalDetailsUrl),
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
         'Authorization': 'Bearer $token',
@@ -1336,8 +1336,8 @@ class SubmitRequestApprovalService {
           });
 
     final url = isBulkApproval
-        ? CUSTOMER_SAMPLING_REQUEST_BULK_APPROVAL_SUBMIT_URL
-        : CUSTOMER_SAMPLING_REQUEST_APPROVAL_SUBMIT_URL;
+        ? customerSamplingRequestBulkApprovalSubmitUrl
+        : customerSamplingRequestApprovalSubmitUrl;
     final response = await http.post(
       Uri.parse(url),
       headers: <String, String>{
@@ -1453,8 +1453,8 @@ class SubmitRequestApprovalService {
           });
 
     final url = isBulkApproval
-        ? SELF_STOCK_BULK_APPROVAL_SUBMIT_URL
-        : SELF_STOCK_APPROVAL_SUBMIT_URL;
+        ? selfStockBulkApprovalSubmitUrl
+        : selfStockApprovalSubmitUrl;
     final response = await http.post(
       Uri.parse(url),
       headers: <String, String>{
@@ -1601,7 +1601,7 @@ class CreateNewCustomerService {
     });
 
     final response = await http.post(
-      Uri.parse(CUSTOMER_CREATION_URL),
+      Uri.parse(customerCreationUrl),
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
         'Authorization': 'Bearer $token',
@@ -1812,7 +1812,7 @@ class CreateNewCustomerService {
     });
 
     final response = await http.post(
-      Uri.parse(CUSTOMER_CREATION_URL),
+      Uri.parse(customerCreationUrl),
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
         'Authorization': 'Bearer $token',
@@ -2000,7 +2000,7 @@ class CheckInCheckOutService {
     if (kDebugMode) {
       print('Request body: $body');
     }
-    final response = await http.post(Uri.parse(CHECK_IN_CHECK_OUT_URL),
+    final response = await http.post(Uri.parse(checkInCheckOutUrl),
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
           'Authorization': 'Bearer $token',
@@ -2063,7 +2063,7 @@ class SeriesAndClassLevelListService {
       print("Request body : $body");
     }
     final response = await http.post(
-      Uri.parse(GET_SERIES_AND_CLASS_LEVEL_LIST_URL),
+      Uri.parse(getSeriesAndClassLevelListUrl),
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
         'Authorization': 'Bearer $token',

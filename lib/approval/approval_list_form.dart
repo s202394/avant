@@ -1,6 +1,7 @@
 import 'package:avant/api/api_service.dart';
 import 'package:avant/approval/approval_detail_form.dart';
 import 'package:avant/common/common.dart';
+import 'package:avant/common/constants.dart';
 import 'package:avant/common/error_layout.dart';
 import 'package:avant/common/no_data_layout.dart';
 import 'package:avant/common/toast.dart';
@@ -11,7 +12,6 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:avant/common/constants.dart';
 
 import '../model/submit_approval_model.dart';
 
@@ -286,7 +286,7 @@ class ApprovalListFormState extends State<ApprovalListForm> {
       String requestIds = checkedRequests.map((request) => request.requestId).join(',');
 
       final SubmitRequestApprovalResponse response;
-      if (widget.type == CUSTOMER_SAMPLE_APPROVAL) {
+      if (widget.type == customerSampleApproval) {
         response = await SubmitRequestApprovalService().submitCustomerSamplingRequestApproved(
           widget.type,
           true,

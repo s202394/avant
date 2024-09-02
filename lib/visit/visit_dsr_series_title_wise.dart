@@ -279,7 +279,7 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
                                   label: 'Sampling Done',
                                   value: widget.samplingDone ? 'Yes' : 'No'),
                               LabeledText(
-                                  label: 'Follow up Action',
+                                  label: 'Follow Up Action',
                                   value: widget.followUpAction ? 'Yes' : 'No'),
                             ],
                           ),
@@ -288,24 +288,26 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
                           color: Colors.orange,
                           child: TabBar(
                             controller: _tabController,
-                            labelColor: Colors.black,
+                            labelColor: Colors.white,
+                            unselectedLabelColor: Colors.white,
                             indicatorColor: Colors.blue,
                             tabs: [
                               AbsorbPointer(
                                 absorbing: widget.selectedIndex == 1,
                                 // Disable if selectedIndex is 1
-                                child: Tab(text: 'Series/ Title'),
+                                child: const Tab(text: 'Series/ Title'),
                               ),
                               AbsorbPointer(
                                 absorbing: widget.selectedIndex == 0,
                                 // Disable if selectedIndex is 0
-                                child: Tab(text: 'Title wise'),
+                                child: const Tab(text: 'Title wise'),
                               ),
                             ],
                           ),
                         ),
                         Expanded(
                           child: TabBarView(
+                            physics: const NeverScrollableScrollPhysics(),
                             controller: _tabController,
                             children: [
                               _buildSeriesTitleTab(),
