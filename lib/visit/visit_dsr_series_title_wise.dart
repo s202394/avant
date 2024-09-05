@@ -1,3 +1,4 @@
+import 'package:avant/db/db_helper.dart';
 import 'package:avant/views/label_text.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -5,18 +6,25 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../api/api_service.dart';
 import '../model/fetch_titles_model.dart';
+import '../model/get_visit_dsr_model.dart';
 import '../model/login_model.dart';
 import '../model/sampling_details_response.dart';
 import '../model/series_and_class_level_list_response.dart';
 import '../views/book_list_item.dart';
 import '../views/rich_text.dart';
+import 'cart.dart';
+import 'follow_up_action.dart';
 
 class VisitDsrSeriesTitleWise extends StatefulWidget {
+  final GetVisitDsrResponse visitDsrData;
   final int selectedIndex;
   final int customerId;
   final String customerName;
+  final String customerCode;
   final String customerType;
   final String address;
+  final String city;
+  final String state;
   final SeriesList? selectedSeries;
   final ClassLevelList? selectedClassLevel;
   final TitleList? selectedTitle;
@@ -30,11 +38,15 @@ class VisitDsrSeriesTitleWise extends StatefulWidget {
 
   const VisitDsrSeriesTitleWise({
     super.key,
+    required this.visitDsrData,
     required this.selectedIndex,
     required this.customerId,
     required this.customerName,
+    required this.customerCode,
     required this.customerType,
     required this.address,
+    required this.city,
+    required this.state,
     required this.selectedSeries,
     required this.selectedClassLevel,
     required this.selectedTitle,
@@ -59,10 +71,12 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
   String? selectedSampleGiven;
   String? selectedSampleTo;
   String? selectedShipTo;
+  String? selectedShippingAddress;
 
   bool _submitted = false;
 
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  DatabaseHelper databaseHelper = DatabaseHelper();
 
   List<TitleList> books = [];
   List<SamplingType> samplingTypes = [];
@@ -70,6 +84,7 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
   List<SampleTo> sampleTos = [];
 
   List<String> shipToOptions = [];
+  List<String> shippingAddressOptions = [];
 
   bool isFetchingShipTo = false;
   bool isLoading = true;
@@ -117,6 +132,7 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
         final futures = [
           GetVisitDsrService().fetchTitles(
             widget.selectedIndex,
+            executiveId ?? 0,
             widget.selectedSeries?.seriesId ?? 0,
             widget.selectedClassLevel?.classLevelId ?? 0,
             widget.selectedTitle?.title ?? '',
@@ -212,6 +228,7 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
 
       // Initialize the shipToOptions list
       shipToOptions = [];
+      shippingAddressOptions = [];
 
       // Safely access and check the properties
       final resAddress = response.shipTo?.resAddress;
@@ -219,9 +236,11 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
 
       if (resAddress != null && resAddress.isNotEmpty) {
         shipToOptions.add("Residential Address");
+        shippingAddressOptions.add(response.shipTo?.resAddress ?? '');
       }
       if (officeAddress != null && officeAddress.isNotEmpty) {
         shipToOptions.add("Official Address");
+        shippingAddressOptions.add(response.shipTo?.officeAddress ?? '');
       }
     } catch (e) {
       setState(() {
@@ -424,6 +443,7 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
                           selectedSampleGiven = value;
                           selectedShipTo = null;
                           shipToOptions.clear();
+                          shippingAddressOptions.clear();
                           _fetchShipToData();
                         });
                       },
@@ -456,6 +476,12 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
                       onChanged: (value) {
                         setState(() {
                           selectedShipTo = value;
+                          // Find the index of the selected item in shipToOptions
+                          int index = shipToOptions.indexOf(value!);
+                          // Use the index to select the corresponding shipping address
+                          selectedShippingAddress = index != -1
+                              ? shippingAddressOptions[index]
+                              : null;
                         });
                       },
                     ),
@@ -471,11 +497,11 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
                       itemCount: books.length,
                       itemBuilder: (context, index) {
                         return BookListItem(
-                          book: books[index],
-                          onQuantityChanged: (newQuantity) {
-                            _handleQuantityChange(index, newQuantity);
-                          },
-                        );
+                            book: books[index],
+                            onQuantityChanged: (newQuantity) {
+                              _handleQuantityChange(index, newQuantity);
+                            },
+                            areDropdownsSelected: _areDropdownsSelected());
                       },
                     ),
             ),
@@ -490,10 +516,7 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
               _submitted = true;
             });
             if (_formKey.currentState?.validate() == true &&
-                selectedSampleTo != null &&
-                selectedSampleGiven != null &&
-                selectedSamplingType != null &&
-                selectedShipTo != null) {
+                _areDropdownsSelected()) {
               _submitForm();
             }
           },
@@ -507,7 +530,7 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
             children: [
               Icon(Icons.shopping_cart),
               SizedBox(width: 8),
-              Text('Submit/ Next'),
+              Text('Next'),
             ],
           ),
         ),
@@ -531,13 +554,99 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
     setState(() {
       books[index].quantity = newQuantity;
     });
+
+    // Perform the database operation outside of setState
+    if (newQuantity == 0) {
+      deleteItem(index);
+    } else {
+      _updateCartItem(index, newQuantity);
+    }
+  }
+
+  Future<void> _updateCartItem(int index, int newQuantity) async {
+    await databaseHelper.insertCartItem({
+      'BookId': books[index].bookId,
+      'SeriesId': widget.selectedSeries?.seriesId ?? 0,
+      'Title': books[index].title,
+      'ISBN': books[index].isbn,
+      'Author': books[index].author,
+      'Price': books[index].price,
+      'ListPrice': books[index].listPrice,
+      'BookNum': books[index].bookNum,
+      'Image': books[index].image,
+      'BookType': books[index].bookType,
+      'ImageUrl': books[index].imageUrl,
+      'PhysicalStock': books[index].physicalStock,
+      'RequestedQty': newQuantity,
+      'ShipTo': selectedShipTo,
+      'ShippingAddress': selectedShippingAddress,
+      'SamplingType': selectedSamplingType,
+      'SampleTo': selectedSampleTo,
+      'SampleGiven': selectedSampleGiven,
+      'MRP': books[index].listPrice,
+    });
+  }
+
+  Future<void> deleteItem(int index) async {
+    await databaseHelper.deleteCartItem(books[index].bookId);
   }
 
   void _submitForm() {
     if (kDebugMode) {
       print('Form submitted!');
     }
-    if (widget.samplingDone) {
-    } else {}
+    if (widget.followUpAction) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => FollowUpAction(
+            visitDsrData: widget.visitDsrData,
+            customerId: widget.customerId,
+            customerName: widget.customerName,
+            customerCode: widget.customerCode,
+            customerType: widget.customerType,
+            address: widget.address,
+            city: widget.city,
+            state: widget.state,
+            visitFeedback: widget.visitFeedback,
+            visitDate: widget.visitDate,
+            visitPurposeId: widget.visitPurposeId,
+            jointVisitWithIds: widget.jointVisitWithIds,
+            personMetId: widget.personMetId,
+            samplingDone: widget.samplingDone,
+            followUpAction: widget.followUpAction,
+          ),
+        ),
+      );
+    } else {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => Cart(
+            customerId: widget.customerId,
+            customerName: widget.customerName,
+            customerCode: widget.customerCode,
+            customerType: widget.customerType,
+            address: widget.address,
+            city: widget.city,
+            state: widget.state,
+            visitFeedback: widget.visitFeedback,
+            visitDate: widget.visitDate,
+            visitPurposeId: widget.visitPurposeId,
+            jointVisitWithIds: widget.jointVisitWithIds,
+            personMetId: widget.personMetId,
+            samplingDone: widget.samplingDone,
+            followUpAction: widget.followUpAction,
+          ),
+        ),
+      );
+    }
+  }
+
+  bool _areDropdownsSelected() {
+    return selectedSampleTo != null &&
+        selectedSampleGiven != null &&
+        selectedSamplingType != null &&
+        selectedShipTo != null;
   }
 }

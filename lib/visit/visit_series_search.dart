@@ -8,10 +8,12 @@ import '../api/api_service.dart';
 import '../common/common_text.dart';
 import '../common/toast.dart';
 import '../model/fetch_titles_model.dart';
+import '../model/get_visit_dsr_model.dart';
 import '../model/login_model.dart';
 import '../model/series_and_class_level_list_response.dart';
 
 class VisitSeriesSearch extends StatefulWidget {
+  final GetVisitDsrResponse visitDsrData;
   final int customerId;
   final String customerName;
   final String customerCode;
@@ -29,6 +31,7 @@ class VisitSeriesSearch extends StatefulWidget {
 
   const VisitSeriesSearch({
     super.key,
+    required this.visitDsrData,
     required this.customerId,
     required this.customerName,
     required this.customerCode,
@@ -65,7 +68,7 @@ class VisitSeriesSearchPageState extends State<VisitSeriesSearch>
   late SharedPreferences prefs;
   late String token;
   int? executiveId;
-  String? profileCode;
+  int? profileId;
 
   bool _submitted = false;
   bool _isLoading = true;
@@ -99,11 +102,10 @@ class VisitSeriesSearchPageState extends State<VisitSeriesSearch>
       token = prefs.getString('token') ?? '';
     });
     executiveId = await getExecutiveId();
-    profileCode = await getProfileCode();
+    profileId = await getProfileId();
     try {
       final response = await SeriesAndClassLevelListService()
-          .getSeriesAndClassLevelList(
-              executiveId ?? 0, profileCode ?? '', token);
+          .getSeriesAndClassLevelList(executiveId ?? 0, profileId ?? 0, token);
 
       setState(() {
         classLevelItems = response.classLevelList
@@ -154,6 +156,7 @@ class VisitSeriesSearchPageState extends State<VisitSeriesSearch>
     try {
       final response = await GetVisitDsrService().fetchTitles(
         1,
+        executiveId ?? 0,
         selectedSeries?.seriesId ?? 0,
         selectedClassLevel?.classLevelId ?? 0,
         query,
@@ -283,18 +286,22 @@ class VisitSeriesSearchPageState extends State<VisitSeriesSearch>
     int selectedIndex = _tabController.index;
     if (selectedIndex == 0 && selectedSeries == null) {
       _toastMessage.showToastMessage("Please select series");
-    } else if (selectedIndex == 1 && _autocompleteController.text.isEmpty) {
+    } else if (selectedIndex == 1 && selectedTitle == null) {
       _toastMessage.showToastMessage("Please select title");
     } else {
       Navigator.push(
         context,
         MaterialPageRoute(
           builder: (context) => VisitDsrSeriesTitleWise(
+            visitDsrData: widget.visitDsrData,
             selectedIndex: selectedIndex,
             customerId: widget.customerId,
             customerName: widget.customerName,
+            customerCode: widget.customerCode,
             customerType: widget.customerType,
             address: widget.address,
+            city: widget.city,
+            state: widget.state,
             selectedSeries: selectedSeries,
             selectedClassLevel: selectedClassLevel,
             selectedTitle: selectedTitle,
@@ -318,19 +325,6 @@ class VisitSeriesSearchPageState extends State<VisitSeriesSearch>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            buildDropdownField<ClassLevelList>(
-                'Class Level',
-                selectedClassLevel,
-                classLevelItems,
-                (value) {
-                  setState(() {
-                    selectedClassLevel = value;
-                  });
-                },
-                selectedId: selectedClassLevel?.classLevelId,
-                onIdChanged: (id) {
-                  // No longer needed
-                }),
             buildDropdownField<SeriesList>(
                 'Series',
                 selectedSeries,
@@ -341,6 +335,19 @@ class VisitSeriesSearchPageState extends State<VisitSeriesSearch>
                   });
                 },
                 selectedId: selectedSeries?.seriesId,
+                onIdChanged: (id) {
+                  // No longer needed
+                }),
+            buildDropdownField<ClassLevelList>(
+                'Class Level',
+                selectedClassLevel,
+                classLevelItems,
+                (value) {
+                  setState(() {
+                    selectedClassLevel = value;
+                  });
+                },
+                selectedId: selectedClassLevel?.classLevelId,
                 onIdChanged: (id) {
                   // No longer needed
                 }),

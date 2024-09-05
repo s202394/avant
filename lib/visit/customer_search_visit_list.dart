@@ -2,6 +2,7 @@ import 'package:avant/visit/visit_detail_page.dart';
 import 'package:avant/visit/visit_series_search.dart';
 import 'package:flutter/material.dart';
 
+import '../model/get_visit_dsr_model.dart';
 import '../views/rich_text.dart';
 
 class CustomerSearchVisitList extends StatefulWidget {
@@ -70,10 +71,11 @@ class CustomerSearchVisitListPageState extends State<CustomerSearchVisitList> {
                       subtitle: RichTextWidget(label: widget.address),
                       trailing: InkWell(
                         onTap: () {
-                          Navigator.push(
+                          /*Navigator.push(
                             context,
                             MaterialPageRoute(
                               builder: (context) => VisitSeriesSearch(
+                                visitDsrData: GetVisitDsrResponse(),
                                 customerId: widget.customerId,
                                 customerName: widget.customerName,
                                 customerCode: widget.customerCode,
@@ -90,7 +92,7 @@ class CustomerSearchVisitListPageState extends State<CustomerSearchVisitList> {
                                 followUpAction: false,
                               ),
                             ),
-                          );
+                          );*/
                         },
                         child: Image.asset('images/travel.png',
                             height: 30, width: 30),

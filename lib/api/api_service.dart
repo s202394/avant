@@ -588,17 +588,19 @@ class GetVisitDsrService {
     }
   }
 
-  Future<FetchTitlesResponse> fetchTitles(int selectedIndex, int seriesId,
-      int classLevel, String isbn, String token) async {
+  Future<FetchTitlesResponse> fetchTitles(int selectedIndex, int executiveId,
+      int seriesId, int classLevel, String isbn, String token) async {
     final String body;
     if (selectedIndex == 1) {
       body = jsonEncode(<String, dynamic>{
         'BookISBN': isbn,
+        'ExecutiveId': executiveId,
       });
     } else {
       body = jsonEncode(<String, dynamic>{
         'ClassLevel': classLevel,
         'SeriesId': seriesId,
+        'ExecutiveId': executiveId,
       });
     }
     final response = await http.post(
@@ -620,14 +622,14 @@ class GetVisitDsrService {
     } else if (response.statusCode == 401) {
       // Token is invalid or expired, refresh the token and retry
       return await refreshAndRetryFetchTitles(
-          selectedIndex, seriesId, classLevel, isbn);
+          selectedIndex, executiveId, seriesId, classLevel, isbn);
     } else {
       throw Exception('Failed to load fetch titles');
     }
   }
 
-  Future<FetchTitlesResponse> refreshAndRetryFetchTitles(
-      int selectedIndex, int seriesId, int classLevel, String isbn) async {
+  Future<FetchTitlesResponse> refreshAndRetryFetchTitles(int selectedIndex,
+      int executiveId, int seriesId, int classLevel, String isbn) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String username = prefs.getString('token_username') ?? '';
     String password = prefs.getString('password') ?? '';
@@ -638,7 +640,7 @@ class GetVisitDsrService {
 
       if (newToken != null && newToken.isNotEmpty) {
         return await fetchTitles(
-            selectedIndex, seriesId, classLevel, isbn, newToken);
+            selectedIndex, executiveId, seriesId, classLevel, isbn, newToken);
       } else {
         throw Exception('Failed to retrieve new token');
       }
@@ -2054,7 +2056,7 @@ class CheckInCheckOutService {
 
 class SeriesAndClassLevelListService {
   Future<SeriesAndClassLevelListResponse> getSeriesAndClassLevelList(
-      int executiveId, String profileId, String token) async {
+      int executiveId, int profileId, String token) async {
     final String body = jsonEncode(<String, dynamic>{
       'ProfileId': profileId,
       'ExecutiveId': executiveId,
@@ -2087,7 +2089,7 @@ class SeriesAndClassLevelListService {
   }
 
   Future<SeriesAndClassLevelListResponse> refreshAndRetry(
-      int executiveId, String profileId) async {
+      int executiveId, int profileId) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String username = prefs.getString('token_username') ?? '';
     String password = prefs.getString('password') ?? '';

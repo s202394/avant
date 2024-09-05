@@ -177,6 +177,27 @@ class DatabaseHelper {
         if (kDebugMode) {
           print("SetupValues table successfully created.");
         }
+
+        //Create table for Book Cart
+        await database.execute(
+          "CREATE TABLE Cart (BookId INTEGER PRIMARY KEY, SeriesId INTEGER, Title TEXT, ISBN TEXT, Author TEXT, Price TEXT,ListPrice REAL, BookNum TEXT, Image TEXT,BookType TEXT, ImageUrl TEXT, PhysicalStock INTEGER, RequestedQty INTEGER DEFAULT 0, ShipTo TEXT, ShippingAddress TEXT, SamplingType TEXT, SampleTo TEXT, SampleGiven TEXT, MRP INTEGER)",
+        );
+        if (kDebugMode) {
+          print("Cart table successfully created.");
+        }
+
+        //Create table for FollowUpActionCart
+        await database.execute("CREATE TABLE FollowUpActionCart ("
+            "Id INTEGER PRIMARY KEY AUTOINCREMENT, "
+            "FollowUpAction TEXT, "
+            "FollowUpDate INTEGER, "
+            "DepartmentId INTEGER, "
+            "Department TEXT, "
+            "FollowUpExecutiveId INTEGER, "
+            "FollowUpExecutive TEXT)");
+        if (kDebugMode) {
+          print("FollowUpActionCart table successfully created.");
+        }
       },
       version: 1,
     );
@@ -244,7 +265,7 @@ class DatabaseHelper {
     }
     if (kDebugMode) {
       print(
-        "${data.menuName}:${data.childMenuName} successfully inserted into db.");
+          "${data.menuName}:${data.childMenuName} successfully inserted into db.");
     }
   }
 
@@ -300,7 +321,7 @@ class DatabaseHelper {
         conflictAlgorithm: ConflictAlgorithm.replace);
     if (kDebugMode) {
       print(
-        "BoardMaster ${data.boardId}:${data.boardName} successfully inserted into db.");
+          "BoardMaster ${data.boardId}:${data.boardName} successfully inserted into db.");
     }
   }
 
@@ -732,6 +753,7 @@ class DatabaseHelper {
       affiliateTypeList: affiliateTypeList,
     );
   }
+
   //Save Geography Data to the Database
   Future<void> insertGeographyData(Geography data) async {
     final db = await database;
@@ -775,4 +797,87 @@ class DatabaseHelper {
       return SetupValues.fromJson(maps[i]);
     });
   }
+
+  //Start Cart
+  //Insert
+  Future<void> insertCartItem(Map<String, dynamic> cartItem) async {
+    final db = await database;
+    await db.insert('Cart', cartItem,
+        conflictAlgorithm: ConflictAlgorithm.replace);
+  }
+
+  //Delete
+  Future<void> deleteCartItem(int bookId) async {
+    final db = await database;
+    await db.delete('Cart', where: 'BookId = ?', whereArgs: [bookId]);
+  }
+
+  //Update
+  Future<void> updateCartItem(
+      int bookId, Map<String, dynamic> newValues) async {
+    final db = await database;
+    await db
+        .update('Cart', newValues, where: 'BookId = ?', whereArgs: [bookId]);
+  }
+
+  //Get Series Items
+  Future<List<Map<String, dynamic>>> getCartItemsWithTitle() async {
+    final db = await database;
+    return await db.query(
+      'Cart',
+      where: 'SeriesId = ?',
+      whereArgs: [0],
+    );
+  }
+
+  //Get Title Items
+  Future<List<Map<String, dynamic>>> getCartItemsWithSeries() async {
+    final db = await database;
+    return await db.query('Cart', where: 'SeriesId != ?', whereArgs: [0]);
+  }
+
+  //End Cart
+
+  //Start FollowUpActionCart
+  //Insert in FollowUpActionCart
+  Future<void> insertFollowUpActionCart(Map<String, dynamic> data) async {
+    final db = await database;
+    await db.insert('FollowUpActionCart', data,
+        conflictAlgorithm: ConflictAlgorithm.replace);
+  }
+
+  //Retrieve all records from FollowUpActionCart
+  Future<List<Map<String, dynamic>>> getAllFollowUpActionCarts() async {
+    final db = await database;
+    return await db.query('FollowUpActionCart');
+  }
+
+  //Retrieve a specific record by Id from FollowUpActionCart
+  Future<Map<String, dynamic>?> getFollowUpActionCartById(int id) async {
+    final db = await database;
+    List<Map<String, dynamic>> result =
+        await db.query('FollowUpActionCart', where: 'Id = ?', whereArgs: [id]);
+    return result.isNotEmpty ? result.first : null;
+  }
+
+  //Update Operation from FollowUpActionCart
+  Future<void> updateFollowUpActionCart(
+      int id, Map<String, dynamic> data) async {
+    final db = await database;
+    await db
+        .update('FollowUpActionCart', data, where: 'Id = ?', whereArgs: [id]);
+  }
+
+  //Delete a specific record by Id from FollowUpActionCart
+  Future<void> deleteFollowUpActionCart(int id) async {
+    final db = await database;
+    await db.delete('FollowUpActionCart', where: 'Id = ?', whereArgs: [id]);
+  }
+
+  //Delete all records from FollowUpActionCart
+  Future<void> deleteAllFollowUpActionCarts() async {
+    final db = await database;
+    await db.delete('FollowUpActionCart');
+  }
+//END FollowUpActionCart
 }

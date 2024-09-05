@@ -442,6 +442,7 @@ class DsrEntryPageState extends State<DsrEntry> {
         context,
         MaterialPageRoute(
           builder: (context) => VisitSeriesSearch(
+            visitDsrData: visitDsrData,
             customerId: widget.customerId,
             customerName: widget.customerName,
             customerCode: widget.customerCode,

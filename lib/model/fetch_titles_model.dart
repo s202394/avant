@@ -38,6 +38,8 @@ class TitleList {
   final String bookNum;
   final String image;
   final String bookType;
+  final String imageUrl;
+  final int physicalStock;
   int quantity;
 
   TitleList({
@@ -50,7 +52,9 @@ class TitleList {
     required this.bookNum,
     required this.image,
     required this.bookType,
-    required this.quantity,
+    required this.imageUrl,
+    required this.physicalStock,
+    this.quantity = 0,
   });
 
   factory TitleList.fromJson(Map<String, dynamic> json) {
@@ -61,10 +65,12 @@ class TitleList {
       author: json['Author'] ?? '',
       price: json['Price'] ?? '',
       listPrice: json['ListPrice'] ?? 0,
-      bookNum: json['BookNum'] ?? '',
+      bookNum: json['Booknum'] ?? '',
       image: json['Image'] ?? '',
       bookType: json['BookType'] ?? '',
-      quantity: json['Quantity'] ?? 0,
+      imageUrl: json['ImageUrl'] ?? '',
+      physicalStock: json['PhysicalStock'] ?? 0,
+      quantity: 0,
     );
   }
 
@@ -76,10 +82,12 @@ class TitleList {
       'Author': author,
       'Price': price,
       'ListPrice': listPrice,
-      'BookNum': bookNum,
+      'Booknum': bookNum,
       'Image': image,
       'BookType': bookType,
       'Quantity': quantity,
+      'ImageUrl': quantity,
+      'PhysicalStock': quantity,
     };
   }
 }

@@ -1,6 +1,7 @@
 import 'package:avant/api/api_service.dart';
 import 'package:avant/common/common.dart';
 import 'package:avant/common/toast.dart';
+import 'package:avant/db/db_helper.dart';
 import 'package:avant/home.dart';
 import 'package:avant/model/get_visit_dsr_model.dart';
 import 'package:avant/model/login_model.dart';
@@ -13,6 +14,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../model/followup_action_model.dart';
 import '../service/location_service.dart';
+import 'cart.dart';
 
 class FollowUpAction extends StatefulWidget {
   final GetVisitDsrResponse visitDsrData;
@@ -70,6 +72,7 @@ class FollowUpActionState extends State<FollowUpAction> {
 
   ToastMessage toastMessage = ToastMessage();
   LocationService locationService = LocationService();
+  DatabaseHelper databaseHelper = DatabaseHelper();
 
   List<Executive> executivesList = [];
 
@@ -196,6 +199,7 @@ class FollowUpActionState extends State<FollowUpAction> {
                 ),
                 Row(
                   children: [
+                    // First item
                     Expanded(
                       child: GestureDetector(
                         onTap: () {
@@ -203,7 +207,7 @@ class FollowUpActionState extends State<FollowUpAction> {
                             _submitted = true;
                           });
                           if (_formKey.currentState!.validate()) {
-                            _submitForm();
+                            _updateCartItem();
                           }
                         },
                         child: Container(
@@ -213,7 +217,41 @@ class FollowUpActionState extends State<FollowUpAction> {
                             padding: EdgeInsets.symmetric(
                                 vertical: 8.0, horizontal: 16),
                             child: Text(
-                              'Submit',
+                              'Add More',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    // Optional: add space between the two items
+                    // Second item
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _submitted = true;
+                          });
+                          if (_formKey.currentState!.validate()) {
+                            _updateCartItem();
+
+                            goToCart();
+                          }
+                        },
+                        child: Container(
+                          width: double.infinity,
+                          color: Colors.red,
+                          child: const Padding(
+                            padding: EdgeInsets.symmetric(
+                                vertical: 8.0, horizontal: 16),
+                            child: Text(
+                              'Add',
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                 color: Colors.white,
@@ -271,101 +309,6 @@ class FollowUpActionState extends State<FollowUpAction> {
     } finally {
       setState(() {
         isFetchingExecutive = false;
-      });
-    }
-  }
-
-  void _submitForm() async {
-    try {
-      FocusScope.of(context).unfocus();
-
-      if (!await _checkInternetConnection()) return;
-
-      setState(() {
-        _isLoading = true;
-      });
-
-      try {
-        if (kDebugMode) {
-          print("_submitForm clicked");
-        }
-
-        String followUpAction =
-            "<DocumentElement><FollowUpAction><Department>$selectedDepartmentId</Department><FollowUpExecutive>$selectedExecutiveId</FollowUpExecutive><FollowUpAction>${_visitFollowUpActionController
-            .text}</FollowUpAction><FollowUpDate>${_dateController
-            .text}</FollowUpDate></FollowUpAction></DocumentElement>";
-        final responseData = await VisitEntryService().visitEntry(
-            executiveId ?? 0,
-            widget.customerType,
-            widget.customerId,
-            executiveId ?? 0,
-            address,
-            profileCode ?? '',
-            position.latitude,
-            position.longitude,
-            1,
-            widget.visitFeedback,
-            _dateController.text,
-            widget.visitPurposeId,
-            widget.personMetId,
-            widget.jointVisitWithIds,
-            "",
-            "",
-            "",
-            "",
-            "",
-            0,
-            0,
-            userId ?? 0,
-            followUpAction,
-            "",
-            'No',
-            "",
-            "",
-            false,
-            "",
-            "",
-            token ?? "");
-
-        if (responseData.status == 'Success') {
-          String s = responseData.s;
-          if (kDebugMode) {
-            print(s);
-          }
-          if (s.isNotEmpty) {
-            if (kDebugMode) {
-              print('Add Visit DSR Error s not empty');
-            }
-            toastMessage.showInfoToastMessage(s);
-            if (s.contains('::')) {
-              toastMessage.showInfoToastMessage(
-                  'Please check the customer details and try again.');
-            } else {
-              toastMessage.showInfoToastMessage(
-                  'Failed to add DSR entry. Please try again.');
-            }
-          } else {
-            if (mounted) {
-              Navigator.of(context).pushReplacement(
-                MaterialPageRoute(
-                  builder: (context) => const HomePage(),
-                ),
-              );
-            }
-          }
-        }
-      } catch (e) {
-        if (kDebugMode) {
-          print("Failed to add DSR entry: $e");
-        }
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        print("Failed to add DSR entry: $e");
-      }
-    } finally {
-      setState(() {
-        _isLoading = false;
       });
     }
   }
@@ -478,5 +421,40 @@ class FollowUpActionState extends State<FollowUpAction> {
       return false;
     }
     return true;
+  }
+
+  Future<void> _updateCartItem() async {
+    await databaseHelper.insertFollowUpActionCart({
+      'FollowUpAction': _visitFollowUpActionController.text,
+      'FollowUpDate': _dateController.text,
+      'DepartmentId': selectedDepartmentId,
+      'Department': selectedDepartment,
+      'FollowUpExecutiveId': selectedExecutiveId,
+      'FollowUpExecutive': selectedExecutive,
+    });
+  }
+
+  void goToCart() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => Cart(
+          customerId: widget.customerId,
+          customerName: widget.customerName,
+          customerCode: widget.customerCode,
+          customerType: widget.customerType,
+          address: widget.address,
+          city: widget.city,
+          state: widget.state,
+          visitFeedback: widget.visitFeedback,
+          visitDate: widget.visitDate,
+          visitPurposeId: widget.visitPurposeId,
+          jointVisitWithIds: widget.jointVisitWithIds,
+          personMetId: widget.personMetId,
+          samplingDone: widget.samplingDone,
+          followUpAction: widget.followUpAction,
+        ),
+      ),
+    );
   }
 }
