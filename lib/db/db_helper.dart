@@ -854,6 +854,32 @@ class DatabaseHelper {
     await db.delete('Cart');
   }
 
+  Future<int> getItemCount() async {
+    final db = await database;
+
+    // Query to count the number of items in the Cart
+    final result = await db.rawQuery('SELECT COUNT(*) AS itemCount FROM Cart');
+
+    // Extracting the item count
+    int itemCount = result[0]['itemCount'] as int;
+
+    return itemCount;
+  }
+
+  Future<double> getTotalPrice() async {
+    final db = await database;
+
+    // Query to calculate total price
+    final result = await db.rawQuery('SELECT SUM(ListPrice * RequestedQty) AS totalPrice FROM Cart');
+
+    // Extracting the total price
+    double totalPrice = result[0]['totalPrice'] != null
+        ? (result[0]['totalPrice'] as double)
+        : 0.0;
+
+    return totalPrice;
+  }
+
   //End Cart
 
   //Start FollowUpActionCart

@@ -461,6 +461,9 @@ class CartState extends State<Cart> with SingleTickerProviderStateMixin {
         String generateToBeDispatchedCartXML =
             generateCartXmlSampleGiven(generateToBeDispatchedCartList);
 
+        int itemCount = await databaseHelper.getItemCount();
+        double totalPrice = await databaseHelper.getTotalPrice();
+
         final responseData = await VisitEntryService().visitEntry(
             executiveId ?? 0,
             widget.customerType,
@@ -481,8 +484,8 @@ class CartState extends State<Cart> with SingleTickerProviderStateMixin {
             "",
             "",
             "",
-            0,
-            0,
+            totalPrice,
+            itemCount,
             userId ?? 0,
             followUpActionXML,
             generateSampleGivenCartXML,
