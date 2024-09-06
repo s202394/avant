@@ -32,15 +32,10 @@ android {
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
     }
-
     kotlinOptions {
         jvmTarget = "1.8"
     }
-    packagingOptions {
-        // This will allow Gradle to merge duplicates without failing
-        pickFirst 'Icon'
-        pickFirst '**/*.kotlin_module' // example for kotlin modules
-    }
+
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "ltd.pvt.webtech.avant.avant"

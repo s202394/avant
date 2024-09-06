@@ -54,7 +54,6 @@ class Cart extends StatefulWidget {
 }
 
 class CartState extends State<Cart> with SingleTickerProviderStateMixin {
-  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   late TabController _tabController;
 
   late SharedPreferences prefs;
@@ -81,6 +80,9 @@ class CartState extends State<Cart> with SingleTickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
+
+    getAddressData();
+
     _fetchCartDetails();
     _fetchCartData();
   }
@@ -107,7 +109,8 @@ class CartState extends State<Cart> with SingleTickerProviderStateMixin {
       if (tabCount > 0) {
         _tabController = TabController(length: tabCount, vsync: this);
       } else {
-        _tabController = TabController(length: 1, vsync: this); // Fallback to at least one tab
+        _tabController = TabController(
+            length: 1, vsync: this); // Fallback to at least one tab
       }
     });
   }
@@ -150,82 +153,77 @@ class CartState extends State<Cart> with SingleTickerProviderStateMixin {
         ),
         body: _isLoading
             ? const Center(child: CircularProgressIndicator())
-            : Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            widget.customerName,
-                            style: const TextStyle(
-                                fontWeight: FontWeight.bold, fontSize: 18),
-                          ),
-                          RichTextWidget(label: widget.address),
-                          const Divider(height: 1),
-                          const SizedBox(height: 16),
-                          _detailText.buildDetailText(
-                            'Sampling Done: ',
-                            widget.samplingDone ? 'Yes' : 'No',
-                          ),
-                          _detailText.buildDetailText(
-                            'Follow up Action: ',
-                            widget.followUpAction ? 'Yes' : 'No',
-                          ),
-                        ],
-                      ),
-                    ),
-                    Container(
-                      color: Colors.orange,
-                      child: TabBar(
-                          controller: _tabController,
-                          labelColor: Colors.white,
-                          indicatorColor: Colors.blue,
-                          tabs: _tabs()),
-                    ),
-                    Expanded(
-                      child: TabBarView(
-                          controller: _tabController, children: _tabsAction()),
-                    ),
-                    Row(
+            : Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Expanded(
-                          child: GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                _submitted = true;
-                              });
-                              if (_formKey.currentState!.validate()) {
-                                _submitForm();
-                              }
-                            },
-                            child: Container(
-                              width: double.infinity,
-                              color: Colors.blue,
-                              child: const Padding(
-                                padding: EdgeInsets.symmetric(
-                                    vertical: 8.0, horizontal: 16),
-                                child: Text(
-                                  'Submit',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 18,
-                                  ),
+                        Text(
+                          widget.customerName,
+                          style: const TextStyle(
+                              fontWeight: FontWeight.bold, fontSize: 18),
+                        ),
+                        RichTextWidget(label: widget.address),
+                        const Divider(height: 1),
+                        const SizedBox(height: 16),
+                        _detailText.buildDetailText(
+                          'Sampling Done: ',
+                          widget.samplingDone ? 'Yes' : 'No',
+                        ),
+                        _detailText.buildDetailText(
+                          'Follow up Action: ',
+                          widget.followUpAction ? 'Yes' : 'No',
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    color: Colors.orange,
+                    child: TabBar(
+                        controller: _tabController,
+                        labelColor: Colors.white,
+                        indicatorColor: Colors.blue,
+                        tabs: _tabs()),
+                  ),
+                  Expanded(
+                    child: TabBarView(
+                        controller: _tabController, children: _tabsAction()),
+                  ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _submitted = true;
+                            });
+                            _submitForm();
+                          },
+                          child: Container(
+                            width: double.infinity,
+                            color: Colors.blue,
+                            child: const Padding(
+                              padding: EdgeInsets.symmetric(
+                                  vertical: 8.0, horizontal: 16),
+                              child: Text(
+                                'Submit',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 18,
                                 ),
                               ),
                             ),
                           ),
                         ),
-                      ],
-                    ),
-                  ],
-                ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
       ),
     );
@@ -366,13 +364,13 @@ class CartState extends State<Cart> with SingleTickerProviderStateMixin {
                         _buildTableHeader('Date'),
                         _buildTableHeader('Executive'),
                         _buildTableHeader('Department'),
-                        _buildTableHeader('Action'),
+                        _buildTableHeader('Follow Up Action'),
                         _buildTableHeader(''),
                       ],
                     ),
                     ...data.map(
                       (row) {
-                        final id = row['id'] as int?;
+                        final id = row['Id'] as int?;
                         return TableRow(
                           children: [
                             _buildTableCell(row['FollowUpDate']),
@@ -396,8 +394,7 @@ class CartState extends State<Cart> with SingleTickerProviderStateMixin {
   }
 
   Future<void> _deleteFollowUpAction(int id) async {
-    final db = await databaseHelper.database;
-    await db.delete('FollowUpActionCart', where: 'id = ?', whereArgs: [id]);
+    databaseHelper.deleteFollowUpActionCart(id);
 
     // Refresh the data after deletion
     _fetchCartData();
@@ -423,8 +420,7 @@ class CartState extends State<Cart> with SingleTickerProviderStateMixin {
 
   Widget _buildTableCellAction(dynamic id, Function(int) onDelete) {
     if (id == null) {
-      return const SizedBox
-          .shrink(); // Or handle the case where id is null in some other way
+      return const SizedBox.shrink();
     }
 
     return Padding(
@@ -438,78 +434,8 @@ class CartState extends State<Cart> with SingleTickerProviderStateMixin {
     );
   }
 
-  Widget buildTextField(String label, TextEditingController controller,
-      {bool enabled = true, int maxLines = 1}) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: TextFormField(
-        controller: controller,
-        decoration: InputDecoration(
-          labelText: label,
-          border: const OutlineInputBorder(),
-          contentPadding:
-              const EdgeInsets.symmetric(vertical: 12.0, horizontal: 12.0),
-          alignLabelWithHint: true,
-        ),
-        enabled: enabled,
-        maxLines: maxLines,
-        validator: (value) {
-          if (value == null || value.isEmpty) {
-            return 'Please enter $label';
-          }
-          return null;
-        },
-        onChanged: (text) {
-          if (_formKey.currentState != null) {
-            _formKey.currentState!.validate();
-          }
-        },
-      ),
-    );
-  }
-
-  Widget buildDropdownField<T>(String label, T? selectedValue,
-      List<DropdownMenuItem<T>> items, ValueChanged<T?> onChanged,
-      {required int? selectedId, required ValueChanged<int?> onIdChanged}) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: InputDecorator(
-        decoration: InputDecoration(
-          labelText: label,
-          border: const OutlineInputBorder(),
-          errorText: _submitted && selectedValue == null && label == 'Series'
-              ? 'Please select a $label'
-              : null,
-        ),
-        child: DropdownButtonHideUnderline(
-          child: DropdownButton<T>(
-            isDense: true,
-            value: selectedValue,
-            items: items,
-            onChanged: (value) {
-              if (value == null) return;
-
-              onChanged(value);
-              final selectedItem =
-                  items.firstWhere((item) => item.value == value);
-              onIdChanged((selectedItem.key as ValueKey).value as int);
-
-              setState(() {
-                if (_submitted) {
-                  _formKey.currentState?.validate();
-                }
-              });
-            },
-          ),
-        ),
-      ),
-    );
-  }
-
   void _submitForm() async {
     try {
-      FocusScope.of(context).unfocus();
-
       if (!await _checkInternetConnection()) return;
 
       setState(() {
@@ -521,8 +447,20 @@ class CartState extends State<Cart> with SingleTickerProviderStateMixin {
           print("_submitForm clicked");
         }
 
-        /*String followUpAction =
-            "<DocumentElement><FollowUpAction><Department>$selectedDepartmentId</Department><FollowUpExecutive>$selectedExecutiveId</FollowUpExecutive><FollowUpAction>${_visitFollowUpActionController.text}</FollowUpAction><FollowUpDate>${_dateController.text}</FollowUpDate></FollowUpAction></DocumentElement>";*/
+        List<Map<String, dynamic>> followUpActionCarts =
+            await databaseHelper.getAllFollowUpActionCarts();
+        String followUpActionXML = getFollowUpActions(followUpActionCarts);
+
+        List<Map<String, dynamic>> generateSampleGivenCartList =
+            await databaseHelper.getCartItemsWithSampleGiven("Sample Given");
+        String generateSampleGivenCartXML =
+            generateCartXmlSampleGiven(generateSampleGivenCartList);
+        List<Map<String, dynamic>> generateToBeDispatchedCartList =
+            await databaseHelper
+                .getCartItemsWithSampleGiven("To Be Dispatched");
+        String generateToBeDispatchedCartXML =
+            generateCartXmlSampleGiven(generateToBeDispatchedCartList);
+
         final responseData = await VisitEntryService().visitEntry(
             executiveId ?? 0,
             widget.customerType,
@@ -534,7 +472,7 @@ class CartState extends State<Cart> with SingleTickerProviderStateMixin {
             position.longitude,
             1,
             widget.visitFeedback,
-            "",
+            widget.visitDate,
             widget.visitPurposeId,
             widget.personMetId,
             widget.jointVisitWithIds,
@@ -546,14 +484,14 @@ class CartState extends State<Cart> with SingleTickerProviderStateMixin {
             0,
             0,
             userId ?? 0,
-            "",
-            "",
+            followUpActionXML,
+            generateSampleGivenCartXML,
             'No',
             "",
             "",
             false,
             "",
-            "",
+            generateToBeDispatchedCartXML,
             token);
 
         if (responseData.status == 'Success') {
@@ -566,20 +504,35 @@ class CartState extends State<Cart> with SingleTickerProviderStateMixin {
               print('Add Visit DSR Error s not empty');
             }
             toastMessage.showInfoToastMessage(s);
-            if (s.contains('::')) {
-              toastMessage.showInfoToastMessage(
-                  'Please check the customer details and try again.');
-            } else {
-              toastMessage.showInfoToastMessage(
-                  'Failed to add DSR entry. Please try again.');
-            }
-          } else {
+
+            databaseHelper.deleteAllCartItems();
+            databaseHelper.deleteAllFollowUpActionCarts();
+
             if (mounted) {
-              Navigator.of(context).pushReplacement(
+              Navigator.pushAndRemoveUntil(
+                context,
                 MaterialPageRoute(builder: (context) => const HomePage()),
+                (Route<dynamic> route) => false,
               );
             }
+          } else if (responseData.e.isNotEmpty) {
+            if (kDebugMode) {
+              print('Add Visit DSR Error e not empty');
+            }
+            toastMessage.showToastMessage(responseData.e);
+          } else {
+            if (kDebugMode) {
+              print('Add Visit DSR Error s & e empty');
+            }
+            toastMessage
+                .showToastMessage("An error occurred while adding visit.");
           }
+        } else {
+          if (kDebugMode) {
+            print('Add Visit DSR Error ${responseData.status}');
+          }
+          toastMessage
+              .showToastMessage("An error occurred while adding visit.");
         }
       } catch (e) {
         if (kDebugMode) {
@@ -588,13 +541,83 @@ class CartState extends State<Cart> with SingleTickerProviderStateMixin {
       }
     } catch (e) {
       if (kDebugMode) {
-        print("Failed to add DSR entry: $e");
+        print("Failed to add DSR entry from cart: $e");
       }
     } finally {
       setState(() {
         _isLoading = false;
       });
     }
+  }
+
+  String getFollowUpActions(List<Map<String, dynamic>> followUpActionCarts) {
+    // Start building the XML string
+    String followUpActionsXml = "<DocumentElement>";
+
+    // Loop through each follow-up action cart and append it to the XML string
+    for (var actionCart in followUpActionCarts) {
+      followUpActionsXml += "<FollowUpAction>"
+          "<Department>${actionCart['DepartmentId']}</Department>"
+          "<FollowUpExecutive>${actionCart['FollowUpExecutiveId']}</FollowUpExecutive>"
+          "<FollowUpAction>${actionCart['FollowUpAction']}</FollowUpAction>"
+          "<FollowUpDate>${actionCart['FollowUpDate']}</FollowUpDate>"
+          "</FollowUpAction>";
+    }
+
+    // Close the XML root element
+    followUpActionsXml += "</DocumentElement>";
+
+    return followUpActionsXml;
+  }
+
+  String generateCartXmlToBeDispatched(List<Map<String, dynamic>> cartItems) {
+    // Start building the XML string
+    String xmlString = "<DocumentElement>";
+
+    // Loop through each item in the cart
+    for (var item in cartItems) {
+      xmlString += "<CustomerSamplingRequestDetails>"
+          "<SeriesId>${item['SeriesId']}</SeriesId>"
+          "<BookId>${item['BookId']}</BookId>"
+          "<RequestedQty>${item['RequestedQty'].toString().padLeft(2, '0')}</RequestedQty>"
+          "<ShipTo>${item['ShipTo']}</ShipTo>"
+          "<ShippingAddress>${item['ShippingAddress']}</ShippingAddress>"
+          "<SamplingType>${item['SamplingType']}</SamplingType>"
+          "<SampleTo>${item['SampleTo']}</SampleTo>"
+          "<SampleGiven>${item['SampleGiven']}</SampleGiven>"
+          "<MRP>${item['MRP']}</MRP>"
+          "</CustomerSamplingRequestDetails>";
+    }
+
+    // Close the XML root element
+    xmlString += "</DocumentElement>";
+
+    return xmlString;
+  }
+
+  String generateCartXmlSampleGiven(List<Map<String, dynamic>> cartItems) {
+    // Start building the XML string
+    String xmlString = "<DocumentElement>";
+
+    // Loop through each item in the cart
+    for (var item in cartItems) {
+      xmlString += "<CustomerSamplingRequestDetails>"
+          "<SeriesId>${item['SeriesId']}</SeriesId>"
+          "<BookId>${item['BookId']}</BookId>"
+          "<RequestedQty>${item['RequestedQty'].toString().padLeft(2, '0')}</RequestedQty>"
+          "<ShipTo>${item['ShipTo']}</ShipTo>"
+          "<ShippingAddress>${item['ShippingAddress']}</ShippingAddress>"
+          "<SamplingType>${item['SamplingType']}</SamplingType>"
+          "<SampleTo>${item['SampleTo']}</SampleTo>"
+          "<SampleGiven>${item['SampleGiven']}</SampleGiven>"
+          "<MRP>${item['MRP']}</MRP>"
+          "</CustomerSamplingRequestDetails>";
+    }
+
+    // Close the XML root element
+    xmlString += "</DocumentElement>";
+
+    return xmlString;
   }
 
   Future<bool> _checkInternetConnection() async {

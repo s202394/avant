@@ -180,7 +180,7 @@ class DatabaseHelper {
 
         //Create table for Book Cart
         await database.execute(
-          "CREATE TABLE Cart (BookId INTEGER PRIMARY KEY, SeriesId INTEGER, Title TEXT, ISBN TEXT, Author TEXT, Price TEXT,ListPrice REAL, BookNum TEXT, Image TEXT,BookType TEXT, ImageUrl TEXT, PhysicalStock INTEGER, RequestedQty INTEGER DEFAULT 0, ShipTo TEXT, ShippingAddress TEXT, SamplingType TEXT, SampleTo TEXT, SampleGiven TEXT, MRP INTEGER)",
+          "CREATE TABLE Cart (BookId INTEGER PRIMARY KEY, SeriesId INTEGER, Title TEXT, ISBN TEXT, Author TEXT, Price TEXT, ListPrice REAL, BookNum TEXT, Image TEXT, BookType TEXT, ImageUrl TEXT, PhysicalStock INTEGER, RequestedQty INTEGER DEFAULT 0, ShipTo TEXT, ShippingAddress TEXT, SamplingType TEXT, SampleTo TEXT, SampleGiven TEXT, MRP INTEGER)",
         );
         if (kDebugMode) {
           print("Cart table successfully created.");
@@ -834,6 +834,24 @@ class DatabaseHelper {
   Future<List<Map<String, dynamic>>> getCartItemsWithSeries() async {
     final db = await database;
     return await db.query('Cart', where: 'SeriesId != ?', whereArgs: [0]);
+  }
+
+  //Get Title Items
+  Future<List<Map<String, dynamic>>> getCartItemsWithSampleGiven(String sampleGiven) async {
+    final db = await database;
+    return await db.query('Cart', where: 'SampleGiven = ?', whereArgs: [sampleGiven]);
+  }
+
+  //Retrieve all records from Cart
+  Future<List<Map<String, dynamic>>> getAllCarts() async {
+    final db = await database;
+    return await db.query('Cart');
+  }
+
+  //Delete all records from Cart
+  Future<void> deleteAllCartItems() async {
+    final db = await database;
+    await db.delete('Cart');
   }
 
   //End Cart

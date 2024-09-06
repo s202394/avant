@@ -73,26 +73,65 @@ class VisitSeriesSearchPageState extends State<VisitSeriesSearch>
   bool _submitted = false;
   bool _isLoading = true;
   bool _isFetchingTitles = false;
+  bool _isSuggestionSelected = false;
 
   final DetailText _detailText = DetailText();
   final ToastMessage _toastMessage = ToastMessage();
 
-  final TextEditingController titleController = TextEditingController();
   final TextEditingController _autocompleteController = TextEditingController();
+  final FocusNode _autocompleteFocusNode = FocusNode();
 
   @override
   void initState() {
     super.initState();
+
+    if (kDebugMode) {
+      print('visitPurposeId:${widget.visitPurposeId}');
+    }
+
     _tabController = TabController(length: 2, vsync: this);
+
     _fetchSeriesAndClassLevels();
+
     _autocompleteController.addListener(() {
-      _fetchTitlesSuggestions(_autocompleteController.text);
+      if (_isSuggestionSelected) {
+        if (kDebugMode) {
+          print('_isSuggestionSelected:$_isSuggestionSelected');
+        }
+        // Reset flag and return if a suggestion was selected
+        _isSuggestionSelected = false;
+        return;
+      }
+      if (kDebugMode) {
+        print('_isSuggestionSelected:$_isSuggestionSelected');
+      }
+      final query = _autocompleteController.text;
+      if (query.isNotEmpty) {
+        if (kDebugMode) {
+          print('_isSuggestionSelected:$_isSuggestionSelected query:$query');
+        }
+        _fetchTitlesSuggestions(query);
+      } else {
+        setState(() {
+          titleSuggestions = [];
+        });
+      }
+    });
+
+    _autocompleteFocusNode.addListener(() {
+      if (!_autocompleteFocusNode.hasFocus) {
+        setState(() {
+          titleSuggestions = [];
+        });
+      }
     });
   }
 
   @override
   void dispose() {
     _tabController.dispose();
+    _autocompleteController.dispose();
+    _autocompleteFocusNode.dispose();
     super.dispose();
   }
 
@@ -152,7 +191,9 @@ class VisitSeriesSearchPageState extends State<VisitSeriesSearch>
     setState(() {
       _isFetchingTitles = true;
     });
-
+    if (kDebugMode) {
+      print('_isSuggestionSelected:$_isSuggestionSelected query:$query');
+    }
     try {
       final response = await GetVisitDsrService().fetchTitles(
         1,
@@ -326,31 +367,33 @@ class VisitSeriesSearchPageState extends State<VisitSeriesSearch>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             buildDropdownField<SeriesList>(
-                'Series',
-                selectedSeries,
-                seriesItems,
-                (value) {
-                  setState(() {
-                    selectedSeries = value;
-                  });
-                },
-                selectedId: selectedSeries?.seriesId,
-                onIdChanged: (id) {
-                  // No longer needed
-                }),
+              'Series',
+              selectedSeries,
+              seriesItems,
+              (value) {
+                setState(() {
+                  selectedSeries = value;
+                });
+              },
+              selectedId: selectedSeries?.seriesId,
+              onIdChanged: (id) {
+                // No longer needed
+              },
+            ),
             buildDropdownField<ClassLevelList>(
-                'Class Level',
-                selectedClassLevel,
-                classLevelItems,
-                (value) {
-                  setState(() {
-                    selectedClassLevel = value;
-                  });
-                },
-                selectedId: selectedClassLevel?.classLevelId,
-                onIdChanged: (id) {
-                  // No longer needed
-                }),
+              'Class Level',
+              selectedClassLevel,
+              classLevelItems,
+              (value) {
+                setState(() {
+                  selectedClassLevel = value;
+                });
+              },
+              selectedId: selectedClassLevel?.classLevelId,
+              onIdChanged: (id) {
+                // No longer needed
+              },
+            ),
           ],
         ),
       ),
@@ -364,8 +407,11 @@ class VisitSeriesSearchPageState extends State<VisitSeriesSearch>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            buildTextField('Title / ISBN', _autocompleteController,
-                enabled: true),
+            buildTextField(
+              'Title / ISBN',
+              _autocompleteController,
+              enabled: true,
+            ),
             if (_isFetchingTitles)
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 16.0),
@@ -377,13 +423,12 @@ class VisitSeriesSearchPageState extends State<VisitSeriesSearch>
                   title: Text(title.title),
                   onTap: () {
                     setState(() {
-                      if (kDebugMode) {
-                        print(title.title);
-                      }
                       selectedTitle = title;
                       _autocompleteController.text = title.title;
+                      _isSuggestionSelected = true;
                       titleSuggestions = [];
                     });
+                    _autocompleteFocusNode.unfocus();
                   },
                 ),
               ),
@@ -419,6 +464,7 @@ class VisitSeriesSearchPageState extends State<VisitSeriesSearch>
             _formKey.currentState!.validate();
           }
         },
+        focusNode: _autocompleteFocusNode,
       ),
     );
   }
