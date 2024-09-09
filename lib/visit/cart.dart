@@ -53,7 +53,7 @@ class Cart extends StatefulWidget {
   CartState createState() => CartState();
 }
 
-class CartState extends State<Cart> with SingleTickerProviderStateMixin {
+class CartState extends State<Cart> with TickerProviderStateMixin {
   late TabController _tabController;
 
   late SharedPreferences prefs;
@@ -81,6 +81,8 @@ class CartState extends State<Cart> with SingleTickerProviderStateMixin {
   void initState() {
     super.initState();
 
+    _tabController = TabController(length: 0, vsync: this);
+
     getAddressData();
 
     _fetchCartDetails();
@@ -106,11 +108,11 @@ class CartState extends State<Cart> with SingleTickerProviderStateMixin {
         tabCount++;
       }
 
+      _tabController.dispose();
       if (tabCount > 0) {
         _tabController = TabController(length: tabCount, vsync: this);
       } else {
-        _tabController = TabController(
-            length: 1, vsync: this); // Fallback to at least one tab
+        _tabController = TabController(length: 1, vsync: this);
       }
     });
   }
@@ -153,78 +155,81 @@ class CartState extends State<Cart> with SingleTickerProviderStateMixin {
         ),
         body: _isLoading
             ? const Center(child: CircularProgressIndicator())
-            : Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          widget.customerName,
-                          style: const TextStyle(
-                              fontWeight: FontWeight.bold, fontSize: 18),
-                        ),
-                        RichTextWidget(label: widget.address),
-                        const Divider(height: 1),
-                        const SizedBox(height: 16),
-                        _detailText.buildDetailText(
-                          'Sampling Done: ',
-                          widget.samplingDone ? 'Yes' : 'No',
-                        ),
-                        _detailText.buildDetailText(
-                          'Follow up Action: ',
-                          widget.followUpAction ? 'Yes' : 'No',
-                        ),
-                      ],
-                    ),
-                  ),
-                  Container(
-                    color: Colors.orange,
-                    child: TabBar(
-                        controller: _tabController,
-                        labelColor: Colors.white,
-                        indicatorColor: Colors.blue,
-                        tabs: _tabs()),
-                  ),
-                  Expanded(
-                    child: TabBarView(
-                        controller: _tabController, children: _tabsAction()),
-                  ),
-                  Row(
+            : (_tabController == null)
+                ? const Center(child: Text('Loading...')) // Loading placeholder
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              widget.customerName,
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.bold, fontSize: 18),
+                            ),
+                            RichTextWidget(label: widget.address),
+                            const Divider(height: 1),
+                            const SizedBox(height: 16),
+                            _detailText.buildDetailText(
+                              'Sampling Done: ',
+                              widget.samplingDone ? 'Yes' : 'No',
+                            ),
+                            _detailText.buildDetailText(
+                              'Follow up Action: ',
+                              widget.followUpAction ? 'Yes' : 'No',
+                            ),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        color: Colors.orange,
+                        child: TabBar(
+                            controller: _tabController,
+                            labelColor: Colors.white,
+                            indicatorColor: Colors.blue,
+                            tabs: _tabs()),
+                      ),
                       Expanded(
-                        child: GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              _submitted = true;
-                            });
-                            _submitForm();
-                          },
-                          child: Container(
-                            width: double.infinity,
-                            color: Colors.blue,
-                            child: const Padding(
-                              padding: EdgeInsets.symmetric(
-                                  vertical: 8.0, horizontal: 16),
-                              child: Text(
-                                'Submit',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 18,
+                        child: TabBarView(
+                            controller: _tabController,
+                            children: _tabsAction()),
+                      ),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  _submitted = true;
+                                });
+                                _submitForm();
+                              },
+                              child: Container(
+                                width: double.infinity,
+                                color: Colors.blue,
+                                child: const Padding(
+                                  padding: EdgeInsets.symmetric(
+                                      vertical: 8.0, horizontal: 16),
+                                  child: Text(
+                                    'Submit',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 18,
+                                    ),
+                                  ),
                                 ),
                               ),
                             ),
                           ),
-                        ),
+                        ],
                       ),
                     ],
                   ),
-                ],
-              ),
       ),
     );
   }

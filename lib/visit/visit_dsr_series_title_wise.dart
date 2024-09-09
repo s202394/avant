@@ -70,6 +70,7 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
   String? selectedSamplingType;
   String? selectedSampleGiven;
   String? selectedSampleTo;
+  int? selectedSampleToId;
   String? selectedShipTo;
   String? selectedShippingAddress;
 
@@ -391,11 +392,7 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
                             : null,
                       ),
                       items: sampleToItems,
-                      onChanged: (value) {
-                        setState(() {
-                          selectedSampleTo = value;
-                        });
-                      },
+                      onChanged: _onSampleToChanged,
                     ),
                   ),
                 ),
@@ -581,7 +578,7 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
       'ShipTo': selectedShipTo,
       'ShippingAddress': selectedShippingAddress,
       'SamplingType': selectedSamplingType,
-      'SampleTo': selectedSampleTo,
+      'SampleTo': selectedSampleToId,
       'SampleGiven': selectedSampleGiven,
       'MRP': books[index].listPrice,
     });
@@ -648,5 +645,17 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
         selectedSampleGiven != null &&
         selectedSamplingType != null &&
         selectedShipTo != null;
+  }
+
+  void _onSampleToChanged(String? value) {
+    setState(() {
+      selectedSampleTo = value;
+
+      SampleTo? selectedSampleToObj = sampleTos.firstWhere(
+        (sampleTo) => sampleTo.customerName == value,
+        orElse: () => SampleTo(customerName: '', customerContactId: 0),
+      );
+      selectedSampleToId = selectedSampleToObj.customerContactId;
+    });
   }
 }

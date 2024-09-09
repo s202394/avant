@@ -23,7 +23,8 @@ class NewCustomerSchoolForm2 extends StatefulWidget {
   final String keyCustomer;
   final String customerStatus;
 
-  const NewCustomerSchoolForm2({super.key,
+  const NewCustomerSchoolForm2({
+    super.key,
     required this.type,
     required this.customerName,
     required this.address,
@@ -110,7 +111,7 @@ class NewCustomerSchoolForm2State extends State<NewCustomerSchoolForm2> {
       // Data exists in the database, return it
       if (kDebugMode) {
         print(
-          "CustomerEntryMaster data found in db: ${existingData.salutationMasterList}");
+            "CustomerEntryMaster data found in db: ${existingData.salutationMasterList}");
       }
       return existingData;
     } else {
@@ -127,14 +128,14 @@ class NewCustomerSchoolForm2State extends State<NewCustomerSchoolForm2> {
                 .fetchCustomerEntryMaster(downHierarchy, token);
         if (kDebugMode) {
           print(
-            "CustomerEntryMaster data fetched from API and saved to db. $response");
+              "CustomerEntryMaster data fetched from API and saved to db. $response");
         }
         // Save the fetched data to the database
         await dbHelper.insertCustomerEntryMasterResponse(response);
 
         if (kDebugMode) {
           print(
-            "CustomerEntryMaster data fetched from API and saved to db. $response");
+              "CustomerEntryMaster data fetched from API and saved to db. $response");
         }
         return response;
       } catch (e) {
@@ -215,33 +216,20 @@ class NewCustomerSchoolForm2State extends State<NewCustomerSchoolForm2> {
             Text(
               textAlign: TextAlign.center,
               widget.customerName,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             Text(
               textAlign: TextAlign.center,
               widget.address,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             Text(
               textAlign: TextAlign.center,
               '${widget.cityName} - ${widget.pinCode}',
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 10),
-            Container(
-              width: double.infinity, // Full width
-              height: 1, // Height of the line
-              color: Colors.grey, // Line color
-            ),
+            Container(width: double.infinity, height: 1, color: Colors.grey),
             const SizedBox(height: 10),
             _buildDropdownClassesField('Start Class', startClassController,
                 _startClassFieldKey, data.classesList, _startClassFocusNode,
@@ -370,10 +358,8 @@ class NewCustomerSchoolForm2State extends State<NewCustomerSchoolForm2> {
         value: _selectedRanking,
         focusNode: focusNode,
         items: rankingList
-            .map((ranking) => DropdownMenuItem<String>(
-                  value: ranking,
-                  child: Text(ranking),
-                ))
+            .map((ranking) =>
+                DropdownMenuItem<String>(value: ranking, child: Text(ranking)))
             .toList(),
         onChanged: (String? value) {
           setState(() {
@@ -446,9 +432,7 @@ class NewCustomerSchoolForm2State extends State<NewCustomerSchoolForm2> {
         focusNode: focusNode,
         items: classesList
             .map((classes) => DropdownMenuItem<Classes>(
-                  value: classes,
-                  child: Text(classes.className),
-                ))
+                value: classes, child: Text(classes.className)))
             .toList(),
         onChanged: (Classes? value) {
           setState(() {
@@ -464,9 +448,7 @@ class NewCustomerSchoolForm2State extends State<NewCustomerSchoolForm2> {
           });
         },
         decoration: InputDecoration(
-          labelText: label,
-          border: const OutlineInputBorder(),
-        ),
+            labelText: label, border: const OutlineInputBorder()),
         validator: (value) {
           if (value == null || value.className.isEmpty) {
             return 'Please select $label';
@@ -508,10 +490,8 @@ class NewCustomerSchoolForm2State extends State<NewCustomerSchoolForm2> {
             : _selectedDecisionMonth,
         focusNode: focusNode,
         items: monthsList
-            .map((month) => DropdownMenuItem<Months>(
-                  value: month,
-                  child: Text(month.name),
-                ))
+            .map((month) =>
+                DropdownMenuItem<Months>(value: month, child: Text(month.name)))
             .toList(),
         onChanged: (Months? value) {
           setState(() {

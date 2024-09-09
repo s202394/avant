@@ -180,7 +180,7 @@ class DatabaseHelper {
 
         //Create table for Book Cart
         await database.execute(
-          "CREATE TABLE Cart (BookId INTEGER PRIMARY KEY, SeriesId INTEGER, Title TEXT, ISBN TEXT, Author TEXT, Price TEXT, ListPrice REAL, BookNum TEXT, Image TEXT, BookType TEXT, ImageUrl TEXT, PhysicalStock INTEGER, RequestedQty INTEGER DEFAULT 0, ShipTo TEXT, ShippingAddress TEXT, SamplingType TEXT, SampleTo TEXT, SampleGiven TEXT, MRP INTEGER)",
+          "CREATE TABLE Cart (BookId INTEGER PRIMARY KEY, SeriesId INTEGER, Title TEXT, ISBN TEXT, Author TEXT, Price TEXT, ListPrice REAL, BookNum TEXT, Image TEXT, BookType TEXT, ImageUrl TEXT, PhysicalStock INTEGER, RequestedQty INTEGER DEFAULT 0, ShipTo TEXT, ShippingAddress TEXT, SamplingType TEXT, SampleTo INTEGER DEFAULT 0, SampleGiven TEXT, MRP INTEGER)",
         );
         if (kDebugMode) {
           print("Cart table successfully created.");

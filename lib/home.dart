@@ -10,12 +10,15 @@ import 'package:avant/login.dart';
 import 'package:avant/model/login_model.dart';
 import 'package:avant/model/menu_model.dart';
 import 'package:avant/model/travel_plan_model.dart';
+import 'package:avant/new_customer/new_customer_school_form1.dart';
 import 'package:avant/visit/dsr_entry.dart';
 import 'package:avant/visit/visit_detail_page.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import 'new_customer/new_customer_trade_library_form1.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -239,15 +242,45 @@ class HomePageState extends State<HomePage> {
                                 title: Text(childMenu.childMenuName),
                                 onTap: () {
                                   Navigator.pop(context);
-                                  // Handle navigation based on menuName and childMenuName
-                                  // Navigate based on conditions
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) =>
-                                          WebViewScreen(url: childMenu.linkURL),
-                                    ),
-                                  );
+                                  if (childMenu.menuName == 'Customer') {
+                                    if (childMenu.childMenuName ==
+                                        'School List') {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                            builder: (context) =>
+                                                const NewCustomerSchoolForm1(
+                                                    type: 'School')),
+                                      );
+                                    } else if (childMenu.childMenuName ==
+                                        'Institute List') {
+                                    } else if (childMenu.childMenuName ==
+                                        'Trade List') {
+                                      Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                              builder: (context) =>
+                                                  const NewCustomerTradeLibraryForm1(
+                                                      type: 'Trade')));
+                                    } else if (childMenu.childMenuName ==
+                                        'Library List') {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                            builder: (context) =>
+                                                const NewCustomerTradeLibraryForm1(
+                                                    type: 'Library')),
+                                      );
+                                    }
+                                  } else {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => WebViewScreen(
+                                            url: childMenu.linkURL),
+                                      ),
+                                    );
+                                  }
                                 },
                               ),
                             );

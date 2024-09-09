@@ -2,7 +2,6 @@ import 'package:avant/api/api_service.dart';
 import 'package:avant/common/common.dart';
 import 'package:avant/common/toast.dart';
 import 'package:avant/db/db_helper.dart';
-import 'package:avant/home.dart';
 import 'package:avant/model/get_visit_dsr_model.dart';
 import 'package:avant/model/login_model.dart';
 import 'package:avant/views/rich_text.dart';
@@ -367,9 +366,9 @@ class FollowUpActionState extends State<FollowUpAction> {
             ? () async {
                 final DateTime? picked = await showDatePicker(
                   context: context,
-                  initialDate: DateTime.now(),
-                  firstDate: DateTime(1970, 1, 1),
-                  lastDate: DateTime.now(),
+                  initialDate: DateTime.now().add(const Duration(days: 1)),
+                  firstDate: DateTime.now().add(const Duration(days: 1)),
+                  lastDate: DateTime.now().add(const Duration(days: 365)),
                   builder: (BuildContext context, Widget? child) {
                     return Theme(
                       data: ThemeData.light(),

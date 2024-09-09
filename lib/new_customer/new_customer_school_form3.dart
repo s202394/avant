@@ -327,32 +327,23 @@ class NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
                   textAlign: TextAlign.center,
                   widget.customerName,
                   style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
+                      fontSize: 16, fontWeight: FontWeight.bold),
                 ),
                 Text(
                   textAlign: TextAlign.center,
                   widget.address,
                   style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
+                      fontSize: 16, fontWeight: FontWeight.bold),
                 ),
                 Text(
                   textAlign: TextAlign.center,
                   '${widget.cityName} - ${widget.pinCode}',
                   style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
+                      fontSize: 16, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 10),
                 Container(
-                  width: double.infinity, // Full width
-                  height: 1, // Height of the line
-                  color: Colors.grey, // Line color
-                ),
+                    width: double.infinity, height: 1, color: Colors.grey),
                 const SizedBox(height: 10),
                 const Text(
                   textAlign: TextAlign.center,
@@ -366,10 +357,10 @@ class NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2, // Number of columns
-                    childAspectRatio: 2.0, // Adjust this for aspect ratio
-                    crossAxisSpacing: 0.0, // Adjust spacing between columns
-                    mainAxisSpacing: 0.0, // Adjust spacing between rows
+                    crossAxisCount: 2,
+                    childAspectRatio: 2.0,
+                    crossAxisSpacing: 0.0,
+                    mainAxisSpacing: 0.0,
                   ),
                   itemCount: data.classesList.length,
                   itemBuilder: (context, index) {
@@ -448,18 +439,15 @@ class NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
                   },
                 ),
                 Container(
-                  width: double.infinity, // Full width
-                  height: 1, // Height of the line
-                  color: Colors.grey, // Line color
+                  width: double.infinity,
+                  height: 1,
+                  color: Colors.grey,
                 ),
                 const SizedBox(height: 10),
                 const Text(
                   textAlign: TextAlign.center,
                   'Primary Contact',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 10),
                 _buildTextField('Contact First Name',
