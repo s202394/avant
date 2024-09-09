@@ -9,6 +9,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../model/geography_model.dart';
+import '../model/search_bookseller_response.dart';
+
 class NewCustomerSchoolForm2 extends StatefulWidget {
   final String type;
   final String customerName;
@@ -48,6 +51,9 @@ class NewCustomerSchoolForm2State extends State<NewCustomerSchoolForm2> {
   late Future<CustomerEntryMasterResponse> futureData;
 
   late String token;
+  late int executiveId;
+  bool _isLoading = true;
+  bool _submitted = false;
 
   final _formKey = GlobalKey<FormState>();
 
@@ -69,6 +75,18 @@ class NewCustomerSchoolForm2State extends State<NewCustomerSchoolForm2> {
   final TextEditingController gstController = TextEditingController();
   final TextEditingController rankingController = TextEditingController();
 
+  //Bookseller bottom sheet controllers
+  final TextEditingController _booksellerNameController =
+      TextEditingController();
+  final TextEditingController _booksellerCodeController =
+      TextEditingController();
+  final TextEditingController _booksellerCityController =
+      TextEditingController();
+
+  final FocusNode _cityFocusNode = FocusNode();
+
+  final _cityFieldKey = GlobalKey<FormFieldState>();
+
   final _endClassFieldKey = GlobalKey<FormFieldState>();
   final _startClassFieldKey = GlobalKey<FormFieldState>();
   final _samplingMonthFieldKey = GlobalKey<FormFieldState>();
@@ -87,22 +105,34 @@ class NewCustomerSchoolForm2State extends State<NewCustomerSchoolForm2> {
   final FocusNode _mediumFocusNode = FocusNode();
   final FocusNode _rankingFocusNode = FocusNode();
 
+  DatabaseHelper dbHelper = DatabaseHelper();
+
+  String _cityAccess = '';
+  List<Geography> _filteredCities = [];
+  Geography? _selectedCity;
+
+  List<BookSellers> _booksellers = [];
+
   @override
   void initState() {
     super.initState();
+
+    initialize();
     futureData = initializePreferencesAndData();
+
+    _loadGeographyData();
+  }
+
+  void initialize() async {
+    prefs = await SharedPreferences.getInstance();
+    setState(() {
+      token = prefs.getString('token') ?? '';
+      executiveId = prefs.getInt('executiveId') ?? 0;
+      _cityAccess = prefs.getString('CityAccess') ?? '';
+    });
   }
 
   Future<CustomerEntryMasterResponse> initializePreferencesAndData() async {
-    prefs = await SharedPreferences.getInstance();
-
-    setState(() {
-      token = prefs.getString('token') ?? '';
-    });
-
-    // Create an instance of DatabaseHelper
-    DatabaseHelper dbHelper = DatabaseHelper();
-
     // Check if data exists in the database
     CustomerEntryMasterResponse? existingData =
         await dbHelper.getCustomerEntryMasterResponse();
@@ -168,6 +198,48 @@ class NewCustomerSchoolForm2State extends State<NewCustomerSchoolForm2> {
         data.affiliateTypeList.isEmpty;
   }
 
+  void _loadGeographyData() async {
+    // Retrieve geography data from the database
+    List<Geography> dbData = await dbHelper.getGeographyDataFromDB();
+    if (dbData.isNotEmpty) {
+      setState(() {
+        _filteredCities = dbData;
+        _isLoading = false;
+      });
+      if (kDebugMode) {
+        print("Loaded geography data from the database.");
+      }
+    } else {
+      if (kDebugMode) {
+        print("No data in DB, fetching from API.");
+      }
+      _fetchGeographyData();
+    }
+  }
+
+  void _fetchGeographyData() async {
+    GeographyService geographyService = GeographyService();
+    try {
+      GeographyResponse geographyResponse = await geographyService
+          .fetchGeographyData(_cityAccess, executiveId, token);
+      List<int> cityIds =
+          _cityAccess.split(',').map((id) => int.parse(id)).toList();
+      setState(() {
+        _filteredCities = geographyResponse.geographyList
+            .where((geography) => cityIds.contains(geography.cityId))
+            .toList();
+        _isLoading = false;
+      });
+    } catch (e) {
+      if (kDebugMode) {
+        print(e);
+      }
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
   @override
   void dispose() {
     endClassController.dispose();
@@ -178,6 +250,10 @@ class NewCustomerSchoolForm2State extends State<NewCustomerSchoolForm2> {
     gstController.dispose();
     mediumController.dispose();
     rankingController.dispose();
+    _booksellerNameController.dispose();
+    _booksellerCodeController.dispose();
+    _booksellerCityController.dispose();
+    _cityFocusNode.dispose();
     super.dispose();
   }
 
@@ -188,20 +264,22 @@ class NewCustomerSchoolForm2State extends State<NewCustomerSchoolForm2> {
         title: Text('New Customer - ${widget.type}'),
         backgroundColor: const Color(0xFFFFF8E1),
       ),
-      body: FutureBuilder<CustomerEntryMasterResponse>(
-        future: futureData,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          } else if (snapshot.hasData) {
-            return buildForm(snapshot.data!);
-          } else {
-            return const Center(child: Text('No data found'));
-          }
-        },
-      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : FutureBuilder<CustomerEntryMasterResponse>(
+              future: futureData,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                } else if (snapshot.hasError) {
+                  return Center(child: Text('Error: ${snapshot.error}'));
+                } else if (snapshot.hasData) {
+                  return buildForm(snapshot.data!);
+                } else {
+                  return const Center(child: Text('No data found'));
+                }
+              },
+            ),
     );
   }
 
@@ -256,6 +334,26 @@ class NewCustomerSchoolForm2State extends State<NewCustomerSchoolForm2> {
             _buildTextField('PAN', panController, _panFieldKey, _panFocusNode),
             _buildTextField('GST', gstController, _gstFieldKey, _gstFocusNode),
             buildPurchaseModeField(data.purchaseModeList),
+            const SizedBox(height: 20),
+            if (_isLoading) ...[
+              const CircularProgressIndicator(),
+            ] else if (_booksellers.isNotEmpty) ...[
+              Expanded(
+                child: ListView.builder(
+                  itemCount: _booksellers.length,
+                  itemBuilder: (context, index) {
+                    final bookseller = _booksellers[index];
+                    return ListTile(
+                      title: Text(bookseller.bookSellerName),
+                      subtitle: Text('Code: ${bookseller.bookSellerName}'),
+                      // Add any other details you want to display
+                    );
+                  },
+                ),
+              ),
+            ] else ...[
+              const Text('No booksellers found.'),
+            ],
             const SizedBox(height: 16),
             GestureDetector(
               onTap: () {
@@ -548,6 +646,75 @@ class NewCustomerSchoolForm2State extends State<NewCustomerSchoolForm2> {
     if (_formKey.currentState!.validate()) {
       if (_selectedPurchaseMode == null) {
         _toastMessage.showToastMessage("Please select Purchase Mode");
+      } else if (_selectedPurchaseMode == 'Book Seller' ||
+          _selectedPurchaseMode == 'Bookseller') {
+        showModalBottomSheet(
+          context: context,
+          isScrollControlled: true, // This ensures that the bottom sheet can adjust its height
+          builder: (BuildContext context) {
+            final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
+
+            return Padding(
+              padding: EdgeInsets.only(bottom: keyboardHeight),
+              child: SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child:Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      const Text(
+                        'Search Bookseller',
+                        style: TextStyle(
+                          color: Colors.black,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      buildTextField(
+                          'Name', _booksellerNameController, _submitted),
+                      buildTextField(
+                          'Code', _booksellerCodeController, _submitted),
+                      _buildDropdownFieldCity('City', _booksellerCityController,
+                          _cityFieldKey, _cityFocusNode),
+                      const SizedBox(height: 20),
+                      Center(
+                        child: ElevatedButton(
+                          onPressed: () {
+                            Navigator.pop(context);
+                            setState(() {
+                              _submitted = true;
+                            });
+                            if (_formKey.currentState!.validate()) {
+                              searchBookseller();
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.lightBlueAccent,
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 32.0, vertical: 12.0),
+                            textStyle: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          child: const Text(
+                            'Search',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+
       } else {
         Navigator.push(
           context,
@@ -597,6 +764,103 @@ class NewCustomerSchoolForm2State extends State<NewCustomerSchoolForm2> {
           break;
         }
       }
+    }
+  }
+
+  Widget buildTextField(
+      String label, TextEditingController controller, bool submitted) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: TextFormField(
+        decoration: InputDecoration(
+          labelText: label,
+          border: const OutlineInputBorder(),
+          errorText: submitted && controller.text.isEmpty
+              ? 'Please enter $label'
+              : null,
+          contentPadding: const EdgeInsets.symmetric(
+            vertical: 12.0,
+            horizontal: 12.0,
+          ),
+          alignLabelWithHint: true,
+        ),
+        controller: controller,
+        onChanged: (text) {
+          if (_submitted && text.isNotEmpty) {
+            setState(() {});
+          }
+        },
+      ),
+    );
+  }
+
+  Widget _buildDropdownFieldCity(
+    String label,
+    TextEditingController controller,
+    GlobalKey<FormFieldState> fieldKey,
+    FocusNode focusNode,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: DropdownButtonFormField<Geography>(
+        key: fieldKey,
+        focusNode: focusNode,
+        value: _selectedCity,
+        items: _filteredCities
+            .map(
+              (geography) => DropdownMenuItem<Geography>(
+                value: geography,
+                child: Text(geography.city),
+              ),
+            )
+            .toList(),
+        onChanged: (Geography? value) {
+          setState(() {
+            _selectedCity = value;
+
+            // Update the text controller with the selected city name
+            controller.text = value?.city ?? '';
+
+            // Validate the field
+            fieldKey.currentState?.validate();
+          });
+        },
+        decoration: InputDecoration(
+          labelText: label,
+          border: const OutlineInputBorder(),
+        ),
+        validator: (value) {
+          if (value == null || value.city.isEmpty) {
+            return 'Please select $label';
+          }
+          return null;
+        },
+      ),
+    );
+  }
+
+  void searchBookseller() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final response = await BooksellerService().fetchBooksellerData(
+        _selectedCity?.cityId ?? 0,
+        _booksellerCodeController.text,
+        _booksellerNameController.text,
+        token,
+      );
+
+      setState(() {
+        _isLoading = false;
+        _booksellers = response.bookSellers ?? [];
+      });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      _toastMessage.showToastMessage('Error fetching booksellers: $e');
     }
   }
 }

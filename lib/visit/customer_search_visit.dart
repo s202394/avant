@@ -35,7 +35,7 @@ class CustomerSearchVisitPageState extends State<CustomerSearchVisit> {
   final TextEditingController _cityController = TextEditingController();
 
   bool _submitted = false;
-  bool _isLoading = true; // Add loading state
+  bool _isLoading = true;
 
   @override
   void initState() {

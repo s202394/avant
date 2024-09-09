@@ -15,6 +15,7 @@ import 'package:avant/model/forgot_password_model.dart';
 import 'package:avant/model/geography_model.dart';
 import 'package:avant/model/get_visit_dsr_model.dart';
 import 'package:avant/model/menu_model.dart';
+import 'package:avant/model/search_bookseller_response.dart';
 import 'package:avant/model/setup_values.dart';
 import 'package:avant/model/ship_to_response.dart';
 import 'package:avant/model/submit_approval_model.dart';
@@ -2100,6 +2101,66 @@ class SeriesAndClassLevelListService {
       if (newToken != null && newToken.isNotEmpty) {
         return await getSeriesAndClassLevelList(
             executiveId, profileId, newToken);
+      } else {
+        throw Exception('Failed to retrieve new token');
+      }
+    } else {
+      throw Exception(
+          'Username or password is not stored in SharedPreferences');
+    }
+  }
+}
+
+class BooksellerService {
+  Future<SearchBooksellerResponse> fetchBooksellerData(int cityId,
+      String bookSellerCode, String bookSellerName, String token) async {
+    String body = jsonEncode(<String, dynamic>{
+      'CityId': cityId,
+      'BookSellerCode': bookSellerCode,
+      'BookSellerName': bookSellerName,
+    });
+    if (kDebugMode) {
+      print(body);
+    }
+    if (kDebugMode) {
+      print(Uri.parse(booksellerSearchUrl));
+    }
+    final response = await http.post(
+      Uri.parse(booksellerSearchUrl),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+        'Authorization': 'Bearer $token',
+      },
+      body: body,
+    );
+    if (kDebugMode) {
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}');
+    }
+    if (response.statusCode == 200) {
+      final jsonResponse = json.decode(response.body);
+      return SearchBooksellerResponse.fromJson(jsonResponse);
+    } else if (response.statusCode == 401) {
+      // Token is invalid or expired, refresh the token and retry
+      return await refreshAndRetry(cityId, bookSellerCode, bookSellerName);
+    } else {
+      throw Exception('Failed to load plans');
+    }
+  }
+
+  Future<SearchBooksellerResponse> refreshAndRetry(
+      int cityId, String bookSellerCode, String bookSellerName) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String username = prefs.getString('token_username') ?? '';
+    String password = prefs.getString('password') ?? '';
+
+    if (username.isNotEmpty && password.isNotEmpty) {
+      await TokenService().token(username, password);
+      String? newToken = prefs.getString('token');
+
+      if (newToken != null && newToken.isNotEmpty) {
+        return await fetchBooksellerData(
+            cityId, bookSellerCode, bookSellerName, newToken);
       } else {
         throw Exception('Failed to retrieve new token');
       }
