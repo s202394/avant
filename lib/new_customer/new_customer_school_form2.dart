@@ -335,26 +335,37 @@ class NewCustomerSchoolForm2State extends State<NewCustomerSchoolForm2> {
             _buildTextField('GST', gstController, _gstFieldKey, _gstFocusNode),
             buildPurchaseModeField(data.purchaseModeList),
             const SizedBox(height: 20),
-            if (_isLoading) ...[
-              const CircularProgressIndicator(),
-            ] else if (_booksellers.isNotEmpty) ...[
-              Expanded(
-                child: ListView.builder(
-                  itemCount: _booksellers.length,
-                  itemBuilder: (context, index) {
-                    final bookseller = _booksellers[index];
-                    return ListTile(
-                      title: Text(bookseller.bookSellerName),
-                      subtitle: Text('Code: ${bookseller.bookSellerName}'),
-                      // Add any other details you want to display
-                    );
-                  },
-                ),
+            Visibility(
+              visible: (_selectedPurchaseMode == 'Book Seller' ||
+                      _selectedPurchaseMode == 'Bookseller') &
+                  _submitted,
+              child: Column(
+                children: [
+                  if (_isLoading) ...[
+                    const CircularProgressIndicator(),
+                  ] else if (_booksellers.isNotEmpty) ...[
+                    Container(
+                      height: 100,
+                      child: ListView.builder(
+                        itemCount: _booksellers.length,
+                        itemBuilder: (context, index) {
+                          final bookseller = _booksellers[index];
+                          return ListTile(
+                            title: Text(bookseller.bookSellerName),
+                            subtitle: Text(
+                                "${bookseller.address}\n${bookseller.city}\n${bookseller.state}"),
+                            // Add any other details you want to display
+                          );
+                        },
+                      ),
+                    )
+                  ] else ...[
+                    const Text('No booksellers found.'),
+                  ],
+                  const SizedBox(height: 16),
+                ],
               ),
-            ] else ...[
-              const Text('No booksellers found.'),
-            ],
-            const SizedBox(height: 16),
+            ),
             GestureDetector(
               onTap: () {
                 _submitForm();
@@ -646,11 +657,13 @@ class NewCustomerSchoolForm2State extends State<NewCustomerSchoolForm2> {
     if (_formKey.currentState!.validate()) {
       if (_selectedPurchaseMode == null) {
         _toastMessage.showToastMessage("Please select Purchase Mode");
-      } else if (_selectedPurchaseMode == 'Book Seller' ||
-          _selectedPurchaseMode == 'Bookseller') {
+      } else if ((_selectedPurchaseMode == 'Book Seller' ||
+              _selectedPurchaseMode == 'Bookseller') &&
+          _booksellers.isEmpty) {
         showModalBottomSheet(
           context: context,
-          isScrollControlled: true, // This ensures that the bottom sheet can adjust its height
+          isScrollControlled: true,
+          // This ensures that the bottom sheet can adjust its height
           builder: (BuildContext context) {
             final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
 
@@ -659,7 +672,7 @@ class NewCustomerSchoolForm2State extends State<NewCustomerSchoolForm2> {
               child: SingleChildScrollView(
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
-                  child:Column(
+                  child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: <Widget>[
                       const Text(
@@ -714,7 +727,6 @@ class NewCustomerSchoolForm2State extends State<NewCustomerSchoolForm2> {
             );
           },
         );
-
       } else {
         Navigator.push(
           context,
