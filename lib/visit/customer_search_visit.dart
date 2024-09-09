@@ -59,6 +59,7 @@ class CustomerSearchVisitPageState extends State<CustomerSearchVisit> {
     if (dbData.isNotEmpty) {
       setState(() {
         _filteredCities = dbData;
+        _isLoading = false;
       });
       if (kDebugMode) {
         print("Loaded geography data from the database.");

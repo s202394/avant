@@ -63,7 +63,6 @@ class CartState extends State<Cart> with TickerProviderStateMixin {
 
   int? userId;
 
-  bool _submitted = false;
   bool _isLoading = true;
 
   late Position position;
@@ -202,9 +201,6 @@ class CartState extends State<Cart> with TickerProviderStateMixin {
                           Expanded(
                             child: GestureDetector(
                               onTap: () {
-                                setState(() {
-                                  _submitted = true;
-                                });
                                 _submitForm();
                               },
                               child: Container(

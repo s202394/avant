@@ -11,6 +11,7 @@ import 'package:avant/model/login_model.dart';
 import 'package:avant/model/menu_model.dart';
 import 'package:avant/model/travel_plan_model.dart';
 import 'package:avant/new_customer/new_customer_school_form1.dart';
+import 'package:avant/visit/customer_search_visit.dart';
 import 'package:avant/visit/dsr_entry.dart';
 import 'package:avant/visit/visit_detail_page.dart';
 import 'package:flutter/foundation.dart';
@@ -45,11 +46,14 @@ class HomePageState extends State<HomePage> {
   String? downHierarchy;
 
   bool _hasInternet = true;
+  bool isPunchedIn = false;
 
   @override
   void initState() {
     super.initState();
     _initialize();
+
+    _loadPunchState();
   }
 
   void _initialize() async {
@@ -97,6 +101,39 @@ class HomePageState extends State<HomePage> {
           PlanResponse(status: "Success", todayPlan: [], tomorrowPlan: []));
     }
     setState(() {});
+  }
+
+  // Load Punch State from SharedPreferences
+  Future<void> _loadPunchState() async {
+    prefs = await SharedPreferences.getInstance();
+    setState(() {
+      isPunchedIn = prefs.getBool('isPunchedIn') ?? false;
+    });
+  }
+
+  // Update Punch State in SharedPreferences
+  Future<void> _updatePunchState(bool punchedIn) async {
+    setState(() {
+      isPunchedIn = punchedIn;
+    });
+    await prefs.setBool('isPunchedIn', punchedIn);
+  }
+
+  // Method to handle Punch In
+  void punchIn() async {
+    // You can also trigger an API call here if needed
+    await _updatePunchState(true);
+    if (kDebugMode) {
+      print("You have punched in.");
+    }
+  }
+
+  // Method to handle Punch Out
+  void punchOut() async {
+    await _updatePunchState(false);
+    if (kDebugMode) {
+      print("You have punched out.");
+    }
   }
 
   Future<void> _logout() async {
@@ -230,7 +267,7 @@ class HomePageState extends State<HomePage> {
                         ),
                         decoration: const BoxDecoration(color: Colors.blue),
                       ),
-                      const PunchInToggleSwitch(),
+                      PunchInToggleSwitch(isPunchedIn: isPunchedIn),
                       ...groupedMenuData.keys.map((menuName) {
                         return ExpansionTile(
                           title: Text(menuName),
@@ -287,6 +324,18 @@ class HomePageState extends State<HomePage> {
                           }).toList(),
                         );
                       }),
+                      ListTile(
+                        title: const Text('Visit DSR'),
+                        onTap: () {
+                          Navigator.pop(context);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) =>
+                                    const CustomerSearchVisit()),
+                          );
+                        },
+                      ),
                       ListTile(
                         title: const Text(customerSampleApproval),
                         onTap: () {

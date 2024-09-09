@@ -7,10 +7,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'common/common.dart';
 import 'common/toast.dart';
+import 'home.dart';
 import 'model/login_model.dart';
 
 class PunchInToggleSwitch extends StatefulWidget {
-  const PunchInToggleSwitch({super.key});
+  final bool isPunchedIn;
+
+  const PunchInToggleSwitch({super.key, required this.isPunchedIn});
 
   @override
   PunchInToggleSwitchState createState() => PunchInToggleSwitchState();
@@ -33,6 +36,8 @@ class PunchInToggleSwitchState extends State<PunchInToggleSwitch> {
   @override
   void initState() {
     super.initState();
+
+    isPunchedIn = widget.isPunchedIn;
     _initialize();
   }
 
@@ -46,6 +51,7 @@ class PunchInToggleSwitchState extends State<PunchInToggleSwitch> {
 
   @override
   Widget build(BuildContext context) {
+    final homeState = context.findAncestorStateOfType<HomePageState>();
     if (kDebugMode) {
       print('Print statement in build method');
     }
@@ -77,7 +83,7 @@ class PunchInToggleSwitchState extends State<PunchInToggleSwitch> {
                   value: isPunchedIn,
                   onChanged: (value) {
                     setState(() {
-                      _submit(value);
+                      _submit(value, homeState);
                     });
                   },
                   activeColor: Colors.green,
@@ -91,7 +97,7 @@ class PunchInToggleSwitchState extends State<PunchInToggleSwitch> {
     );
   }
 
-  void _submit(bool newState) async {
+  void _submit(bool newState, HomePageState? homeState) async {
     if (!await _checkInternetConnection()) return;
 
     setState(() {
@@ -121,6 +127,12 @@ class PunchInToggleSwitchState extends State<PunchInToggleSwitch> {
           // Update the state based on the success response
           setState(() {
             isPunchedIn = newState;
+
+            if (isPunchedIn) {
+              homeState?.punchIn();
+            } else {
+              homeState?.punchOut();
+            }
           });
         } else {
           _toastMessage.showToastMessage(
