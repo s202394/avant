@@ -236,6 +236,7 @@ class NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
       token = prefs.getString('token') ?? '';
       _cityAccess = prefs.getString('CityAccess') ?? '';
     });
+    userId = await getUserId();
     _loadGeographyData();
     futureData = initializePreferencesAndData();
   }
@@ -374,6 +375,7 @@ class NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
                           ? _classValues[classItem.classNumId] ?? ''
                           : '0',
                     );
+
                     return Row(
                       children: [
                         SizedBox(
@@ -555,11 +557,36 @@ class NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
   void _submitForm(List<Classes> classesList) async {
     FocusScope.of(context).unfocus();
 
+    bool isAllClassQuantityEntered = true;
+
+    for (var classItem in classesList) {
+      int classId = classItem.classNumId;
+
+      // Get the quantity from _classValues or default to '0'
+      String qty =
+          _classValues.containsKey(classId) ? _classValues[classId]! : '';
+
+      // Check only if the field is enabled for the class
+      if (_isClassInRange(classItem) && qty.isEmpty) {
+        isAllClassQuantityEntered = false;
+        _toastMessage.showToastMessage(
+            'Please enter quantity for Class ${classItem.className}');
+        break;
+      }
+    }
+
+    if (!isAllClassQuantityEntered) {
+      return;
+    }
+
     if (!await _checkInternetConnection()) return;
 
-    setState(() {
-      _isLoading = true;
-    });
+    if (mounted) {
+      setState(() {
+        _isLoading = true;
+      });
+    }
+
     try {
       if (kDebugMode) {
         print("${widget.type} _submitForm clicked");
@@ -651,9 +678,11 @@ class NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
       _toastMessage.showToastMessage(
           "An error occurred while adding new ${widget.type}.");
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -728,6 +757,8 @@ class NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
         ? DateTime.now().subtract(const Duration(days: 365 * 18))
         : DateTime.now();
 
+    DateTime initialDate = label == "Date of Birth" ? maxDate : DateTime.now();
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: InkWell(
@@ -735,7 +766,7 @@ class NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
             ? () async {
                 final DateTime? picked = await showDatePicker(
                   context: context,
-                  initialDate: DateTime.now(),
+                  initialDate: initialDate,
                   firstDate: DateTime(1970, 1, 1),
                   lastDate: maxDate,
                   builder: (BuildContext context, Widget? child) {
