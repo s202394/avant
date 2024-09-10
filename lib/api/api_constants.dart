@@ -24,6 +24,9 @@ const String shipToUrl = '${baseUrl}shipTo';
 
 const String customerEntryMasterUrl = '${baseUrl}CustomerEntryMasterAPI';
 const String customerCreationUrl = '${baseUrl}CustomerCreationAPI';
+const String cityListForSearchCustomerUrl =
+    '${baseUrl}CityListForSearchCustomer';
+const String searchCustomerResultUrl = '${baseUrl}SearchCustomerResult';
 
 // Customer Sampling Approval
 const String customerSamplingApprovalListUrl =

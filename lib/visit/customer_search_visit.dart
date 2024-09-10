@@ -1,10 +1,11 @@
 import 'package:avant/api/api_service.dart';
 import 'package:avant/db/db_helper.dart';
-import 'package:avant/model/geography_model.dart';
 import 'package:avant/visit/customer_search_visit_list.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import '../model/city_list_for_search_customer_response.dart';
 
 class CustomerSearchVisit extends StatefulWidget {
   const CustomerSearchVisit({super.key});
@@ -17,12 +18,12 @@ class CustomerSearchVisitPageState extends State<CustomerSearchVisit> {
   late SharedPreferences prefs;
   late String token;
   late int executiveId;
+  late String downHierarchy;
 
   DatabaseHelper dbHelper = DatabaseHelper();
 
-  String _cityAccess = '';
-  List<Geography> _filteredCities = [];
-  Geography? _selectedCity;
+  List<CityList> cityList = [];
+  CityList? _selectedCity;
 
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final _cityFieldKey = GlobalKey<FormFieldState>();
@@ -34,7 +35,6 @@ class CustomerSearchVisitPageState extends State<CustomerSearchVisit> {
   final TextEditingController _teacherNameController = TextEditingController();
   final TextEditingController _cityController = TextEditingController();
 
-  bool _submitted = false;
   bool _isLoading = true;
 
   @override
@@ -48,49 +48,27 @@ class CustomerSearchVisitPageState extends State<CustomerSearchVisit> {
     setState(() {
       token = prefs.getString('token') ?? '';
       executiveId = prefs.getInt('executiveId') ?? 0;
-      _cityAccess = prefs.getString('CityAccess') ?? '';
+      downHierarchy = prefs.getString('DownHierarchy') ?? '';
     });
-    _loadGeographyData();
+    _fetchCityData();
   }
 
-  void _loadGeographyData() async {
-    // Retrieve geography data from the database
-    List<Geography> dbData = await dbHelper.getGeographyDataFromDB();
-    if (dbData.isNotEmpty) {
-      setState(() {
-        _filteredCities = dbData;
-        _isLoading = false;
-      });
-      if (kDebugMode) {
-        print("Loaded geography data from the database.");
-      }
-    } else {
-      if (kDebugMode) {
-        print("No data in DB, fetching from API.");
-      }
-      _fetchGeographyData();
-    }
-  }
-
-  void _fetchGeographyData() async {
-    GeographyService geographyService = GeographyService();
+  void _fetchCityData() async {
+    CityListForSearchCustomerService service =
+        CityListForSearchCustomerService();
     try {
-      GeographyResponse geographyResponse = await geographyService
-          .fetchGeographyData(_cityAccess, executiveId, token);
-      List<int> cityIds =
-          _cityAccess.split(',').map((id) => int.parse(id)).toList();
+      CityListForSearchCustomerResponse response = await service
+          .getCityListForSearchCustomer(executiveId, downHierarchy, token);
       setState(() {
-        _filteredCities = geographyResponse.geographyList
-            .where((geography) => cityIds.contains(geography.cityId))
-            .toList();
-        _isLoading = false; // Data loaded, stop loading
+        cityList = response.cityList;
+        _isLoading = false;
       });
     } catch (e) {
       if (kDebugMode) {
         print(e);
       }
       setState(() {
-        _isLoading = false; // Stop loading in case of error
+        _isLoading = false;
       });
     }
   }
@@ -130,12 +108,12 @@ class CustomerSearchVisitPageState extends State<CustomerSearchVisit> {
                       padding: const EdgeInsets.all(16.0),
                       child: ListView(
                         children: [
-                          buildTextField('Customer Name',
-                              _customerNameController, _submitted),
-                          buildTextField('Customer Code',
-                              _customerCodeController, _submitted),
+                          buildTextField(
+                              'Customer Name', _customerNameController),
+                          buildTextField(
+                              'Customer Code', _customerCodeController),
                           buildTextField('Principal / Teacher Name',
-                              _teacherNameController, _submitted),
+                              _teacherNameController),
                           _buildDropdownFieldCity('City', _cityController,
                               _cityFieldKey, _cityFocusNode),
                           const SizedBox(height: 16),
@@ -148,12 +126,7 @@ class CustomerSearchVisitPageState extends State<CustomerSearchVisit> {
                       Expanded(
                         child: GestureDetector(
                           onTap: () {
-                            setState(() {
-                              _submitted = true;
-                            });
-                            if (_formKey.currentState!.validate()) {
-                              _submitForm();
-                            }
+                            _submitForm();
                           },
                           child: Container(
                             width: double.infinity,
@@ -194,26 +167,21 @@ class CustomerSearchVisitPageState extends State<CustomerSearchVisit> {
           customerId: 0,
           customerName: _customerNameController.text,
           customerCode: _customerCodeController.text,
-          customerType: _teacherNameController.text,
-          address: _selectedCity?.city ?? '',
-          city: _selectedCity?.city ?? '',
-          state: _selectedCity?.city ?? '',
+          contactName: _teacherNameController.text,
+          cityId: '${_selectedCity?.cityId ?? ''}',
+          cityName: _selectedCity?.cityName ?? '',
         ),
       ),
     );
   }
 
-  Widget buildTextField(
-      String label, TextEditingController controller, bool submitted) {
+  Widget buildTextField(String label, TextEditingController controller) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: TextFormField(
         decoration: InputDecoration(
           labelText: label,
           border: const OutlineInputBorder(),
-          errorText: submitted && controller.text.isEmpty
-              ? 'Please enter $label'
-              : null,
           contentPadding: const EdgeInsets.symmetric(
             vertical: 12.0,
             horizontal: 12.0,
@@ -221,11 +189,6 @@ class CustomerSearchVisitPageState extends State<CustomerSearchVisit> {
           alignLabelWithHint: true,
         ),
         controller: controller,
-        onChanged: (text) {
-          if (_submitted && text.isNotEmpty) {
-            setState(() {});
-          }
-        },
       ),
     );
   }
@@ -238,24 +201,24 @@ class CustomerSearchVisitPageState extends State<CustomerSearchVisit> {
   ) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: DropdownButtonFormField<Geography>(
+      child: DropdownButtonFormField<CityList>(
         key: fieldKey,
         focusNode: focusNode,
         value: _selectedCity,
-        items: _filteredCities
+        items: cityList
             .map(
-              (geography) => DropdownMenuItem<Geography>(
-                value: geography,
-                child: Text(geography.city),
+              (city) => DropdownMenuItem<CityList>(
+                value: city,
+                child: Text(city.cityName),
               ),
             )
             .toList(),
-        onChanged: (Geography? value) {
+        onChanged: (CityList? value) {
           setState(() {
             _selectedCity = value;
 
             // Update the text controller with the selected city name
-            controller.text = value?.city ?? '';
+            controller.text = value?.cityName ?? '';
 
             // Validate the field
             fieldKey.currentState?.validate();
@@ -265,12 +228,6 @@ class CustomerSearchVisitPageState extends State<CustomerSearchVisit> {
           labelText: label,
           border: const OutlineInputBorder(),
         ),
-        validator: (value) {
-          if (value == null || value.city.isEmpty) {
-            return 'Please select $label';
-          }
-          return null;
-        },
       ),
     );
   }

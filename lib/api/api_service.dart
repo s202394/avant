@@ -25,7 +25,10 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../model/city_list_for_search_customer_response.dart';
 import '../model/sampling_details_response.dart';
+import '../model/search_customer_result_response.dart';
+import '../model/send_clarification_query_model.dart';
 import '../model/series_and_class_level_list_response.dart';
 
 class TokenService {
@@ -2018,14 +2021,14 @@ class CheckInCheckOutService {
       return CheckInCheckOutResponse.fromJson(jsonResponse);
     } else if (response.statusCode == 401) {
       // Token is invalid or expired, refresh the token and retry
-      return await refreshAndRetry(
+      return await refreshAndRetryCheckInCheckOut(
           executiveId, enteredBy, date, type, dateTime, longEntry, latEntry);
     } else {
       throw Exception('Failed to check in check out');
     }
   }
 
-  Future<CheckInCheckOutResponse> refreshAndRetry(
+  Future<CheckInCheckOutResponse> refreshAndRetryCheckInCheckOut(
       int executiveId,
       int enteredBy,
       String date,
@@ -2044,6 +2047,61 @@ class CheckInCheckOutService {
       if (newToken != null && newToken.isNotEmpty) {
         return await checkInCheckOut(executiveId, enteredBy, date, type,
             dateTime, longEntry, latEntry, newToken);
+      } else {
+        throw Exception('Failed to retrieve new token');
+      }
+    } else {
+      throw Exception(
+          'Username or password is not stored in SharedPreferences');
+    }
+  }
+
+  Future<CheckInCheckOutResponse> fetchExecutiveLocation(int executiveId,
+      int enteredBy, String executiveLocationXml, String token) async {
+    String body = jsonEncode(<String, dynamic>{
+      'ExecutiveId': executiveId,
+      'ExecutiveLocationXml': executiveLocationXml,
+      'EnteredBy': enteredBy,
+    });
+    if (kDebugMode) {
+      print('Request body: $body');
+    }
+    final response = await http.post(Uri.parse(executiveLocationUrl),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+          'Authorization': 'Bearer $token',
+        },
+        body: body);
+    if (kDebugMode) {
+      print('Request URL: ${response.request?.url}');
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}');
+    }
+    if (response.statusCode == 200) {
+      final jsonResponse = json.decode(response.body);
+      return CheckInCheckOutResponse.fromJson(jsonResponse);
+    } else if (response.statusCode == 401) {
+      // Token is invalid or expired, refresh the token and retry
+      return await refreshAndRetryFetchExecutiveLocation(
+          executiveId, enteredBy, executiveLocationXml);
+    } else {
+      throw Exception('Failed to check in check out');
+    }
+  }
+
+  Future<CheckInCheckOutResponse> refreshAndRetryFetchExecutiveLocation(
+      int executiveId, int enteredBy, String executiveLocationXml) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String username = prefs.getString('token_username') ?? '';
+    String password = prefs.getString('password') ?? '';
+
+    if (username.isNotEmpty && password.isNotEmpty) {
+      await TokenService().token(username, password);
+      String? newToken = prefs.getString('token');
+
+      if (newToken != null && newToken.isNotEmpty) {
+        return await fetchExecutiveLocation(
+            executiveId, enteredBy, executiveLocationXml, newToken);
       } else {
         throw Exception('Failed to retrieve new token');
       }
@@ -2144,7 +2202,7 @@ class BooksellerService {
       // Token is invalid or expired, refresh the token and retry
       return await refreshAndRetry(cityId, bookSellerCode, bookSellerName);
     } else {
-      throw Exception('Failed to load plans');
+      throw Exception('Failed to fetch bookseller data');
     }
   }
 
@@ -2161,6 +2219,233 @@ class BooksellerService {
       if (newToken != null && newToken.isNotEmpty) {
         return await fetchBooksellerData(
             cityId, bookSellerCode, bookSellerName, newToken);
+      } else {
+        throw Exception('Failed to retrieve new token');
+      }
+    } else {
+      throw Exception(
+          'Username or password is not stored in SharedPreferences');
+    }
+  }
+}
+
+class SendClarificationQueryService {
+  Future<SendClarificationQueryResponse> sendClarificationQuery(
+      int requestId,
+      String module,
+      int clarificationQueryTo,
+      String clarificationQuery,
+      int clarificationQueryBy,
+      int enteredBy,
+      String token) async {
+    String body = jsonEncode(<String, dynamic>{
+      'RequestId': requestId,
+      'Module': module,
+      'clarificationQueryTo': clarificationQueryTo,
+      'ClarificationQuery': clarificationQuery,
+      'clarificationQueryBy': clarificationQueryBy,
+      'EnteredBy': enteredBy,
+    });
+    if (kDebugMode) {
+      print(body);
+    }
+    if (kDebugMode) {
+      print(Uri.parse(sendClarificationQueryUrl));
+    }
+    final response = await http.post(
+      Uri.parse(sendClarificationQueryUrl),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+        'Authorization': 'Bearer $token',
+      },
+      body: body,
+    );
+    if (kDebugMode) {
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}');
+    }
+    if (response.statusCode == 200) {
+      final jsonResponse = json.decode(response.body);
+      return SendClarificationQueryResponse.fromJson(jsonResponse);
+    } else if (response.statusCode == 401) {
+      // Token is invalid or expired, refresh the token and retry
+      return await refreshAndRetry(requestId, module, clarificationQueryTo,
+          clarificationQuery, clarificationQueryBy, enteredBy);
+    } else {
+      throw Exception('Failed to send clarification query');
+    }
+  }
+
+  Future<SendClarificationQueryResponse> refreshAndRetry(
+    int requestId,
+    String module,
+    int clarificationQueryTo,
+    String clarificationQuery,
+    int clarificationQueryBy,
+    int enteredBy,
+  ) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String username = prefs.getString('token_username') ?? '';
+    String password = prefs.getString('password') ?? '';
+
+    if (username.isNotEmpty && password.isNotEmpty) {
+      await TokenService().token(username, password);
+      String? newToken = prefs.getString('token');
+
+      if (newToken != null && newToken.isNotEmpty) {
+        return await sendClarificationQuery(
+            requestId,
+            module,
+            clarificationQueryTo,
+            clarificationQuery,
+            clarificationQueryBy,
+            enteredBy,
+            newToken);
+      } else {
+        throw Exception('Failed to retrieve new token');
+      }
+    } else {
+      throw Exception(
+          'Username or password is not stored in SharedPreferences');
+    }
+  }
+}
+
+class CityListForSearchCustomerService {
+  Future<CityListForSearchCustomerResponse> getCityListForSearchCustomer(
+      int executiveId, String executiveDownHierarchy, String token) async {
+    String body = jsonEncode(<String, dynamic>{
+      'ExecutiveId': executiveId,
+      'ExecutiveDownHierarchy': executiveDownHierarchy,
+    });
+    final response = await http.post(
+      Uri.parse(cityListForSearchCustomerUrl),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+        'Authorization': 'Bearer $token',
+      },
+      body: body,
+    );
+    if (kDebugMode) {
+      print('Request url: ${response.request?.url}');
+      print('Request body: $body');
+      print('Response body: ${response.body}');
+      print('Response status: ${response.statusCode}');
+    }
+    if (response.statusCode == 200) {
+      final jsonResponse = json.decode(response.body);
+      return CityListForSearchCustomerResponse.fromJson(jsonResponse);
+    } else if (response.statusCode == 401) {
+      // Token is invalid or expired, refresh the token and retry
+      return await refreshAndRetry(executiveId, executiveDownHierarchy);
+    } else {
+      throw Exception('Failed to get city list for search customer');
+    }
+  }
+
+  Future<CityListForSearchCustomerResponse> refreshAndRetry(
+    int executiveId,
+    String executiveDownHierarchy,
+  ) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String username = prefs.getString('token_username') ?? '';
+    String password = prefs.getString('password') ?? '';
+
+    if (username.isNotEmpty && password.isNotEmpty) {
+      await TokenService().token(username, password);
+      String? newToken = prefs.getString('token');
+
+      if (newToken != null && newToken.isNotEmpty) {
+        return await getCityListForSearchCustomer(
+            executiveId, executiveDownHierarchy, newToken);
+      } else {
+        throw Exception('Failed to retrieve new token');
+      }
+    } else {
+      throw Exception(
+          'Username or password is not stored in SharedPreferences');
+    }
+  }
+}
+
+class SearchCustomerResultService {
+  Future<SearchCustomerResultResponse> searchCustomerResult(
+      int executiveId,
+      String executiveDownHierarchy,
+      String customerName,
+      String cityId,
+      String customerType,
+      String customerCode,
+      String customerContactName,
+      String token) async {
+    String body = jsonEncode(<String, dynamic>{
+      'ExecutiveId': executiveId,
+      'ExecutiveDownHierarchy': executiveDownHierarchy,
+      'CustomerName': customerName,
+      'CityId': cityId,
+      'CustomerType': customerType,
+      'CustomerCode': customerCode,
+      'CustomerContactName': customerContactName,
+    });
+    final response = await http.post(
+      Uri.parse(searchCustomerResultUrl),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+        'Authorization': 'Bearer $token',
+      },
+      body: body,
+    );
+    if (kDebugMode) {
+      print('Request url: ${response.request?.url}');
+      print('Request body: $body');
+      print('Response body: ${response.body}');
+      print('Response status: ${response.statusCode}');
+    }
+    if (response.statusCode == 200) {
+      final jsonResponse = json.decode(response.body);
+      return SearchCustomerResultResponse.fromJson(jsonResponse);
+    } else if (response.statusCode == 401) {
+      // Token is invalid or expired, refresh the token and retry
+      return await refreshAndRetry(
+          executiveId,
+          executiveDownHierarchy,
+          customerName,
+          cityId,
+          customerType,
+          customerCode,
+          customerContactName);
+    } else {
+      throw Exception('Failed to get city list for search customer');
+    }
+  }
+
+  Future<SearchCustomerResultResponse> refreshAndRetry(
+    int executiveId,
+    String executiveDownHierarchy,
+    String customerName,
+    String cityId,
+    String customerType,
+    String customerCode,
+    String customerContactName,
+  ) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String username = prefs.getString('token_username') ?? '';
+    String password = prefs.getString('password') ?? '';
+
+    if (username.isNotEmpty && password.isNotEmpty) {
+      await TokenService().token(username, password);
+      String? newToken = prefs.getString('token');
+
+      if (newToken != null && newToken.isNotEmpty) {
+        return await searchCustomerResult(
+            executiveId,
+            executiveDownHierarchy,
+            customerName,
+            cityId,
+            customerType,
+            customerCode,
+            customerContactName,
+            newToken);
       } else {
         throw Exception('Failed to retrieve new token');
       }

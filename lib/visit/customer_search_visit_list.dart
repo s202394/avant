@@ -1,28 +1,30 @@
 import 'package:avant/visit/visit_detail_page.dart';
-import 'package:avant/visit/visit_series_search.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-import '../model/get_visit_dsr_model.dart';
+import '../api/api_service.dart';
+import '../model/login_model.dart';
+import '../model/search_customer_result_response.dart';
 import '../views/rich_text.dart';
+import 'dsr_entry.dart';
 
 class CustomerSearchVisitList extends StatefulWidget {
   final int customerId;
   final String customerName;
   final String customerCode;
-  final String customerType;
-  final String address;
-  final String city;
-  final String state;
+  final String contactName;
+  final String cityId;
+  final String cityName;
 
   const CustomerSearchVisitList({
     super.key,
     required this.customerId,
     required this.customerName,
     required this.customerCode,
-    required this.customerType,
-    required this.address,
-    required this.city,
-    required this.state,
+    required this.contactName,
+    required this.cityId,
+    required this.cityName,
   });
 
   @override
@@ -31,6 +33,51 @@ class CustomerSearchVisitList extends StatefulWidget {
 }
 
 class CustomerSearchVisitListPageState extends State<CustomerSearchVisitList> {
+  late Future<SearchCustomerResultResponse> _customerData;
+  late SharedPreferences prefs;
+  late String token;
+  late int? executiveId;
+  late String downHierarchy;
+
+  @override
+  void initState() {
+    super.initState();
+    _customerData = _fetchCustomerData();
+  }
+
+  Future<SearchCustomerResultResponse> _fetchCustomerData() async {
+    prefs = await SharedPreferences.getInstance();
+    setState(() {
+      token = prefs.getString('token') ?? '';
+      downHierarchy = prefs.getString('DownHierarchy') ?? '';
+    });
+    executiveId = await getExecutiveId();
+
+    // Check network connectivity
+    var connectivityResult = await Connectivity().checkConnectivity();
+    if (connectivityResult == ConnectivityResult.none) {
+      throw Exception('No Internet Connection');
+    }
+
+    // Call your API service
+    try {
+      var response = await SearchCustomerResultService().searchCustomerResult(
+        executiveId ?? 0,
+        downHierarchy,
+        widget.customerName,
+        widget.cityId,
+        'school',
+        widget.customerCode,
+        widget.contactName,
+        token,
+      );
+
+      return response;
+    } catch (e) {
+      throw Exception(e.toString());
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -38,85 +85,80 @@ class CustomerSearchVisitListPageState extends State<CustomerSearchVisitList> {
         backgroundColor: const Color(0xFFFFF8E1),
         title: const Text('Visit DSR'),
       ),
-      body: Column(
-        children: [
-          Container(
-            width: double.infinity,
-            color: const Color(0xFFF49B20),
-            child: const Padding(
-              padding: EdgeInsets.symmetric(vertical: 8.0, horizontal: 16),
+      body: FutureBuilder<SearchCustomerResultResponse>(
+        future: _customerData,
+        builder: (context, snapshot) {
+          // Show loader while waiting for data
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          // Handle error state
+          else if (snapshot.hasError) {
+            return Center(
               child: Text(
-                'Search Costumer - Visit',
-                textAlign: TextAlign.start,
-                style: TextStyle(
-                  color: Colors.black,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                ),
+                snapshot.error.toString(),
+                style: const TextStyle(color: Colors.red),
               ),
-            ),
-          ),
-          Expanded(
-            child: ListView.builder(
-              itemCount: 5,
-              itemBuilder: (context, index) {
-                return Column(
-                  children: [
-                    ListTile(
-                      title: Text(
-                        widget.customerName,
-                        style: const TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 18),
-                      ),
-                      subtitle: RichTextWidget(label: widget.address),
-                      trailing: InkWell(
-                        onTap: () {
-                          /*Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => VisitSeriesSearch(
-                                visitDsrData: GetVisitDsrResponse(),
-                                customerId: widget.customerId,
-                                customerName: widget.customerName,
-                                customerCode: widget.customerCode,
-                                customerType: widget.customerType,
-                                address: widget.address,
-                                city: widget.city,
-                                state: widget.state,
-                                visitFeedback: '',
-                                visitDate: '',
-                                visitPurposeId: 0,
-                                jointVisitWithIds: '',
-                                personMetId: 0,
-                                samplingDone: false,
-                                followUpAction: false,
-                              ),
-                            ),
-                          );*/
-                        },
-                        child: Image.asset('images/travel.png',
-                            height: 30, width: 30),
-                      ),
+            );
+          }
+
+          // Handle empty data state
+          else if (!snapshot.hasData || snapshot.data!.result.isEmpty) {
+            return const Center(child: Text('No Data Available'));
+          }
+
+          // Build the list once data is available
+          return ListView.builder(
+            itemCount: snapshot.data!.result.length,
+            itemBuilder: (context, index) {
+              var customer = snapshot.data!.result[index];
+              return Column(
+                children: [
+                  ListTile(
+                    title: Text(customer.customerName),
+                    subtitle: RichTextWidget(
+                      label: customer.address,
+                    ),
+                    trailing: InkWell(
                       onTap: () {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => const VisitDetailsPage(
-                              customerId: 0,
-                              visitId: 0,
-                              isTodayPlan: false,
+                            builder: (context) => DsrEntry(
+                              customerId: customer.customerId,
+                              customerName: customer.customerName,
+                              customerCode: '',
+                              customerType: customer.customerType,
+                              address: customer.address,
+                              city: '',
+                              state: '',
                             ),
                           ),
                         );
                       },
+                      child: Image.asset('images/travel.png',
+                          height: 30, width: 30),
                     ),
-                    const Divider(), // Add Divider here
-                  ],
-                );
-              },
-            ),
-          ),
-        ],
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => VisitDetailsPage(
+                            customerId: customer.customerId,
+                            visitId: 0,
+                            isTodayPlan: true,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  const Divider(),
+                ],
+              );
+            },
+          );
+        },
       ),
     );
   }
