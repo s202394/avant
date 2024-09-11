@@ -143,7 +143,7 @@ class LocationService {
       CheckInCheckOutService service = CheckInCheckOutService();
 
       String executiveLocationXml =
-          "<DocumentElement><ExecutiveLocation><DateTime>${getCurrentDate()}</DateTime><Lat>$latitude</Lat><Long>$longitude</Long></ExecutiveLocation></DocumentElement>";
+          "<DocumentElement><ExecutiveLocation><DateTime>${getCurrentDateTime()}</DateTime><Lat>$latitude</Lat><Long>$longitude</Long></ExecutiveLocation></DocumentElement>";
 
       CheckInCheckOutResponse responseData =
           await service.fetchExecutiveLocation(
