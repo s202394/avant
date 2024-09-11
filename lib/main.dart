@@ -2,10 +2,22 @@ import 'dart:async';
 
 import 'package:avant/home.dart';
 import 'package:avant/login.dart';
+import 'package:avant/service/location_service.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:workmanager/workmanager.dart';
+
+import 'model/login_model.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  Workmanager().initialize(callbackDispatcher, isInDebugMode: true);
+
+  Workmanager().registerPeriodicTask(
+      "fetchAndSendLocation", "fetchLocationTask",
+      frequency: const Duration(minutes: 5));
+
   runApp(
     MaterialApp(
       title: 'Splash Screen',
@@ -64,4 +76,24 @@ class SplashScreenState extends State<SplashScreen> {
       ),
     );
   }
+}
+
+void callbackDispatcher() {
+  Workmanager().executeTask((task, inputData) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+
+    String token = prefs.getString('token') ?? '';
+    int executiveId = await getExecutiveId() ?? 0;
+    int userId = await getUserId() ?? 0;
+
+    if (executiveId > 0 && userId > 0) {
+      await LocationService().sendLocationToServer(executiveId, userId, token);
+    } else {
+      if (kDebugMode) {
+        print(
+            'Did not send location due to executiveId:$executiveId, userId:$userId');
+      }
+    }
+    return Future.value(true);
+  });
 }

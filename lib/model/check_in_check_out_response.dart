@@ -1,11 +1,13 @@
 class CheckInCheckOutResponse {
   final String status;
   final String s;
+  final String e;
   final Success success;
 
   CheckInCheckOutResponse({
     required this.status,
     required this.s,
+    required this.e,
     required this.success,
   });
 
@@ -16,6 +18,7 @@ class CheckInCheckOutResponse {
     return CheckInCheckOutResponse(
       status: json['Status'] ?? '',
       s: json['s'] ?? '',
+      e: json['e'] ?? '',
       success: success,
     );
   }

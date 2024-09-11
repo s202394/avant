@@ -3,6 +3,10 @@ import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:flutter/material.dart';
 
+import '../api/api_service.dart';
+import '../common/common.dart';
+import '../model/check_in_check_out_response.dart';
+
 class LocationService {
   Future<Position> getCurrentLocation() async {
     bool serviceEnabled;
@@ -70,7 +74,7 @@ class LocationService {
       Placemark place = placeMark.first;
       if (kDebugMode) {
         print(
-          "address : ${place.street}, ${place.locality}, ${place.administrativeArea}, ${place.country}, ${place.isoCountryCode}");
+            "address : ${place.street}, ${place.locality}, ${place.administrativeArea}, ${place.country}, ${place.isoCountryCode}");
       }
       // Format the address
       return '${place.street}, ${place.locality}, ${place.administrativeArea}, ${place.country}, ${place.isoCountryCode}';
@@ -108,7 +112,7 @@ class LocationService {
       if (placemarks.isNotEmpty) {
         Placemark place = placemarks[0];
         String address =
-         '${place.street}, ${place.locality}, ${place.administrativeArea}, ${place.country}, ${place.postalCode}';
+            '${place.street}, ${place.locality}, ${place.administrativeArea}, ${place.country}, ${place.postalCode}';
         if (kDebugMode) {
           print("address : $address");
         }
@@ -124,6 +128,54 @@ class LocationService {
         print("Error occurred while getting address: $e");
       }
       return '';
+    }
+  }
+
+  // Function to send the location to the server
+  Future<void> sendLocationToServer(
+      int executiveId, int enteredBy, String token) async {
+    try {
+      // Fetch the current location
+      Position position = await getCurrentLocation();
+      double latitude = position.latitude;
+      double longitude = position.longitude;
+
+      CheckInCheckOutService service = CheckInCheckOutService();
+
+      String executiveLocationXml =
+          "<DocumentElement><ExecutiveLocation><DateTime>${getCurrentDate()}</DateTime><Lat>$latitude</Lat><Long>$longitude</Long></ExecutiveLocation></DocumentElement>";
+
+      CheckInCheckOutResponse responseData =
+          await service.fetchExecutiveLocation(
+              executiveId, enteredBy, executiveLocationXml, token);
+
+      if (responseData.status == 'Success') {
+        String s = responseData.s;
+        if (kDebugMode) {
+          print(s);
+        }
+        if (s.isNotEmpty) {
+          if (kDebugMode) {
+            print('Location sent successfully');
+          }
+        } else if (responseData.e.isNotEmpty) {
+          if (kDebugMode) {
+            print('Failed to send location : ${responseData.e}');
+          }
+        } else {
+          if (kDebugMode) {
+            print('Failed to send location s & e empty');
+          }
+        }
+      } else {
+        if (kDebugMode) {
+          print('Failed to send location ${responseData.status}');
+        }
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error fetching or sending location: $e');
+      }
     }
   }
 }
