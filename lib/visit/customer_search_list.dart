@@ -9,30 +9,35 @@ import '../model/search_customer_result_response.dart';
 import '../views/rich_text.dart';
 import 'dsr_entry.dart';
 
-class CustomerSearchVisitList extends StatefulWidget {
+class CustomerSearchList extends StatefulWidget {
+  final String type;
+  final String title;
   final int customerId;
   final String customerName;
   final String customerCode;
   final String contactName;
   final String cityId;
   final String cityName;
+  final String customerType;
 
-  const CustomerSearchVisitList({
+  const CustomerSearchList({
     super.key,
+    required this.type,
+    required this.title,
     required this.customerId,
     required this.customerName,
     required this.customerCode,
     required this.contactName,
     required this.cityId,
     required this.cityName,
+    required this.customerType,
   });
 
   @override
-  CustomerSearchVisitListPageState createState() =>
-      CustomerSearchVisitListPageState();
+  CustomerSearchListPageState createState() => CustomerSearchListPageState();
 }
 
-class CustomerSearchVisitListPageState extends State<CustomerSearchVisitList> {
+class CustomerSearchListPageState extends State<CustomerSearchList> {
   late Future<SearchCustomerResultResponse> _customerData;
   late SharedPreferences prefs;
   late String token;
@@ -66,7 +71,7 @@ class CustomerSearchVisitListPageState extends State<CustomerSearchVisitList> {
         downHierarchy,
         widget.customerName,
         widget.cityId,
-        'school',
+        widget.customerType,
         widget.customerCode,
         widget.contactName,
         token,
@@ -83,7 +88,7 @@ class CustomerSearchVisitListPageState extends State<CustomerSearchVisitList> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: const Color(0xFFFFF8E1),
-        title: const Text('Visit DSR'),
+        title: Text(widget.title),
       ),
       body: FutureBuilder<SearchCustomerResultResponse>(
         future: _customerData,
@@ -137,7 +142,7 @@ class CustomerSearchVisitListPageState extends State<CustomerSearchVisitList> {
                           ),
                         );
                       },
-                      child: Image.asset('images/travel.png',
+                      child: Image.asset(widget.type == 'Visit' ? 'images/travel.png':'images/ic_book.png',
                           height: 30, width: 30),
                     ),
                     onTap: () {

@@ -255,6 +255,45 @@ class DatabaseHelper {
     });
   }
 
+  Future<String?> getCustomerTypesFromDB() async {
+    final db = await database;
+    final List<Map<String, dynamic>> maps = await db.query(
+      'applicationSetup',
+      where: 'key = ?',
+      whereArgs: ['CustomerTypes'],
+    );
+
+    if (maps.isNotEmpty) {
+      // If the record exists, return the keyValue
+      return maps.first['KeyValue'] as String;
+    } else {
+      // Return null if no record is found
+      return null;
+    }
+  }
+
+  Future<List<String>> getCustomerTypesListFromDB() async {
+    final db = await database;
+    final List<Map<String, dynamic>> maps = await db.query(
+      'applicationSetup',
+      where: 'key = ?',
+      whereArgs: ['CustomerTypes'],
+    );
+    if (maps.isNotEmpty) {
+      // If the record exists, get the KeyValue and split it by comma
+      String customerTypes = maps.first['keyValue'];
+      List<String> customerTypesList = customerTypes.split(',');
+
+      // Add 'School' at the first position
+      customerTypesList.insert(0, 'School');
+
+      return customerTypesList; // Return the updated list
+    } else {
+      // If no record is found, return a list with only 'School'
+      return ['School'];
+    }
+  }
+
   //Save Menu Data to the Database
   Future<void> insertMenuData(MenuData data) async {
     final db = await database;

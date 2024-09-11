@@ -11,7 +11,7 @@ import 'package:avant/model/login_model.dart';
 import 'package:avant/model/menu_model.dart';
 import 'package:avant/model/travel_plan_model.dart';
 import 'package:avant/new_customer/new_customer_school_form1.dart';
-import 'package:avant/visit/customer_search_visit.dart';
+import 'package:avant/visit/customer_search.dart';
 import 'package:avant/visit/dsr_entry.dart';
 import 'package:avant/visit/visit_detail_page.dart';
 import 'package:flutter/foundation.dart';
@@ -19,6 +19,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'model/setup_values.dart';
 import 'new_customer/new_customer_trade_library_form1.dart';
 
 class HomePage extends StatefulWidget {
@@ -88,6 +89,19 @@ class HomePageState extends State<HomePage> {
         futureMenuData = Future.value(menuDataList);
       }
 
+      // Fetch setup values from SetupValuesService
+      /*try {
+        List<SetupValues> setupValuesList =
+            await SetupValuesService().setupValues(token!);
+        if (kDebugMode) {
+          print('Setup values: $setupValuesList');
+        }
+      } catch (e) {
+        if (kDebugMode) {
+          print('Error fetching setup values: $e');
+        }
+      }
+*/
       if (executiveId != null) {
         futurePlanResponse =
             TravelPlanService().fetchTravelPlans(executiveId!, token!);
@@ -209,7 +223,7 @@ class HomePageState extends State<HomePage> {
         child: Scaffold(
           appBar: AppBar(
             centerTitle: true,
-            title: const Text("DART CRM"),
+            title: Image.asset('images/dart_crm.jpeg', height: 30),
             leading: Padding(
               padding: const EdgeInsets.only(left: 10.0),
               child: Image.asset('images/logo.png', height: 30),
@@ -285,28 +299,32 @@ class HomePageState extends State<HomePage> {
                                       Navigator.push(
                                         context,
                                         MaterialPageRoute(
-                                            builder: (context) =>
-                                                const NewCustomerSchoolForm1(
-                                                    type: 'School')),
+                                          builder: (context) =>
+                                              const NewCustomerSchoolForm1(
+                                                  type: 'School'),
+                                        ),
                                       );
                                     } else if (childMenu.childMenuName ==
                                         'Institute List') {
                                     } else if (childMenu.childMenuName ==
                                         'Trade List') {
                                       Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                              builder: (context) =>
-                                                  const NewCustomerTradeLibraryForm1(
-                                                      type: 'Trade')));
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              const NewCustomerTradeLibraryForm1(
+                                                  type: 'Trade'),
+                                        ),
+                                      );
                                     } else if (childMenu.childMenuName ==
                                         'Library List') {
                                       Navigator.push(
                                         context,
                                         MaterialPageRoute(
-                                            builder: (context) =>
-                                                const NewCustomerTradeLibraryForm1(
-                                                    type: 'Library')),
+                                          builder: (context) =>
+                                              const NewCustomerTradeLibraryForm1(
+                                                  type: 'Library'),
+                                        ),
                                       );
                                     }
                                   } else {
@@ -331,8 +349,25 @@ class HomePageState extends State<HomePage> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                                builder: (context) =>
-                                    const CustomerSearchVisit()),
+                              builder: (context) => const CustomerSearch(
+                                type: 'Visit',
+                                title: 'DSR Entry',
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                      ListTile(
+                        title: const Text('Customer Sample Request'),
+                        onTap: () {
+                          Navigator.pop(context);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const CustomerSearch(
+                                  type: 'Sampling',
+                                  title: 'Customer Sample Request'),
+                            ),
                           );
                         },
                       ),

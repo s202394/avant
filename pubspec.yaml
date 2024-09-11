@@ -89,6 +89,7 @@ flutter:
    - images/travel.png
    - images/book.png
    - images/ic_book.png
+   - images/dart_crm.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware

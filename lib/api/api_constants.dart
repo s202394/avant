@@ -7,7 +7,7 @@ const String logoutUrl = '${baseUrl}logout';
 const String forgotPasswordUrl = '${baseUrl}forgotpassword';
 const String changePasswordUrl = '${baseUrl}ChangePassword';
 const String menuUrl = '${baseUrl}getMenus';
-const String setupValuesUrl = '${baseUrl}getsetupValues';
+const String setupValuesUrl = '${baseUrl}getsetupValues?setupKey=false';
 const String geographyUrl = '${baseUrl}GeographyAPI';
 const String checkInCheckOutUrl = '${baseUrl}CheckincheckOut';
 const String executiveLocationUrl = '${baseUrl}ExecutiveLocationAPI';

@@ -352,52 +352,69 @@ class MenuService {
 
 class SetupValuesService {
   Future<List<SetupValues>> setupValues(String token) async {
-    final response = await http.post(
-      Uri.parse(setupValuesUrl),
-      headers: <String, String>{
-        'Content-Type': 'application/json; charset=UTF-8',
-        'Authorization': 'Bearer $token',
-      },
-      body: jsonEncode(<String, dynamic>{
-        'setupKey': 'False',
-      }),
-    );
+    // First, try to get setup values from the database
+    List<SetupValues> setupValuesFromDB = await getSetupValuesDataFromDB();
 
-    if (response.statusCode == 200) {
-      final responseData = json.decode(response.body);
+    if (setupValuesFromDB.isNotEmpty) {
+      // If we have data in the database, return it
       if (kDebugMode) {
-        print('Get setup values successful! responseData: $responseData');
+        print('Setup values found in DB: $setupValuesFromDB');
       }
-      if (responseData['Status'] == 'Success') {
-        if (responseData['SetupValue'] != null &&
-            responseData['SetupValue'] is List) {
-          final List<dynamic> setupList = responseData['SetupValue'];
-          final setupData =
-              setupList.map((data) => SetupValues.fromJson(data)).toList();
+      return setupValuesFromDB;
+    } else {
+      // If the database is empty, hit the API
+      if (kDebugMode) {
+        print('No setup values found in DB, fetching from API.');
+      }
 
-          // Save the fetched menu data to the database
-          for (var setup in setupData) {
-            await DatabaseHelper().insertSetupValueData(setup);
+      final response = await http.get(
+        Uri.parse(setupValuesUrl),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (kDebugMode) {
+        print('Request URL: ${response.request?.url}');
+        print('Response body: ${response.body}');
+        print('Response status: ${response.statusCode}');
+      }
+
+      if (response.statusCode == 200) {
+        final responseData = json.decode(response.body);
+
+        if (responseData['Status'] == 'Success') {
+          if (responseData['SetupValue'] != null &&
+              responseData['SetupValue'] is List) {
+            final List<dynamic> setupList = responseData['SetupValue'];
+            final setupData =
+                setupList.map((data) => SetupValues.fromJson(data)).toList();
+
+            // Save the fetched setup data to the database
+            for (var setup in setupData) {
+              await DatabaseHelper().insertSetupValueData(setup);
+            }
+
+            return setupData;
+          } else {
+            if (kDebugMode) {
+              print('SetupValue data is null or not a list');
+            }
+            return await getSetupValuesDataFromDB();
           }
-
-          return setupData;
         } else {
           if (kDebugMode) {
-            print('SetupValue data is null or not a list');
+            print('SetupValue Status is not Success');
           }
           return await getSetupValuesDataFromDB();
         }
+      } else if (response.statusCode == 401) {
+        // Token is invalid or expired, refresh the token and retry
+        return await refreshAndRetry();
       } else {
-        if (kDebugMode) {
-          print('SetupValue Status is not Success');
-        }
         return await getSetupValuesDataFromDB();
       }
-    } else if (response.statusCode == 401) {
-      // Token is invalid or expired, refresh the token and retry
-      return await refreshAndRetry();
-    } else {
-      return await getSetupValuesDataFromDB();
     }
   }
 
