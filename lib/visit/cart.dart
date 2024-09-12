@@ -16,6 +16,8 @@ import '../views/book_list_item.dart';
 import '../views/rich_text.dart';
 
 class Cart extends StatefulWidget {
+  final String type;
+  final String title;
   final int customerId;
   final String customerName;
   final String customerCode;
@@ -33,6 +35,8 @@ class Cart extends StatefulWidget {
 
   const Cart({
     super.key,
+    required this.type,
+    required this.title,
     required this.customerId,
     required this.customerName,
     required this.customerCode,
@@ -76,6 +80,8 @@ class CartState extends State<Cart> with TickerProviderStateMixin {
   LocationService locationService = LocationService();
   ToastMessage toastMessage = ToastMessage();
 
+  int tabCount = 0;
+
   @override
   void initState() {
     super.initState();
@@ -89,31 +95,32 @@ class CartState extends State<Cart> with TickerProviderStateMixin {
   }
 
   Future<void> _fetchCartData() async {
-    final seriesItems = await databaseHelper.getCartItemsWithSeries();
-    final titleItems = await databaseHelper.getCartItemsWithTitle();
+    if (widget.type == 'Visit') {
+      final seriesItems = await databaseHelper.getCartItemsWithSeries();
+      final titleItems = await databaseHelper.getCartItemsWithTitle();
 
-    setState(() {
-      _seriesItems = seriesItems;
-      _titleItems = titleItems;
+      setState(() {
+        _seriesItems = seriesItems;
+        _titleItems = titleItems;
 
-      int tabCount = 0;
-      if (widget.samplingDone && _seriesItems.isNotEmpty) {
-        tabCount++;
-      }
-      if (widget.samplingDone && _titleItems.isNotEmpty) {
-        tabCount++;
-      }
-      if (widget.followUpAction) {
-        tabCount++;
-      }
+        if (widget.samplingDone && _seriesItems.isNotEmpty) {
+          tabCount++;
+        }
+        if (widget.samplingDone && _titleItems.isNotEmpty) {
+          tabCount++;
+        }
+        if (widget.followUpAction) {
+          tabCount++;
+        }
 
-      _tabController.dispose();
-      if (tabCount > 0) {
-        _tabController = TabController(length: tabCount, vsync: this);
-      } else {
-        _tabController = TabController(length: 1, vsync: this);
-      }
-    });
+        _tabController.dispose();
+        if (tabCount > 0) {
+          _tabController = TabController(length: tabCount, vsync: this);
+        } else {
+          _tabController = TabController(length: 1, vsync: this);
+        }
+      });
+    } else {}
   }
 
   @override
@@ -146,11 +153,11 @@ class CartState extends State<Cart> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 2,
+      length: tabCount,
       child: Scaffold(
         appBar: AppBar(
           backgroundColor: Colors.amber[100],
-          title: const Text('DSR Entry'),
+          title: Text(widget.title),
         ),
         body: _isLoading
             ? const Center(child: CircularProgressIndicator())
@@ -170,16 +177,24 @@ class CartState extends State<Cart> with TickerProviderStateMixin {
                                   fontWeight: FontWeight.bold, fontSize: 18),
                             ),
                             RichTextWidget(label: widget.address),
-                            const Divider(height: 1),
-                            const SizedBox(height: 16),
-                            _detailText.buildDetailText(
-                              'Sampling Done: ',
-                              widget.samplingDone ? 'Yes' : 'No',
-                            ),
-                            _detailText.buildDetailText(
-                              'Follow up Action: ',
-                              widget.followUpAction ? 'Yes' : 'No',
-                            ),
+                            Visibility(
+                              visible: widget.type == 'Visit',
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Divider(height: 1),
+                                  const SizedBox(height: 16),
+                                  _detailText.buildDetailText(
+                                    'Sampling Done: ',
+                                    widget.samplingDone ? 'Yes' : 'No',
+                                  ),
+                                  _detailText.buildDetailText(
+                                    'Follow up Action: ',
+                                    widget.followUpAction ? 'Yes' : 'No',
+                                  ),
+                                ],
+                              ),
+                            )
                           ],
                         ),
                       ),

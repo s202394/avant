@@ -1,58 +1,41 @@
 import 'package:avant/views/rich_text.dart';
-import 'package:avant/visit/visit_dsr_series_title_wise.dart';
+import 'package:avant/visit/sampling_series_title_wise.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../api/api_service.dart';
-import '../common/common_text.dart';
 import '../common/toast.dart';
 import '../model/fetch_titles_model.dart';
-import '../model/get_visit_dsr_model.dart';
 import '../model/login_model.dart';
 import '../model/series_and_class_level_list_response.dart';
 
-class VisitSeriesSearch extends StatefulWidget {
-  final GetVisitDsrResponse visitDsrData;
+class SamplingSeriesSearch extends StatefulWidget {
+  final String type;
+  final String title;
   final int customerId;
   final String customerName;
   final String customerCode;
   final String customerType;
   final String address;
-  final String city;
-  final String state;
-  final String visitFeedback;
-  final String visitDate;
-  final int visitPurposeId;
-  final String jointVisitWithIds;
-  final int personMetId;
-  final bool samplingDone;
-  final bool followUpAction;
 
-  const VisitSeriesSearch({
+  const SamplingSeriesSearch({
     super.key,
-    required this.visitDsrData,
+    required this.type,
+    required this.title,
     required this.customerId,
     required this.customerName,
     required this.customerCode,
     required this.customerType,
     required this.address,
-    required this.city,
-    required this.state,
-    required this.visitFeedback,
-    required this.visitDate,
-    required this.visitPurposeId,
-    required this.jointVisitWithIds,
-    required this.personMetId,
-    required this.samplingDone,
-    required this.followUpAction,
   });
 
   @override
-  VisitSeriesSearchPageState createState() => VisitSeriesSearchPageState();
+  SamplingSeriesSearchPageState createState() =>
+      SamplingSeriesSearchPageState();
 }
 
-class VisitSeriesSearchPageState extends State<VisitSeriesSearch>
+class SamplingSeriesSearchPageState extends State<SamplingSeriesSearch>
     with SingleTickerProviderStateMixin {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   late TabController _tabController;
@@ -75,7 +58,6 @@ class VisitSeriesSearchPageState extends State<VisitSeriesSearch>
   bool _isFetchingTitles = false;
   bool _isSuggestionSelected = false;
 
-  final DetailText _detailText = DetailText();
   final ToastMessage _toastMessage = ToastMessage();
 
   final TextEditingController _autocompleteController = TextEditingController();
@@ -84,10 +66,6 @@ class VisitSeriesSearchPageState extends State<VisitSeriesSearch>
   @override
   void initState() {
     super.initState();
-
-    if (kDebugMode) {
-      print('visitPurposeId:${widget.visitPurposeId}');
-    }
 
     _tabController = TabController(length: 2, vsync: this);
 
@@ -177,6 +155,7 @@ class VisitSeriesSearchPageState extends State<VisitSeriesSearch>
       setState(() {
         _isLoading = false;
       });
+      ServerErrorScreen(onRefresh: _fetchSeriesAndClassLevels);
     }
   }
 
@@ -225,7 +204,7 @@ class VisitSeriesSearchPageState extends State<VisitSeriesSearch>
       child: Scaffold(
         appBar: AppBar(
           backgroundColor: Colors.amber[100],
-          title: const Text('DSR Entry'),
+          title: Text(widget.title),
         ),
         body: _isLoading
             ? const Center(child: CircularProgressIndicator())
@@ -245,16 +224,6 @@ class VisitSeriesSearchPageState extends State<VisitSeriesSearch>
                                 fontWeight: FontWeight.bold, fontSize: 18),
                           ),
                           RichTextWidget(label: widget.address),
-                          const Divider(height: 1),
-                          const SizedBox(height: 16),
-                          _detailText.buildDetailText(
-                            'Sampling Done: ',
-                            widget.samplingDone ? 'Yes' : 'No',
-                          ),
-                          _detailText.buildDetailText(
-                            'Follow up Action: ',
-                            widget.followUpAction ? 'Yes' : 'No',
-                          ),
                         ],
                       ),
                     ),
@@ -333,26 +302,18 @@ class VisitSeriesSearchPageState extends State<VisitSeriesSearch>
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => VisitDsrSeriesTitleWise(
-            visitDsrData: widget.visitDsrData,
+          builder: (context) => SamplingSeriesTitleWise(
+            type: widget.type,
+            title: widget.title,
             selectedIndex: selectedIndex,
             customerId: widget.customerId,
             customerName: widget.customerName,
             customerCode: widget.customerCode,
             customerType: widget.customerType,
             address: widget.address,
-            city: widget.city,
-            state: widget.state,
             selectedSeries: selectedSeries,
             selectedClassLevel: selectedClassLevel,
             selectedTitle: selectedTitle,
-            visitFeedback: widget.visitFeedback,
-            visitDate: widget.visitDate,
-            visitPurposeId: widget.visitPurposeId,
-            jointVisitWithIds: widget.jointVisitWithIds,
-            personMetId: widget.personMetId,
-            samplingDone: widget.samplingDone,
-            followUpAction: widget.followUpAction,
           ),
         ),
       );
@@ -503,6 +464,34 @@ class VisitSeriesSearchPageState extends State<VisitSeriesSearch>
             },
           ),
         ),
+      ),
+    );
+  }
+}
+
+class ServerErrorScreen extends StatelessWidget {
+  final VoidCallback onRefresh;
+
+  const ServerErrorScreen({super.key, required this.onRefresh});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.error_outline, size: 80, color: Colors.grey),
+          const SizedBox(height: 20),
+          const Text(
+            'Server Error',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 20),
+          ElevatedButton(
+            onPressed: onRefresh,
+            child: const Text('Retry'),
+          ),
+        ],
       ),
     );
   }

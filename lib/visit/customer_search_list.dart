@@ -1,3 +1,4 @@
+import 'package:avant/visit/sampling_series_search.dart';
 import 'package:avant/visit/visit_detail_page.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
@@ -127,35 +128,58 @@ class CustomerSearchListPageState extends State<CustomerSearchList> {
                     ),
                     trailing: InkWell(
                       onTap: () {
+                        if (widget.type == 'Visit') {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => DsrEntry(
+                                customerId: customer.customerId,
+                                customerName: customer.customerName,
+                                customerCode: '',
+                                customerType: customer.customerType,
+                                address: customer.address,
+                                city: '',
+                                state: '',
+                              ),
+                            ),
+                          );
+                        } else {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => SamplingSeriesSearch(
+                                type: widget.type,
+                                title: widget.title,
+                                customerId: customer.customerId,
+                                customerName: customer.customerName,
+                                customerCode: '',
+                                customerType: customer.customerType,
+                                address: customer.address,
+                              ),
+                            ),
+                          );
+                        }
+                      },
+                      child: Image.asset(
+                          widget.type == 'Visit'
+                              ? 'images/travel.png'
+                              : 'images/ic_book.png',
+                          height: 30,
+                          width: 30),
+                    ),
+                    onTap: () {
+                      if (widget.type == 'Visit') {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => DsrEntry(
+                            builder: (context) => VisitDetailsPage(
                               customerId: customer.customerId,
-                              customerName: customer.customerName,
-                              customerCode: '',
-                              customerType: customer.customerType,
-                              address: customer.address,
-                              city: '',
-                              state: '',
+                              visitId: 0,
+                              isTodayPlan: true,
                             ),
                           ),
                         );
-                      },
-                      child: Image.asset(widget.type == 'Visit' ? 'images/travel.png':'images/ic_book.png',
-                          height: 30, width: 30),
-                    ),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => VisitDetailsPage(
-                            customerId: customer.customerId,
-                            visitId: 0,
-                            isTodayPlan: true,
-                          ),
-                        ),
-                      );
+                      }
                     },
                   ),
                   const Divider(),

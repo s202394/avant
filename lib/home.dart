@@ -19,7 +19,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'model/setup_values.dart';
 import 'new_customer/new_customer_trade_library_form1.dart';
 
 class HomePage extends StatefulWidget {

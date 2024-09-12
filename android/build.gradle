@@ -19,3 +19,8 @@ tasks.register("clean", Delete) {
 tasks.withType(Jar) {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
+
+/*
+tasks.named('jar', Jar) {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}*/

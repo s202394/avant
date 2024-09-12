@@ -438,6 +438,8 @@ class FollowUpActionState extends State<FollowUpAction> {
       context,
       MaterialPageRoute(
         builder: (context) => Cart(
+          type: 'Visit',
+          title: 'DSR Entry',
           customerId: widget.customerId,
           customerName: widget.customerName,
           customerCode: widget.customerCode,

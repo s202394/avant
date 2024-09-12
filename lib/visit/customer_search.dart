@@ -317,6 +317,7 @@ class CustomerSearchPageState extends State<CustomerSearch> {
     _customerCodeController.dispose();
     _teacherNameController.dispose();
     _cityController.dispose();
+    _customerTypeController.dispose();
     super.dispose();
   }
 }

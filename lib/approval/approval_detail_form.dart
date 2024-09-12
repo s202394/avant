@@ -13,6 +13,7 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:avant/common/constants.dart';
 
+import '../common/common.dart';
 import '../model/submit_approval_model.dart';
 
 class ApprovalDetailForm extends StatefulWidget {
@@ -38,8 +39,19 @@ class ApprovalDetailFormState extends State<ApprovalDetailForm> {
 
   List<TitleDetails> _titleDetails = [];
 
+  List<ClarificationExecutivesList> clarificationExecutivesList = [];
+  ClarificationExecutivesList? _selectedClarificationExecutive;
+
   final ToastMessage _toastMessage = ToastMessage();
   final DetailText _detailText = DetailText();
+
+  final _clarificationExecutiveFieldKey = GlobalKey<FormFieldState>();
+
+  final FocusNode _clarificationExecutiveFocusNode = FocusNode();
+
+  final TextEditingController _clarificationExecutiveController =
+      TextEditingController();
+  final TextEditingController _queryController = TextEditingController();
 
   late String token;
   late int? executiveId;
@@ -50,6 +62,9 @@ class ApprovalDetailFormState extends State<ApprovalDetailForm> {
   bool hasData = false;
   bool isLoading = true;
   bool isConnected = true;
+
+  bool _submitted = false;
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -93,6 +108,8 @@ class ApprovalDetailFormState extends State<ApprovalDetailForm> {
           setState(() {
             hasData = response.titleDetails?.isNotEmpty ?? false;
             _titleDetails = response.titleDetails ?? [];
+            clarificationExecutivesList =
+                response.clarificationExecutivesList ?? [];
             if (kDebugMode) {
               print('_titleDetails size:${_titleDetails.length}');
             }
@@ -785,50 +802,28 @@ class ApprovalDetailFormState extends State<ApprovalDetailForm> {
             children: <Widget>[
               const Text(
                 'Raise Query',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16.0,
-                ),
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16.0),
               ),
               const Divider(thickness: 1.5),
               const SizedBox(height: 16.0),
-              const Text(
+              _buildDropdownFieldClarificationExecutives(
                 'Query To',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              DropdownButtonFormField<String>(
-                items: [
-                  DropdownMenuItem(
-                    value: 'Option 1',
-                    child: Text('Option 1'),
-                  ),
-                  DropdownMenuItem(
-                    value: 'Option 2',
-                    child: Text('Option 2'),
-                  ),
-                ],
-                onChanged: (value) {},
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  isDense: true,
-                ),
+                _clarificationExecutiveController,
+                _clarificationExecutiveFieldKey,
+                _clarificationExecutiveFocusNode,
               ),
               const SizedBox(height: 16.0),
-              const Text(
-                'Query',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              TextFormField(
-                maxLines: 4,
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                ),
-              ),
+              buildTextField('Query', _queryController),
               const SizedBox(height: 16.0),
               Center(
                 child: ElevatedButton(
                   onPressed: () {
-                    // Add your submission logic here
+                    setState(() {
+                      _submitted = true;
+                    });
+                    if (_selectedClarificationExecutive != null) {
+                      _submitQuery();
+                    }
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.lightBlueAccent,
@@ -842,9 +837,7 @@ class ApprovalDetailFormState extends State<ApprovalDetailForm> {
                   child: const Text(
                     'Send Query',
                     style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
+                        color: Colors.white, fontWeight: FontWeight.bold),
                   ),
                 ),
               ),
@@ -853,6 +846,147 @@ class ApprovalDetailFormState extends State<ApprovalDetailForm> {
         );
       },
     );
+  }
+
+  Widget buildTextField(String label, TextEditingController controller) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: TextFormField(
+        decoration: InputDecoration(
+          labelText: label,
+          border: const OutlineInputBorder(),
+          contentPadding:
+              const EdgeInsets.symmetric(vertical: 12.0, horizontal: 12.0),
+          alignLabelWithHint: true,
+          errorText: 'Please enter $label',
+        ),
+        controller: controller,
+        maxLines: 4,
+      ),
+    );
+  }
+
+  Widget _buildDropdownFieldClarificationExecutives(
+    String label,
+    TextEditingController controller,
+    GlobalKey<FormFieldState> fieldKey,
+    FocusNode focusNode,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: DropdownButtonFormField<ClarificationExecutivesList>(
+        key: fieldKey,
+        focusNode: focusNode,
+        value: _selectedClarificationExecutive,
+        items: clarificationExecutivesList
+            .map(
+              (clarificationExecutive) =>
+                  DropdownMenuItem<ClarificationExecutivesList>(
+                value: clarificationExecutive,
+                child: Text(clarificationExecutive.executive),
+              ),
+            )
+            .toList(),
+        onChanged: (ClarificationExecutivesList? value) {
+          setState(() {
+            _selectedClarificationExecutive = value;
+
+            // Update the text controller with the selected city name
+            controller.text = value?.executive ?? '';
+
+            // Validate the field
+            fieldKey.currentState?.validate();
+          });
+        },
+        decoration: InputDecoration(
+          labelText: label,
+          border: const OutlineInputBorder(),
+          errorText: _submitted && _selectedClarificationExecutive == null
+              ? 'Please select a $label'
+              : null,
+        ),
+      ),
+    );
+  }
+
+  Future<bool> _checkInternetConnection() async {
+    if (!await checkInternetConnection()) {
+      _toastMessage.showToastMessage(
+          "No internet connection. Please check your connection and try again.");
+      return false;
+    }
+    return true;
+  }
+
+  void _submitQuery() async {
+    try {
+      if (kDebugMode) {
+        print('Query submitted!');
+      }
+      if (!await _checkInternetConnection()) return;
+
+      setState(() {
+        _isLoading = true;
+      });
+
+      try {
+        final responseData = await SendClarificationQueryService()
+            .sendClarificationQuery(
+                executiveId ?? 0,
+                'selfstock',
+                _selectedClarificationExecutive?.executiveId ?? 0,
+                _queryController.text,
+                executiveId ?? 0,
+                userId ?? 0,
+                token);
+
+        if (responseData.status == 'Success') {
+          String msgType = responseData.approvalList.msgType;
+          String msgText = responseData.approvalList.msgText;
+          if (kDebugMode) {
+            print(msgType);
+          }
+          if (msgType == 's') {
+            if (kDebugMode) {
+              print('Send query msgType : $msgType, msgText : $msgText');
+            }
+            _toastMessage.showInfoToastMessage(msgText);
+          } else if (msgType == 'e') {
+            if (kDebugMode) {
+              print('Send query msgType : $msgType, msgText : $msgText');
+            }
+            _toastMessage.showInfoToastMessage(msgText);
+          } else {
+            if (kDebugMode) {
+              print('Send query error s & e empty');
+            }
+            _toastMessage
+                .showToastMessage("An error occurred while sending query.");
+          }
+        } else {
+          if (kDebugMode) {
+            print('Send query error ${responseData.status}');
+          }
+          _toastMessage
+              .showToastMessage("An error occurred while sending query.");
+        }
+      } catch (e) {
+        if (kDebugMode) {
+          print("Failed to sending query : $e");
+        }
+        _toastMessage
+            .showToastMessage("An error occurred while sending query.");
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print("Failed to sending query: $e");
+      }
+      _toastMessage.showToastMessage("An error occurred while sending query.");
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 }
 

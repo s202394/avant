@@ -6,69 +6,50 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../api/api_service.dart';
 import '../model/fetch_titles_model.dart';
-import '../model/get_visit_dsr_model.dart';
 import '../model/login_model.dart';
 import '../model/sampling_details_response.dart';
 import '../model/series_and_class_level_list_response.dart';
 import '../views/book_list_item.dart';
 import '../views/rich_text.dart';
 import 'cart.dart';
-import 'follow_up_action.dart';
 
-class VisitDsrSeriesTitleWise extends StatefulWidget {
-  final GetVisitDsrResponse visitDsrData;
+class SamplingSeriesTitleWise extends StatefulWidget {
+  final String type;
+  final String title;
   final int selectedIndex;
   final int customerId;
   final String customerName;
   final String customerCode;
   final String customerType;
   final String address;
-  final String city;
-  final String state;
   final SeriesList? selectedSeries;
   final ClassLevelList? selectedClassLevel;
   final TitleList? selectedTitle;
-  final String visitFeedback;
-  final String visitDate;
-  final int visitPurposeId;
-  final String jointVisitWithIds;
-  final int personMetId;
-  final bool samplingDone;
-  final bool followUpAction;
 
-  const VisitDsrSeriesTitleWise({
+  const SamplingSeriesTitleWise({
     super.key,
-    required this.visitDsrData,
+    required this.type,
+    required this.title,
     required this.selectedIndex,
     required this.customerId,
     required this.customerName,
     required this.customerCode,
     required this.customerType,
     required this.address,
-    required this.city,
-    required this.state,
     required this.selectedSeries,
     required this.selectedClassLevel,
     required this.selectedTitle,
-    required this.visitFeedback,
-    required this.visitDate,
-    required this.visitPurposeId,
-    required this.jointVisitWithIds,
-    required this.personMetId,
-    required this.samplingDone,
-    required this.followUpAction,
   });
 
   @override
-  VisitDsrSeriesTitleWiseState createState() => VisitDsrSeriesTitleWiseState();
+  SamplingSeriesTitleWiseState createState() => SamplingSeriesTitleWiseState();
 }
 
-class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
+class SamplingSeriesTitleWiseState extends State<SamplingSeriesTitleWise>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
   String? selectedSamplingType;
-  String? selectedSampleGiven;
   String? selectedSampleTo;
   int? selectedSampleToId;
   String? selectedShipTo;
@@ -210,10 +191,6 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
   }
 
   Future<void> _fetchShipToData() async {
-    if (selectedSampleGiven == null) {
-      return; // No need to fetch if no sampleGiven is selected
-    }
-
     setState(() {
       isFetchingShipTo = true;
     });
@@ -221,8 +198,8 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
     try {
       final response = await GetVisitDsrService().getShipTo(
         widget.customerId,
-        widget.personMetId,
-        selectedSampleGiven ?? '',
+        0,
+        '',
         executiveId ?? 0,
         token,
       );
@@ -261,7 +238,7 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
       child: Scaffold(
         appBar: AppBar(
           backgroundColor: Colors.amber[100],
-          title: const Text('DSR Entry'),
+          title: Text(widget.title),
         ),
         body: isLoading
             ? const Center(child: CircularProgressIndicator())
@@ -283,24 +260,6 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
                                     fontWeight: FontWeight.bold, fontSize: 18),
                               ),
                               RichTextWidget(label: widget.address),
-                              const SizedBox(height: 8),
-                              LabeledText(
-                                  label: 'Visit Date', value: widget.visitDate),
-                            ],
-                          ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.only(
-                              left: 16, right: 16, bottom: 8),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              LabeledText(
-                                  label: 'Sampling Done',
-                                  value: widget.samplingDone ? 'Yes' : 'No'),
-                              LabeledText(
-                                  label: 'Follow Up Action',
-                                  value: widget.followUpAction ? 'Yes' : 'No'),
                             ],
                           ),
                         ),
@@ -428,31 +387,6 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
                     child: DropdownButtonFormField<String>(
                       isExpanded: true,
                       decoration: InputDecoration(
-                        labelText: 'Sample Given',
-                        border: const OutlineInputBorder(),
-                        errorText: _submitted && selectedSampleGiven == null
-                            ? 'Please select Sample Given'
-                            : null,
-                      ),
-                      items: sampleGivenItems,
-                      onChanged: (value) {
-                        setState(() {
-                          selectedSampleGiven = value;
-                          selectedShipTo = null;
-                          shipToOptions.clear();
-                          shippingAddressOptions.clear();
-                          _fetchShipToData();
-                        });
-                      },
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.only(left: 8.0),
-                    child: DropdownButtonFormField<String>(
-                      isExpanded: true,
-                      decoration: InputDecoration(
                         labelText: 'Ship To',
                         border: const OutlineInputBorder(),
                         errorText: _submitted && selectedShipTo == null
@@ -463,10 +397,8 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
                           .map(
                             (address) => DropdownMenuItem<String>(
                               value: address,
-                              child: Text(
-                                address,
-                                overflow: TextOverflow.ellipsis,
-                              ),
+                              child: Text(address,
+                                  overflow: TextOverflow.ellipsis),
                             ),
                           )
                           .toList(),
@@ -482,6 +414,11 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
                         });
                       },
                     ),
+                  ),
+                ),
+                const Expanded(
+                  child: Padding(
+                    padding: EdgeInsets.only(left: 8.0),
                   ),
                 ),
               ],
@@ -579,7 +516,7 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
       'ShippingAddress': selectedShippingAddress,
       'SamplingType': selectedSamplingType,
       'SampleTo': selectedSampleToId,
-      'SampleGiven': selectedSampleGiven,
+      'SampleGiven': '',
       'MRP': books[index].listPrice,
     });
   }
@@ -592,59 +529,33 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
     if (kDebugMode) {
       print('Form submitted!');
     }
-    if (widget.followUpAction) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => FollowUpAction(
-            visitDsrData: widget.visitDsrData,
-            customerId: widget.customerId,
-            customerName: widget.customerName,
-            customerCode: widget.customerCode,
-            customerType: widget.customerType,
-            address: widget.address,
-            city: widget.city,
-            state: widget.state,
-            visitFeedback: widget.visitFeedback,
-            visitDate: widget.visitDate,
-            visitPurposeId: widget.visitPurposeId,
-            jointVisitWithIds: widget.jointVisitWithIds,
-            personMetId: widget.personMetId,
-            samplingDone: widget.samplingDone,
-            followUpAction: widget.followUpAction,
-          ),
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => Cart(
+          type: widget.type,
+          title: widget.title,
+          customerId: widget.customerId,
+          customerName: widget.customerName,
+          customerCode: widget.customerCode,
+          customerType: widget.customerType,
+          address: widget.address,
+          city: '',
+          state: '',
+          visitFeedback: '',
+          visitDate: '',
+          visitPurposeId: 0,
+          jointVisitWithIds: '',
+          personMetId: 0,
+          samplingDone: true,
+          followUpAction: false,
         ),
-      );
-    } else {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => Cart(
-            type: 'Visit',
-            title: 'DSR Entry',
-            customerId: widget.customerId,
-            customerName: widget.customerName,
-            customerCode: widget.customerCode,
-            customerType: widget.customerType,
-            address: widget.address,
-            city: widget.city,
-            state: widget.state,
-            visitFeedback: widget.visitFeedback,
-            visitDate: widget.visitDate,
-            visitPurposeId: widget.visitPurposeId,
-            jointVisitWithIds: widget.jointVisitWithIds,
-            personMetId: widget.personMetId,
-            samplingDone: widget.samplingDone,
-            followUpAction: widget.followUpAction,
-          ),
-        ),
-      );
-    }
+      ),
+    );
   }
 
   bool _areDropdownsSelected() {
     return selectedSampleTo != null &&
-        selectedSampleGiven != null &&
         selectedSamplingType != null &&
         selectedShipTo != null;
   }

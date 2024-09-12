@@ -100,17 +100,24 @@ Future<String> getDeviceId() async {
 
 //Check Internet Connection
 Future<bool> checkInternetConnection() async {
-  var connectivityResult = await (Connectivity().checkConnectivity());
+  try {
+    var connectivityResult = await (Connectivity().checkConnectivity());
 
-  if (kDebugMode) {
-    print('checkInternetConnection : $connectivityResult');
-  }
+    if (kDebugMode) {
+      print('checkInternetConnection : $connectivityResult');
+    }
 
-  if (connectivityResult == ConnectivityResult.mobile ||
-      connectivityResult == ConnectivityResult.wifi ||
-      connectivityResult == ConnectivityResult.ethernet) {
-    return true;
-  } else {
+    if (connectivityResult == ConnectivityResult.mobile ||
+        connectivityResult == ConnectivityResult.wifi ||
+        connectivityResult == ConnectivityResult.ethernet) {
+      return true;
+    } else {
+      return false;
+    }
+  } catch (e) {
+    if (kDebugMode) {
+      print('Error checking internet connection: $e');
+    }
     return false;
   }
 }
