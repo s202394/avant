@@ -143,28 +143,29 @@ class LocationService {
       CheckInCheckOutService service = CheckInCheckOutService();
 
       String executiveLocationXml =
-          "<DocumentElement><ExecutiveLocation><DateTime>${getCurrentDateTime()}</DateTime><Lat>$latitude</Lat><Long>$longitude</Long></ExecutiveLocation></DocumentElement>";
+          "<DocumentElement><ExecutiveLocation><DateTime>${getCurrentDateTimeWithSecond()}</DateTime><Lat>$latitude</Lat><Long>$longitude</Long></ExecutiveLocation></DocumentElement>";
 
       CheckInCheckOutResponse responseData =
           await service.fetchExecutiveLocation(
               executiveId, enteredBy, executiveLocationXml, token);
 
       if (responseData.status == 'Success') {
-        String s = responseData.s;
+        String msgType = responseData.success.msgType;
+        String msgText = responseData.success.msgText;
         if (kDebugMode) {
-          print(s);
+          print(msgType);
         }
-        if (s.isNotEmpty) {
+        if (msgType.isNotEmpty && msgType == 's') {
           if (kDebugMode) {
-            print('Location sent successfully');
+            print(msgText);
           }
-        } else if (responseData.e.isNotEmpty) {
+        } else if (msgType.isNotEmpty && msgType == 'e') {
           if (kDebugMode) {
-            print('Failed to send location : ${responseData.e}');
+            print('Failed to send location : $msgText');
           }
         } else {
           if (kDebugMode) {
-            print('Failed to send location s & e empty');
+            print('Failed to send location $msgType $msgText');
           }
         }
       } else {

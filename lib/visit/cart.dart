@@ -95,32 +95,30 @@ class CartState extends State<Cart> with TickerProviderStateMixin {
   }
 
   Future<void> _fetchCartData() async {
-    if (widget.type == 'Visit') {
-      final seriesItems = await databaseHelper.getCartItemsWithSeries();
-      final titleItems = await databaseHelper.getCartItemsWithTitle();
+    final seriesItems = await databaseHelper.getCartItemsWithSeries();
+    final titleItems = await databaseHelper.getCartItemsWithTitle();
 
-      setState(() {
-        _seriesItems = seriesItems;
-        _titleItems = titleItems;
+    setState(() {
+      _seriesItems = seriesItems;
+      _titleItems = titleItems;
 
-        if (widget.samplingDone && _seriesItems.isNotEmpty) {
-          tabCount++;
-        }
-        if (widget.samplingDone && _titleItems.isNotEmpty) {
-          tabCount++;
-        }
-        if (widget.followUpAction) {
-          tabCount++;
-        }
+      if (widget.samplingDone && _seriesItems.isNotEmpty) {
+        tabCount++;
+      }
+      if (widget.samplingDone && _titleItems.isNotEmpty) {
+        tabCount++;
+      }
+      if (widget.followUpAction) {
+        tabCount++;
+      }
 
-        _tabController.dispose();
-        if (tabCount > 0) {
-          _tabController = TabController(length: tabCount, vsync: this);
-        } else {
-          _tabController = TabController(length: 1, vsync: this);
-        }
-      });
-    } else {}
+      _tabController.dispose();
+      if (tabCount > 0) {
+        _tabController = TabController(length: tabCount, vsync: this);
+      } else {
+        _tabController = TabController(length: 1, vsync: this);
+      }
+    });
   }
 
   @override

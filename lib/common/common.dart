@@ -133,3 +133,10 @@ String getCurrentDateTime({String format = 'dd MMM yyyy HH:MM a'}) {
   DateFormat formatter = DateFormat(format);
   return formatter.format(now);
 }
+
+String getCurrentDateTimeWithSecond(
+    {String format = 'dd MMM yyyy HH:MM:ss a'}) {
+  DateTime now = DateTime.now();
+  DateFormat formatter = DateFormat(format);
+  return formatter.format(now);
+}
