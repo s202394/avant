@@ -16,6 +16,7 @@ import 'package:avant/model/geography_model.dart';
 import 'package:avant/model/get_visit_dsr_model.dart';
 import 'package:avant/model/menu_model.dart';
 import 'package:avant/model/search_bookseller_response.dart';
+import 'package:avant/model/self_stock_request_response.dart';
 import 'package:avant/model/setup_values.dart';
 import 'package:avant/model/ship_to_response.dart';
 import 'package:avant/model/submit_approval_model.dart';
@@ -28,6 +29,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../model/city_list_for_search_customer_response.dart';
 import '../model/sampling_details_response.dart';
 import '../model/search_customer_result_response.dart';
+import '../model/self_stock_request_trade_response.dart';
 import '../model/send_clarification_query_model.dart';
 import '../model/series_and_class_level_list_response.dart';
 
@@ -2463,6 +2465,105 @@ class SearchCustomerResultService {
             customerCode,
             customerContactName,
             newToken);
+      } else {
+        throw Exception('Failed to retrieve new token');
+      }
+    } else {
+      throw Exception(
+          'Username or password is not stored in SharedPreferences');
+    }
+  }
+}
+
+class SelfStockRequestService {
+  Future<SelfStockRequestResponse> getSelfStockRequest(String token) async {
+    final response = await http.post(
+      Uri.parse(selfStockRequestUrl),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+        'Authorization': 'Bearer $token',
+      },
+    );
+    if (kDebugMode) {
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}');
+    }
+    if (response.statusCode == 200) {
+      final jsonResponse = json.decode(response.body);
+      return SelfStockRequestResponse.fromJson(jsonResponse);
+    } else if (response.statusCode == 401) {
+      // Token is invalid or expired, refresh the token and retry
+      return await refreshAndRetrySelfStockRequest();
+    } else {
+      throw Exception('Failed to get self stock request');
+    }
+  }
+
+  Future<SelfStockRequestResponse> refreshAndRetrySelfStockRequest() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String username = prefs.getString('token_username') ?? '';
+    String password = prefs.getString('password') ?? '';
+
+    if (username.isNotEmpty && password.isNotEmpty) {
+      await TokenService().token(username, password);
+      String? newToken = prefs.getString('token');
+
+      if (newToken != null && newToken.isNotEmpty) {
+        return await getSelfStockRequest(newToken);
+      } else {
+        throw Exception('Failed to retrieve new token');
+      }
+    } else {
+      throw Exception(
+          'Username or password is not stored in SharedPreferences');
+    }
+  }
+
+  Future<ShipmentResponse> fetchShipmentData(
+      int executiveId, String territoryIds, String shipTo, String token) async {
+    String body = jsonEncode(<String, dynamic>{
+      'Executiveid': executiveId,
+      'Territoryids': territoryIds,
+      'ShipTo': shipTo,
+    });
+
+    final response = await http.post(Uri.parse(selfStockRequestTradeUrl),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+          'Authorization': 'Bearer $token',
+        },
+        body: body);
+    if (kDebugMode) {
+      print('Request URL: ${response.request?.url}');
+      print('Request body: $body');
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}');
+    }
+    if (response.statusCode == 200) {
+      final jsonResponse = json.decode(response.body);
+      return ShipmentResponse.fromJson(jsonResponse, shipTo);
+    } else if (response.statusCode == 401) {
+      // Token is invalid or expired, refresh the token and retry
+      return await refreshAndRetryFetchShipmentData(
+          executiveId, territoryIds, shipTo);
+    } else {
+      throw Exception('Failed to get self stock request trade');
+    }
+  }
+
+  Future<ShipmentResponse> refreshAndRetryFetchShipmentData(
+      int executiveId, String territoryIds, String shipTo) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String username = prefs.getString('token_username') ?? '';
+    String password = prefs.getString('password') ?? '';
+
+    if (username.isNotEmpty && password.isNotEmpty) {
+      await TokenService().token(username, password);
+      String? newToken = prefs.getString('token');
+
+      if (newToken != null && newToken.isNotEmpty) {
+        return await fetchShipmentData(
+            executiveId, territoryIds, shipTo, newToken);
       } else {
         throw Exception('Failed to retrieve new token');
       }

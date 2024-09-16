@@ -13,6 +13,7 @@ import 'package:avant/model/travel_plan_model.dart';
 import 'package:avant/new_customer/new_customer_school_form1.dart';
 import 'package:avant/visit/customer_search.dart';
 import 'package:avant/visit/dsr_entry.dart';
+import 'package:avant/visit/self_stock_entry.dart';
 import 'package:avant/visit/visit_detail_page.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -366,6 +367,18 @@ class HomePageState extends State<HomePage> {
                               builder: (context) => const CustomerSearch(
                                   type: 'Sampling',
                                   title: 'Customer Sample Request'),
+                            ),
+                          );
+                        },
+                      ),
+                      ListTile(
+                        title: const Text('Self Stock Sample Request'),
+                        onTap: () {
+                          Navigator.pop(context);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const SelfStockEntry(),
                             ),
                           );
                         },

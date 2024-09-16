@@ -27,6 +27,8 @@ const String customerCreationUrl = '${baseUrl}CustomerCreationAPI';
 const String cityListForSearchCustomerUrl =
     '${baseUrl}CityListForSearchCustomer';
 const String searchCustomerResultUrl = '${baseUrl}SearchCustomerResult';
+const String selfStockRequestUrl = '${baseUrl}SelfStockRequestAPI';
+const String selfStockRequestTradeUrl = '${baseUrl}selfstockRequesttradeAPI';
 
 // Customer Sampling Approval
 const String customerSamplingApprovalListUrl =
