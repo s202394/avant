@@ -207,9 +207,9 @@ class SelfStockEntryPageState extends State<SelfStockEntry> {
   Widget _buildShipToDropdown(List<DropdownMenuItem<String>> shipToItems) {
     return DropdownButtonFormField<String>(
       isExpanded: true,
-      decoration: InputDecoration(
+      decoration: const InputDecoration(
         labelText: 'Ship To',
-        border: const OutlineInputBorder(),
+        border: OutlineInputBorder(),
       ),
       value: selectedShipTo,
       items: shipToItems,

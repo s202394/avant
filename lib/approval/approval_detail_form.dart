@@ -72,6 +72,12 @@ class ApprovalDetailFormState extends State<ApprovalDetailForm> {
     _checkConnectivity();
   }
 
+  String getType() {
+    return widget.type == customerSampleApproval
+        ? 'CustomerSampling'
+        : 'Approval';
+  }
+
   Future<void> _checkConnectivity() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     var connectivityResult = await Connectivity().checkConnectivity();
@@ -100,15 +106,8 @@ class ApprovalDetailFormState extends State<ApprovalDetailForm> {
         isConnected = true;
         isLoading = true;
         futureRequestDetails = ApprovalDetailsService()
-            .fetchApprovalDetails(
-                widget.type,
-                widget.customerId,
-                widget.customerType,
-                widget.requestId,
-                widget.type == customerSampleApproval
-                    ? 'CustomerSampling'
-                    : 'Approval',
-                token)
+            .fetchApprovalDetails(widget.type, widget.customerId,
+                widget.customerType, widget.requestId, getType(), token)
             .then((response) {
           setState(() {
             hasData = response.titleDetails?.isNotEmpty ?? false;
@@ -577,16 +576,12 @@ class ApprovalDetailFormState extends State<ApprovalDetailForm> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.green,
                 textStyle: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
+                    color: Colors.white, fontWeight: FontWeight.bold),
               ),
               child: const Text(
                 'Approve',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
+                style:
+                    TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
               ),
             ),
             ElevatedButton(
@@ -594,16 +589,12 @@ class ApprovalDetailFormState extends State<ApprovalDetailForm> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.red,
                 textStyle: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
+                    color: Colors.white, fontWeight: FontWeight.bold),
               ),
               child: const Text(
                 'Reject',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
+                style:
+                    TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
               ),
             ),
           ],
@@ -634,10 +625,7 @@ class ApprovalDetailFormState extends State<ApprovalDetailForm> {
       alignment: Alignment.centerLeft,
       child: Text(
         title,
-        style: const TextStyle(
-          fontWeight: FontWeight.bold,
-          fontSize: 16.0,
-        ),
+        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16.0),
       ),
     );
   }
@@ -696,9 +684,7 @@ class ApprovalDetailFormState extends State<ApprovalDetailForm> {
                   child: Text(
                     textAlign: TextAlign.center,
                     '${titleDetails.requestedQty}',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                 ),
               ),
@@ -720,9 +706,8 @@ class ApprovalDetailFormState extends State<ApprovalDetailForm> {
                         fontSize: 15, fontWeight: FontWeight.bold),
                     decoration: const InputDecoration(
                       border: InputBorder.none,
-                      counterText: "", // Hides the default character counter
-                      contentPadding:
-                          EdgeInsets.zero, // Removes default padding
+                      counterText: "",
+                      contentPadding: EdgeInsets.zero,
                     ),
                     inputFormatters: [
                       FilteringTextInputFormatter.digitsOnly,
@@ -739,11 +724,7 @@ class ApprovalDetailFormState extends State<ApprovalDetailForm> {
                 onTap: () {
                   // Handle delete action
                 },
-                child: const Icon(
-                  Icons.cancel,
-                  color: Colors.red,
-                  size: 35,
-                ),
+                child: const Icon(Icons.cancel, color: Colors.red, size: 35),
               ),
               const SizedBox(width: 5.0),
             ],
@@ -761,9 +742,7 @@ class ApprovalDetailFormState extends State<ApprovalDetailForm> {
           child: Text(
             textAlign: TextAlign.center,
             '${approvalMatrix.sequenceNo}',
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-            ),
+            style: const TextStyle(fontWeight: FontWeight.bold),
           ),
         ),
         Padding(
@@ -1021,9 +1000,7 @@ class ApprovalDetailFormState extends State<ApprovalDetailForm> {
       final responseData = await SendClarificationQueryService()
           .sendClarificationQuery(
               widget.requestId,
-              (widget.type == customerSampleApproval)
-                  ? 'CustomerSampling'
-                  : 'SelfStock',
+              getType(),
               _selectedClarificationExecutive?.executiveId ?? 0,
               _queryController.text,
               executiveId ?? 0,

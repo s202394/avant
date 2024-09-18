@@ -30,7 +30,6 @@ import '../model/city_list_for_search_customer_response.dart';
 import '../model/sampling_details_response.dart';
 import '../model/search_customer_result_response.dart';
 import '../model/self_stock_request_trade_response.dart';
-import '../model/send_clarification_query_model.dart';
 import '../model/series_and_class_level_list_response.dart';
 
 class TokenService {
@@ -783,6 +782,7 @@ class GetVisitDsrService {
       print('Response status: ${response.statusCode}');
       print('Response body: ${response.body}');
       print('Request body: $body');
+      print('Request URL: ${response.request?.url}');
     }
     if (response.statusCode == 200) {
       final jsonResponse = json.decode(response.body);
@@ -1271,10 +1271,8 @@ class ApprovalDetailsService {
       'RequestId': requestId,
       'Module': module,
     });
-    final bodySelfStockRequest = jsonEncode(<String, dynamic>{
-      'RequestId': requestId,
-      'Module': module,
-    });
+    final bodySelfStockRequest =
+        jsonEncode(<String, dynamic>{'RequestId': requestId, 'Module': module});
     final body = (type == customerSampleApproval)
         ? bodyCustomerSampleApproval
         : bodySelfStockRequest;
@@ -1290,7 +1288,6 @@ class ApprovalDetailsService {
     );
     if (kDebugMode) {
       print('Request URL: ${response.request?.url}');
-      print('Request URL: ${token}');
       print('Request body: $body');
       print('Response status: ${response.statusCode}');
       print('Response body: ${response.body}');
@@ -1303,7 +1300,7 @@ class ApprovalDetailsService {
       return await refreshAndRetry(
           type, customerId, customerType, requestId, module);
     } else {
-      throw Exception('Failed to get fetchCustomerSamplingApprovalDetails');
+      throw Exception('Failed to fetchApprovalDetails');
     }
   }
 
@@ -1448,7 +1445,7 @@ class SubmitRequestApprovalService {
     }
   }
 
-  submitSelfStockRequestApproved(
+  Future<SubmitRequestApprovalResponse> submitSelfStockRequestApproved(
       String type,
       bool isBulkApproval,
       String requestFor,
@@ -1517,7 +1514,7 @@ class SubmitRequestApprovalService {
           selfStockDetailsXml,
           remarks);
     } else {
-      throw Exception('Failed to submitCustomerSamplingRequestApproved');
+      throw Exception('Failed to submitSelfStockRequestApproved');
     }
   }
 

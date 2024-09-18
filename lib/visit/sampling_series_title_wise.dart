@@ -62,7 +62,6 @@ class SamplingSeriesTitleWiseState extends State<SamplingSeriesTitleWise>
 
   List<TitleList> books = [];
   List<SamplingType> samplingTypes = [];
-  List<SampleGiven> sampleGivens = [];
   List<SampleTo> sampleTos = [];
 
   List<String> shipToOptions = [];
@@ -142,7 +141,6 @@ class SamplingSeriesTitleWiseState extends State<SamplingSeriesTitleWise>
         setState(() {
           books = titlesResponse.titleList ?? [];
           samplingTypes = samplingResponse.samplingType ?? [];
-          sampleGivens = samplingResponse.sampleGiven ?? [];
           sampleTos = samplingResponse.sampleTo ?? [];
           isLoading = false;
         });
@@ -167,7 +165,6 @@ class SamplingSeriesTitleWiseState extends State<SamplingSeriesTitleWise>
           }
 
           samplingTypes = samplingResponse.samplingType ?? [];
-          sampleGivens = samplingResponse.sampleGiven ?? [];
           sampleTos = samplingResponse.sampleTo ?? [];
           isLoading = false;
         });
@@ -198,8 +195,8 @@ class SamplingSeriesTitleWiseState extends State<SamplingSeriesTitleWise>
     try {
       final response = await GetVisitDsrService().getShipTo(
         widget.customerId,
-        0,
-        '',
+        selectedSampleToId ?? 0,
+        'To be Dispatched',
         executiveId ?? 0,
         token,
       );
@@ -306,13 +303,6 @@ class SamplingSeriesTitleWiseState extends State<SamplingSeriesTitleWise>
       return DropdownMenuItem<String>(
         value: type.samplingTypeValue,
         child: Text(type.samplingType),
-      );
-    }).toList();
-
-    final sampleGivenItems = sampleGivens.map((given) {
-      return DropdownMenuItem<String>(
-        value: given.sampleGivenValue,
-        child: Text(given.sampleGiven),
       );
     }).toList();
 
@@ -569,6 +559,8 @@ class SamplingSeriesTitleWiseState extends State<SamplingSeriesTitleWise>
         orElse: () => SampleTo(customerName: '', customerContactId: 0),
       );
       selectedSampleToId = selectedSampleToObj.customerContactId;
+
+      _fetchShipToData();
     });
   }
 }

@@ -184,15 +184,19 @@ class SamplingSeriesSearchPageState extends State<SamplingSeriesSearch>
       );
 
       setState(() {
-        titleSuggestions = response.titleList ?? [];
-        _isFetchingTitles = false;
+        if (mounted) {
+          titleSuggestions = response.titleList ?? [];
+          _isFetchingTitles = false;
+        }
       });
     } catch (e) {
       if (kDebugMode) {
         print('Error fetching titles: $e');
       }
       setState(() {
-        _isFetchingTitles = false;
+        if (mounted) {
+          _isFetchingTitles = false;
+        }
       });
     }
   }
@@ -373,12 +377,13 @@ class SamplingSeriesSearchPageState extends State<SamplingSeriesSearch>
               _autocompleteController,
               enabled: true,
             ),
+            const SizedBox(height: 16.0),
             if (_isFetchingTitles)
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 16.0),
                 child: Center(child: CircularProgressIndicator()),
               ),
-            if (titleSuggestions.isNotEmpty)
+            if (!_isFetchingTitles && titleSuggestions.isNotEmpty)
               ...titleSuggestions.map(
                 (title) => ListTile(
                   title: Text(title.title),
