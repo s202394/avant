@@ -214,7 +214,11 @@ class CartState extends State<Cart> with TickerProviderStateMixin {
                           Expanded(
                             child: GestureDetector(
                               onTap: () {
-                                _submitForm();
+                                if (widget.type == 'Visit') {
+                                  _submitVisitForm();
+                                } else {
+                                  _submitSamplingForm();
+                                }
                               },
                               child: Container(
                                 width: double.infinity,
@@ -448,7 +452,7 @@ class CartState extends State<Cart> with TickerProviderStateMixin {
     );
   }
 
-  void _submitForm() async {
+  void _submitVisitForm() async {
     try {
       if (!await _checkInternetConnection()) return;
 
@@ -458,7 +462,7 @@ class CartState extends State<Cart> with TickerProviderStateMixin {
 
       try {
         if (kDebugMode) {
-          print("_submitForm clicked");
+          print("_submitVisitForm clicked");
         }
 
         List<Map<String, dynamic>> followUpActionCarts =
@@ -656,5 +660,128 @@ class CartState extends State<Cart> with TickerProviderStateMixin {
     if (kDebugMode) {
       print("address: $address");
     }
+  }
+
+  void _submitSamplingForm() async {
+    try {
+      if (!await _checkInternetConnection()) return;
+
+      setState(() {
+        _isLoading = true;
+      });
+
+      try {
+        if (kDebugMode) {
+          print("_submitSamplingForm clicked");
+        }
+
+        List<Map<String, dynamic>> generateCartList =
+            await databaseHelper.getAllCarts();
+        String cartXML = generateCartXmlSampling(generateCartList);
+
+        int itemCount = await databaseHelper.getItemCount();
+        double totalPrice = await databaseHelper.getTotalPrice();
+
+        final responseData = await CustomerSamplingService()
+            .submitCustomerSampling(
+                widget.customerId,
+                executiveId ?? 0,
+                profileCode ?? '',
+                widget.customerId,
+                cartXML,
+                widget.customerType,
+                "",
+                "",
+                0,
+                totalPrice,
+                itemCount,
+                userId ?? 0,
+                token);
+
+        if (responseData.status == 'Success') {
+          String msgType = responseData.returnMessage.msgType;
+          String msgText = responseData.returnMessage.msgText;
+          if (kDebugMode) {
+            print(msgType);
+          }
+          if (msgType == 's') {
+            if (kDebugMode) {
+              print(
+                  'Submit sampling request msgType : $msgType, msgText : $msgText');
+            }
+            toastMessage.showInfoToastMessage(msgText);
+
+            databaseHelper.deleteAllCartItems();
+            databaseHelper.deleteAllFollowUpActionCarts();
+
+            if (mounted) {
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(builder: (context) => const HomePage()),
+                    (Route<dynamic> route) => false,
+              );
+            }
+          } else if (msgType == 'e') {
+            if (kDebugMode) {
+              print(
+                  'Submit sampling request msgType : $msgType, msgText : $msgText');
+            }
+            toastMessage.showInfoToastMessage(msgText);
+          } else {
+            if (kDebugMode) {
+              print('Submit sampling request $msgType');
+            }
+            toastMessage.showToastMessage(
+                "An error occurred submit sampling request.");
+          }
+        } else {
+          if (kDebugMode) {
+            print('Submit sampling request error ${responseData.status}');
+          }
+          toastMessage.showToastMessage(
+              "An error occurred while submit sampling request.");
+        }
+      } catch (e) {
+        if (kDebugMode) {
+          print("Failed to sending sampling request : $e");
+        }
+        toastMessage.showToastMessage(
+            "An error occurred while submit sampling request.");
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print("Failed to submit sampling request: $e");
+      }
+      toastMessage.showToastMessage(
+          "An error occurred while submit sampling request.");
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  String generateCartXmlSampling(List<Map<String, dynamic>> cartItems) {
+    // Start building the XML string
+    String xmlString = "<DocumentElement>";
+
+    // Loop through each item in the cart
+    for (var item in cartItems) {
+      xmlString += "<CustomerSamplingRequestDetails>"
+          "<SeriesId>${item['SeriesId']}</SeriesId>"
+          "<BookId>${item['BookId']}</BookId>"
+          "<RequestedQty>${item['RequestedQty'].toString().padLeft(2, '0')}</RequestedQty>"
+          "<ShipTo>${item['ShipTo']}</ShipTo>"
+          "<ShippingAddress>${item['ShippingAddress']}</ShippingAddress>"
+          "<SamplingType>${item['SamplingType']}</SamplingType>"
+          "<SampleTo>${item['SampleTo']}</SampleTo>"
+          "<MRP>${item['MRP']}</MRP>"
+          "</CustomerSamplingRequestDetails>";
+    }
+
+    // Close the XML root element
+    xmlString += "</DocumentElement>";
+
+    return xmlString;
   }
 }

@@ -49,6 +49,8 @@ const String selfStockApprovalSubmitUrl =
     '${baseUrl}SubmitSelfStockSamplingApproval';
 const String selfStockBulkApprovalSubmitUrl =
     '${baseUrl}SubmitSelfStockSamplingBulkApproval';
+const String selfStockSamplingSubmitUrl = '${baseUrl}selfstockSampling';
+const String customerSamplingSubmitUrl = '${baseUrl}CustomerSampling';
 
 const String sendClarificationQueryUrl = '${baseUrl}SendClarificationQuery';
 

@@ -70,8 +70,6 @@ class SelfStockRequestCartState extends State<SelfStockRequestCart>
 
     _tabController = TabController(length: 1, vsync: this);
 
-    getAddressData();
-
     _fetchCartDetails();
     _fetchCartData();
   }
@@ -250,66 +248,34 @@ class SelfStockRequestCartState extends State<SelfStockRequestCart>
           print("_submitForm clicked");
         }
 
-        List<Map<String, dynamic>> followUpActionCarts =
-            await databaseHelper.getAllFollowUpActionCarts();
-        String followUpActionXML = getFollowUpActions(followUpActionCarts);
+        List<Map<String, dynamic>> generateCartList =
+            await databaseHelper.getAllCarts();
+        String cartXml = generateCartXml(generateCartList);
 
-        List<Map<String, dynamic>> generateSampleGivenCartList =
-            await databaseHelper.getCartItemsWithSampleGiven("Sample Given");
-        String generateSampleGivenCartXML =
-            generateCartXmlSampleGiven(generateSampleGivenCartList);
-        List<Map<String, dynamic>> generateToBeDispatchedCartList =
-            await databaseHelper
-                .getCartItemsWithSampleGiven("To Be Dispatched");
-        String generateToBeDispatchedCartXML =
-            generateCartXmlSampleGiven(generateToBeDispatchedCartList);
-
-        int itemCount = await databaseHelper.getItemCount();
-        double totalPrice = await databaseHelper.getTotalPrice();
-
-        final responseData = await VisitEntryService().visitEntry(
-            executiveId ?? 0,
-            '',
-            0,
-            executiveId ?? 0,
-            address,
-            profileCode ?? '',
-            position.latitude,
-            position.longitude,
-            1,
-            '',
-            '',
-            0,
-            0,
-            '',
-            "",
-            "",
-            "",
-            "",
-            "",
-            totalPrice,
-            itemCount,
-            userId ?? 0,
-            followUpActionXML,
-            generateSampleGivenCartXML,
-            'No',
-            "",
-            "",
-            false,
-            "",
-            generateToBeDispatchedCartXML,
-            token);
+        final responseData = await SelfStockSamplingService()
+            .submitSelfStockSampling(
+                executiveId ?? 0,
+                profileCode ?? '',
+                executiveId ?? 0,
+                cartXml,
+                widget.address,
+                widget.shipToId,
+                widget.shipmentModeId,
+                userId ?? 0,
+                token);
 
         if (responseData.status == 'Success') {
-          String s = responseData.s;
+          String msgType = responseData.returnMessage.msgType;
+          String msgText = responseData.returnMessage.msgText;
           if (kDebugMode) {
-            print(s);
+            print(msgType);
           }
-          if (s.isNotEmpty) {
+          if (msgType == 's') {
             if (kDebugMode) {
-              print('Add Visit DSR Error s not empty');
+              print(
+                  'Submit self stock request msgType : $msgType, msgText : $msgText');
             }
-            toastMessage.showInfoToastMessage(s);
+            toastMessage.showInfoToastMessage(msgText);
 
             databaseHelper.deleteAllCartItems();
             databaseHelper.deleteAllFollowUpActionCarts();
@@ -318,37 +284,42 @@ class SelfStockRequestCartState extends State<SelfStockRequestCart>
               Navigator.pushAndRemoveUntil(
                 context,
                 MaterialPageRoute(builder: (context) => const HomePage()),
-                (Route<dynamic> route) => false,
+                    (Route<dynamic> route) => false,
               );
             }
-          } else if (responseData.e.isNotEmpty) {
+          } else if (msgType == 'e') {
             if (kDebugMode) {
-              print('Add Visit DSR Error e not empty');
+              print(
+                  'Submit self stock request msgType : $msgType, msgText : $msgText');
             }
-            toastMessage.showToastMessage(responseData.e);
+            toastMessage.showInfoToastMessage(msgText);
           } else {
             if (kDebugMode) {
-              print('Add Visit DSR Error s & e empty');
+              print('Submit self stock request $msgType');
             }
-            toastMessage
-                .showToastMessage("An error occurred while adding visit.");
+            toastMessage.showToastMessage(
+                "An error occurred submit self stock request.");
           }
         } else {
           if (kDebugMode) {
-            print('Add Visit DSR Error ${responseData.status}');
+            print('Submit self stock request error ${responseData.status}');
           }
-          toastMessage
-              .showToastMessage("An error occurred while adding visit.");
+          toastMessage.showToastMessage(
+              "An error occurred while submit self stock request.");
         }
       } catch (e) {
         if (kDebugMode) {
-          print("Failed to add DSR entry: $e");
+          print("Failed to submit self stock request : $e");
         }
+        toastMessage.showToastMessage(
+            "An error occurred while submit self stock request.");
       }
     } catch (e) {
       if (kDebugMode) {
-        print("Failed to add DSR entry from cart: $e");
+        print("Failed to submit self stock request: $e");
       }
+      toastMessage.showToastMessage(
+          "An error occurred while submit self stock request.");
     } finally {
       setState(() {
         _isLoading = false;
@@ -356,68 +327,18 @@ class SelfStockRequestCartState extends State<SelfStockRequestCart>
     }
   }
 
-  String getFollowUpActions(List<Map<String, dynamic>> followUpActionCarts) {
-    // Start building the XML string
-    String followUpActionsXml = "<DocumentElement>";
-
-    // Loop through each follow-up action cart and append it to the XML string
-    for (var actionCart in followUpActionCarts) {
-      followUpActionsXml += "<FollowUpAction>"
-          "<Department>${actionCart['DepartmentId']}</Department>"
-          "<FollowUpExecutive>${actionCart['FollowUpExecutiveId']}</FollowUpExecutive>"
-          "<FollowUpAction>${actionCart['FollowUpAction']}</FollowUpAction>"
-          "<FollowUpDate>${actionCart['FollowUpDate']}</FollowUpDate>"
-          "</FollowUpAction>";
-    }
-
-    // Close the XML root element
-    followUpActionsXml += "</DocumentElement>";
-
-    return followUpActionsXml;
-  }
-
-  String generateCartXmlToBeDispatched(List<Map<String, dynamic>> cartItems) {
+  String generateCartXml(List<Map<String, dynamic>> cartItems) {
     // Start building the XML string
     String xmlString = "<DocumentElement>";
 
     // Loop through each item in the cart
     for (var item in cartItems) {
-      xmlString += "<CustomerSamplingRequestDetails>"
+      xmlString += "<SelfStockRequestDetails>"
+          "<SubjectId>0</SubjectId>"
           "<SeriesId>${item['SeriesId']}</SeriesId>"
           "<BookId>${item['BookId']}</BookId>"
           "<RequestedQty>${item['RequestedQty'].toString().padLeft(2, '0')}</RequestedQty>"
-          "<ShipTo>${item['ShipTo']}</ShipTo>"
-          "<ShippingAddress>${item['ShippingAddress']}</ShippingAddress>"
-          "<SamplingType>${item['SamplingType']}</SamplingType>"
-          "<SampleTo>${item['SampleTo']}</SampleTo>"
-          "<SampleGiven>${item['SampleGiven']}</SampleGiven>"
-          "<MRP>${item['MRP']}</MRP>"
-          "</CustomerSamplingRequestDetails>";
-    }
-
-    // Close the XML root element
-    xmlString += "</DocumentElement>";
-
-    return xmlString;
-  }
-
-  String generateCartXmlSampleGiven(List<Map<String, dynamic>> cartItems) {
-    // Start building the XML string
-    String xmlString = "<DocumentElement>";
-
-    // Loop through each item in the cart
-    for (var item in cartItems) {
-      xmlString += "<CustomerSamplingRequestDetails>"
-          "<SeriesId>${item['SeriesId']}</SeriesId>"
-          "<BookId>${item['BookId']}</BookId>"
-          "<RequestedQty>${item['RequestedQty'].toString().padLeft(2, '0')}</RequestedQty>"
-          "<ShipTo>${item['ShipTo']}</ShipTo>"
-          "<ShippingAddress>${item['ShippingAddress']}</ShippingAddress>"
-          "<SamplingType>${item['SamplingType']}</SamplingType>"
-          "<SampleTo>${item['SampleTo']}</SampleTo>"
-          "<SampleGiven>${item['SampleGiven']}</SampleGiven>"
-          "<MRP>${item['MRP']}</MRP>"
-          "</CustomerSamplingRequestDetails>";
+          "</SelfStockRequestDetails>";
     }
 
     // Close the XML root element
@@ -433,17 +354,5 @@ class SelfStockRequestCartState extends State<SelfStockRequestCart>
       return false;
     }
     return true;
-  }
-
-  void getAddressData() async {
-    position = await locationService.getCurrentLocation();
-    if (kDebugMode) {
-      print("Latitude: ${position.latitude}, Longitude: ${position.longitude}");
-    }
-
-    address = await locationService.getAddressFromLocation();
-    if (kDebugMode) {
-      print("address: $address");
-    }
   }
 }

@@ -2573,3 +2573,218 @@ class SelfStockRequestService {
     }
   }
 }
+
+class CustomerSamplingService {
+  Future<SubmitRequestApprovalResponse> submitCustomerSampling(
+      int customerId,
+      int loggedInExecutiveId,
+      String loggedInExecutiveProfileCode,
+      int executiveId,
+      String customerSamplingDetailsXML,
+      String customerType,
+      String requestRemarks,
+      String shippingInstructions,
+      int shipmentMode,
+      double totalPrice,
+      int totalQty,
+      int enteredBy,
+      String token) async {
+    String body = jsonEncode(<String, dynamic>{
+      'CustomerId': customerId,
+      'LoggedInExecutiveid': loggedInExecutiveId,
+      'LoggedInExecutiveProfileCode': loggedInExecutiveProfileCode,
+      'ExecutiveId': executiveId,
+      'CustomerType': customerType,
+      'RequestRemarks': requestRemarks,
+      'ShippingInstructions': shippingInstructions,
+      'ShipmentMode': shipmentMode,
+      'TotalPrice': totalPrice,
+      'TotalQty': totalQty,
+      'EnteredBy': enteredBy,
+      'CustomerSamplingDetailsXML': customerSamplingDetailsXML,
+    });
+    if (kDebugMode) {
+      print(body);
+    }
+    if (kDebugMode) {
+      print(Uri.parse(customerSamplingSubmitUrl));
+    }
+    final response = await http.post(
+      Uri.parse(customerSamplingSubmitUrl),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+        'Authorization': 'Bearer $token',
+      },
+      body: body,
+    );
+    if (kDebugMode) {
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}');
+    }
+    if (response.statusCode == 200) {
+      final jsonResponse = json.decode(response.body);
+      return SubmitRequestApprovalResponse.fromJson(jsonResponse);
+    } else if (response.statusCode == 401) {
+      // Token is invalid or expired, refresh the token and retry
+      return await refreshAndRetry(
+        customerId,
+        loggedInExecutiveId,
+        loggedInExecutiveProfileCode,
+        executiveId,
+        customerSamplingDetailsXML,
+        customerType,
+        requestRemarks,
+        shippingInstructions,
+        shipmentMode,
+        totalPrice,
+        totalQty,
+        enteredBy,
+      );
+    } else {
+      throw Exception('Failed to submit Customer Sampling');
+    }
+  }
+
+  Future<SubmitRequestApprovalResponse> refreshAndRetry(
+    int customerId,
+    int loggedInExecutiveId,
+    String loggedInExecutiveProfileCode,
+    int executiveId,
+    String customerSamplingDetailsXML,
+    String customerType,
+    String requestRemarks,
+    String shippingInstructions,
+    int shipmentMode,
+    double totalPrice,
+    int totalQty,
+    int enteredBy,
+  ) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String username = prefs.getString('token_username') ?? '';
+    String password = prefs.getString('password') ?? '';
+
+    if (username.isNotEmpty && password.isNotEmpty) {
+      await TokenService().token(username, password);
+      String? newToken = prefs.getString('token');
+
+      if (newToken != null && newToken.isNotEmpty) {
+        return await submitCustomerSampling(
+            customerId,
+            loggedInExecutiveId,
+            loggedInExecutiveProfileCode,
+            executiveId,
+            customerSamplingDetailsXML,
+            customerType,
+            requestRemarks,
+            shippingInstructions,
+            shipmentMode,
+            totalPrice,
+            totalQty,
+            enteredBy,
+            newToken);
+      } else {
+        throw Exception('Failed to retrieve new token');
+      }
+    } else {
+      throw Exception(
+          'Username or password is not stored in SharedPreferences');
+    }
+  }
+}
+
+class SelfStockSamplingService {
+  Future<SubmitRequestApprovalResponse> submitSelfStockSampling(
+      int loggedInExecutiveId,
+      String profileCode,
+      int executiveId,
+      String selfStockDetailsXml,
+      String shippingAddress,
+      String shipTo,
+      int shipmentModeId,
+      int enteredBy,
+      String token) async {
+    String body = jsonEncode(<String, dynamic>{
+      'LoggedInExecutiveid': loggedInExecutiveId,
+      'ProfileCode': profileCode,
+      'ExecutiveId': executiveId,
+      'ShippingAddress': shippingAddress,
+      'ShipTo': shipTo,
+      'ShipmentModeId': shipmentModeId,
+      'EnteredBy': enteredBy,
+      'SelfStockDetailsxml': selfStockDetailsXml,
+    });
+    if (kDebugMode) {
+      print(body);
+    }
+    if (kDebugMode) {
+      print(Uri.parse(selfStockSamplingSubmitUrl));
+    }
+    final response = await http.post(
+      Uri.parse(selfStockSamplingSubmitUrl),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+        'Authorization': 'Bearer $token',
+      },
+      body: body,
+    );
+    if (kDebugMode) {
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}');
+    }
+    if (response.statusCode == 200) {
+      final jsonResponse = json.decode(response.body);
+      return SubmitRequestApprovalResponse.fromJson(jsonResponse);
+    } else if (response.statusCode == 401) {
+      // Token is invalid or expired, refresh the token and retry
+      return await refreshAndRetry(
+        loggedInExecutiveId,
+        profileCode,
+        executiveId,
+        selfStockDetailsXml,
+        shippingAddress,
+        shipTo,
+        shipmentModeId,
+        enteredBy,
+      );
+    } else {
+      throw Exception('Failed to submit Self Stock Sampling');
+    }
+  }
+
+  Future<SubmitRequestApprovalResponse> refreshAndRetry(
+      int loggedInExecutiveId,
+      String profileCode,
+      int executiveId,
+      String selfStockDetailsXml,
+      String shippingAddress,
+      String shipTo,
+      int shipmentModeId,
+      int enteredBy) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String username = prefs.getString('token_username') ?? '';
+    String password = prefs.getString('password') ?? '';
+
+    if (username.isNotEmpty && password.isNotEmpty) {
+      await TokenService().token(username, password);
+      String? newToken = prefs.getString('token');
+
+      if (newToken != null && newToken.isNotEmpty) {
+        return await submitSelfStockSampling(
+            loggedInExecutiveId,
+            profileCode,
+            executiveId,
+            selfStockDetailsXml,
+            shippingAddress,
+            shipTo,
+            shipmentModeId,
+            enteredBy,
+            newToken);
+      } else {
+        throw Exception('Failed to retrieve new token');
+      }
+    } else {
+      throw Exception(
+          'Username or password is not stored in SharedPreferences');
+    }
+  }
+}
