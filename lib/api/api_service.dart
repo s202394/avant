@@ -1289,6 +1289,8 @@ class ApprovalDetailsService {
       body: body,
     );
     if (kDebugMode) {
+      print('Request URL: ${response.request?.url}');
+      print('Request URL: ${token}');
       print('Request body: $body');
       print('Response status: ${response.statusCode}');
       print('Response body: ${response.body}');
@@ -2249,7 +2251,7 @@ class BooksellerService {
 }
 
 class SendClarificationQueryService {
-  Future<SendClarificationQueryResponse> sendClarificationQuery(
+  Future<SubmitRequestApprovalResponse> sendClarificationQuery(
       int requestId,
       String module,
       int clarificationQueryTo,
@@ -2285,7 +2287,7 @@ class SendClarificationQueryService {
     }
     if (response.statusCode == 200) {
       final jsonResponse = json.decode(response.body);
-      return SendClarificationQueryResponse.fromJson(jsonResponse);
+      return SubmitRequestApprovalResponse.fromJson(jsonResponse);
     } else if (response.statusCode == 401) {
       // Token is invalid or expired, refresh the token and retry
       return await refreshAndRetry(requestId, module, clarificationQueryTo,
@@ -2295,7 +2297,7 @@ class SendClarificationQueryService {
     }
   }
 
-  Future<SendClarificationQueryResponse> refreshAndRetry(
+  Future<SubmitRequestApprovalResponse> refreshAndRetry(
     int requestId,
     String module,
     int clarificationQueryTo,

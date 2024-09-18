@@ -35,6 +35,9 @@ class ApprovalListFormState extends State<ApprovalListForm> {
 
   final ToastMessage _toastMessage = ToastMessage();
 
+  final FocusNode _commentFocusNode = FocusNode();
+  final ScrollController _commentScrollController = ScrollController();
+
   late String token;
   late int? executiveId;
   late String? profileCode;
@@ -51,7 +54,19 @@ class ApprovalListFormState extends State<ApprovalListForm> {
   @override
   void dispose() {
     _commentController.dispose();
+    _commentFocusNode.dispose();
+    _commentScrollController.dispose();
     super.dispose();
+  }
+
+  void _focusAndScroll() {
+    _commentFocusNode.requestFocus();
+
+    _commentScrollController.animateTo(
+      _commentScrollController.position.maxScrollExtent,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
   }
 
   @override
@@ -123,9 +138,10 @@ class ApprovalListFormState extends State<ApprovalListForm> {
                     } else if (snapshot.hasError) {
                       return const ErrorLayout();
                     } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                      return const NoDataLayout(); // Ensures it is centered
+                      return const NoDataLayout();
                     } else {
                       return SingleChildScrollView(
+                        controller: _commentScrollController,
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
@@ -255,12 +271,15 @@ class ApprovalListFormState extends State<ApprovalListForm> {
       }
     });
 
+    _focusAndScroll();
+
     if (_commentError != null || _selectionError != null) {
       return;
     }
 
     if (checkedRequests.isEmpty) {
-      _toastMessage.showToastMessage("Please select any item to take an action.");
+      _toastMessage
+          .showToastMessage("Please select any item to take an action.");
       return;
     }
 
@@ -283,11 +302,13 @@ class ApprovalListFormState extends State<ApprovalListForm> {
     }
 
     try {
-      String requestIds = checkedRequests.map((request) => request.requestId).join(',');
+      String requestIds =
+          checkedRequests.map((request) => request.requestId).join(',');
 
       final SubmitRequestApprovalResponse response;
       if (widget.type == customerSampleApproval) {
-        response = await SubmitRequestApprovalService().submitCustomerSamplingRequestApproved(
+        response = await SubmitRequestApprovalService()
+            .submitCustomerSamplingRequestApproved(
           widget.type,
           true,
           action,
@@ -300,7 +321,8 @@ class ApprovalListFormState extends State<ApprovalListForm> {
           token,
         );
       } else {
-        response = await SubmitRequestApprovalService().submitSelfStockRequestApproved(
+        response =
+            await SubmitRequestApprovalService().submitSelfStockRequestApproved(
           widget.type,
           true,
           action,
@@ -320,7 +342,8 @@ class ApprovalListFormState extends State<ApprovalListForm> {
       }
 
       if (kDebugMode) {
-        print('Approval ${widget.type} successful: ${response.returnMessage.msgText}');
+        print(
+            'Approval ${widget.type} successful: ${response.returnMessage.msgText}');
       }
 
       if (response.status == 'Success') {
@@ -331,20 +354,22 @@ class ApprovalListFormState extends State<ApprovalListForm> {
             Navigator.pushAndRemoveUntil(
               context,
               MaterialPageRoute(builder: (context) => const HomePage()),
-                  (Route<dynamic> route) => false,
+              (Route<dynamic> route) => false,
             );
           }
         } else {
           if (kDebugMode) {
             print('$action ${widget.type} Error: message is empty');
           }
-          _toastMessage.showToastMessage("An error occurred while $action ${widget.type}.");
+          _toastMessage.showToastMessage(
+              "An error occurred while $action ${widget.type}.");
         }
       } else {
         if (kDebugMode) {
           print('Add ${widget.type} Error: ${response.status}');
         }
-        _toastMessage.showToastMessage("An error occurred while $action ${widget.type}.");
+        _toastMessage.showToastMessage(
+            "An error occurred while $action ${widget.type}.");
       }
     } catch (error) {
       // Dismiss the loading dialog if mounted
@@ -354,7 +379,8 @@ class ApprovalListFormState extends State<ApprovalListForm> {
       if (kDebugMode) {
         print('Failed to ${widget.type} $action: $error');
       }
-      _toastMessage.showToastMessage("An error occurred while $action ${widget.type}.");
+      _toastMessage
+          .showToastMessage("An error occurred while $action ${widget.type}.");
     }
   }
 

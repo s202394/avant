@@ -76,6 +76,9 @@ class ApprovalDetailFormState extends State<ApprovalDetailForm> {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     var connectivityResult = await Connectivity().checkConnectivity();
 
+    // Check if the widget is still mounted before calling setState
+    if (!mounted) return;
+
     setState(() {
       token = prefs.getString('token') ?? '';
       downHierarchy = prefs.getString('DownHierarchy') ?? '';
@@ -86,11 +89,13 @@ class ApprovalDetailFormState extends State<ApprovalDetailForm> {
     profileCode = await getProfileCode();
 
     if (connectivityResult == ConnectivityResult.none) {
+      if (!mounted) return;
       setState(() {
         isConnected = false;
         isLoading = false;
       });
     } else {
+      if (!mounted) return;
       setState(() {
         isConnected = true;
         isLoading = true;
@@ -117,10 +122,12 @@ class ApprovalDetailFormState extends State<ApprovalDetailForm> {
           });
           return response;
         }).catchError((error) {
-          setState(() {
-            isLoading = false;
-            hasData = false;
-          });
+          if (mounted) {
+            setState(() {
+              isLoading = false;
+              hasData = false;
+            });
+          }
           if (kDebugMode) {
             print("Error occurred: $error");
           }
@@ -470,10 +477,12 @@ class ApprovalDetailFormState extends State<ApprovalDetailForm> {
                                   style: TextStyle(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 16.0,
+                                    decoration: TextDecoration.underline,
                                   ),
                                 ),
                                 ElevatedButton(
-                                  onPressed: () => openDialog(context),
+                                  onPressed: () =>
+                                      {_submitted = false, openDialog(context)},
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: Colors.lightBlueAccent,
                                     textStyle: const TextStyle(
@@ -491,21 +500,59 @@ class ApprovalDetailFormState extends State<ApprovalDetailForm> {
                                 ),
                               ],
                             ),
-                            ListView.builder(
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              itemCount:
-                                  response.clarificationList?.length ?? 0,
-                              itemBuilder: (context, index) {
-                                var clarification =
-                                    response.clarificationList![index];
-                                return ListTile(
-                                  title: Text(clarification.clarificationQuery),
-                                  subtitle:
-                                      Text(clarification.clarificationResponse),
-                                );
-                              },
-                            ),
+                            Visibility(
+                                visible:
+                                    (response.clarificationList?.length ?? 0) >
+                                        0,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      "Queries/Response",
+                                      style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 16.0),
+                                    ),
+                                    const SizedBox(height: 5.0),
+                                    Container(
+                                      decoration: BoxDecoration(
+                                        border: Border.all(
+                                            color: Colors.grey, width: 1.0),
+                                        borderRadius:
+                                            BorderRadius.circular(8.0),
+                                      ),
+                                      child: ListView.builder(
+                                        shrinkWrap: true,
+                                        physics:
+                                            const NeverScrollableScrollPhysics(),
+                                        itemCount: response
+                                                .clarificationList?.length ??
+                                            0,
+                                        itemBuilder: (context, index) {
+                                          var clarification = response
+                                              .clarificationList![index];
+                                          return Column(
+                                            children: [
+                                              ListTile(
+                                                title: Text(clarification
+                                                    .clarificationQuery),
+                                                subtitle: Text(clarification
+                                                    .clarificationResponse),
+                                              ),
+                                              if (index !=
+                                                  response.clarificationList!
+                                                          .length -
+                                                      1)
+                                                const Divider(
+                                                    thickness: 1.0,
+                                                    height: 0.0),
+                                            ],
+                                          );
+                                        },
+                                      ),
+                                    ),
+                                  ],
+                                ))
                           ],
                         );
                       }
@@ -795,53 +842,80 @@ class ApprovalDetailFormState extends State<ApprovalDetailForm> {
       isScrollControlled: true,
       builder: (BuildContext context) {
         return Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              const Text(
-                'Raise Query',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16.0),
-              ),
-              const Divider(thickness: 1.5),
-              const SizedBox(height: 16.0),
-              _buildDropdownFieldClarificationExecutives(
-                'Query To',
-                _clarificationExecutiveController,
-                _clarificationExecutiveFieldKey,
-                _clarificationExecutiveFocusNode,
-              ),
-              const SizedBox(height: 16.0),
-              buildTextField('Query', _queryController),
-              const SizedBox(height: 16.0),
-              Center(
-                child: ElevatedButton(
-                  onPressed: () {
-                    setState(() {
-                      _submitted = true;
-                    });
-                    if (_selectedClarificationExecutive != null) {
-                      _submitQuery();
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.lightBlueAccent,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 32.0, vertical: 12.0),
-                    textStyle: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
+          padding:
+              EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Raise Query',
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold, fontSize: 16.0),
+                      ),
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.of(context).pop();
+                        },
+                        child: const Icon(Icons.cancel_outlined),
+                      ),
+                    ],
                   ),
-                  child: const Text(
-                    'Send Query',
-                    style: TextStyle(
-                        color: Colors.white, fontWeight: FontWeight.bold),
+                  const Divider(thickness: 1.5),
+                  const SizedBox(height: 8.0),
+                  _buildDropdownFieldClarificationExecutives(
+                    'Query To',
+                    _clarificationExecutiveController,
+                    _clarificationExecutiveFieldKey,
+                    _clarificationExecutiveFocusNode,
                   ),
-                ),
+                  buildTextField('Query', _queryController),
+                  const SizedBox(height: 8.0),
+                  _isLoading
+                      ? const Center(child: CircularProgressIndicator())
+                      : Center(
+                          child: ElevatedButton(
+                            onPressed: () async {
+                              setState(() {
+                                _submitted = true;
+                                _isLoading = true;
+                              });
+                              await _submitQuery();
+                              if (mounted) {
+                                setState(() {
+                                  _isLoading = false;
+                                });
+                                Navigator.of(context).pop(); // Close dialog
+                                clearData(); //clear data
+                                _checkConnectivity(); // Refresh query items
+                              }
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.lightBlueAccent,
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 32.0, vertical: 12.0),
+                              textStyle: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            child: const Text(
+                              'Send Query',
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ),
+                ],
               ),
-            ],
+            ),
           ),
         );
       },
@@ -858,8 +932,17 @@ class ApprovalDetailFormState extends State<ApprovalDetailForm> {
           contentPadding:
               const EdgeInsets.symmetric(vertical: 12.0, horizontal: 12.0),
           alignLabelWithHint: true,
-          errorText: 'Please enter $label',
+          errorText: _submitted && controller.text.isEmpty
+              ? 'Please select a $label'
+              : null,
         ),
+        onChanged: (value) {
+          if (value.isNotEmpty) {
+            setState(() {
+              _submitted = false;
+            });
+          }
+        },
         controller: controller,
         maxLines: 4,
       ),
@@ -918,75 +1001,72 @@ class ApprovalDetailFormState extends State<ApprovalDetailForm> {
     return true;
   }
 
-  void _submitQuery() async {
+  Future<void> _submitQuery() async {
+    if (_selectedClarificationExecutive == null) {
+      _toastMessage.showToastMessage("Please select Query To");
+      return;
+    }
+    if (_queryController.text.isEmpty) {
+      _toastMessage.showToastMessage("Please enter Query");
+      return;
+    }
+
+    if (!await _checkInternetConnection()) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+
     try {
-      if (kDebugMode) {
-        print('Query submitted!');
-      }
-      if (!await _checkInternetConnection()) return;
+      final responseData = await SendClarificationQueryService()
+          .sendClarificationQuery(
+              widget.requestId,
+              (widget.type == customerSampleApproval)
+                  ? 'CustomerSampling'
+                  : 'SelfStock',
+              _selectedClarificationExecutive?.executiveId ?? 0,
+              _queryController.text,
+              executiveId ?? 0,
+              userId ?? 0,
+              token);
 
-      setState(() {
-        _isLoading = true;
-      });
+      String msgType = responseData.returnMessage.msgType;
+      String msgText = responseData.returnMessage.msgText;
 
-      try {
-        final responseData = await SendClarificationQueryService()
-            .sendClarificationQuery(
-                executiveId ?? 0,
-                'selfstock',
-                _selectedClarificationExecutive?.executiveId ?? 0,
-                _queryController.text,
-                executiveId ?? 0,
-                userId ?? 0,
-                token);
-
-        if (responseData.status == 'Success') {
-          String msgType = responseData.approvalList.msgType;
-          String msgText = responseData.approvalList.msgText;
-          if (kDebugMode) {
-            print(msgType);
-          }
-          if (msgType == 's') {
-            if (kDebugMode) {
-              print('Send query msgType : $msgType, msgText : $msgText');
-            }
-            _toastMessage.showInfoToastMessage(msgText);
-          } else if (msgType == 'e') {
-            if (kDebugMode) {
-              print('Send query msgType : $msgType, msgText : $msgText');
-            }
-            _toastMessage.showInfoToastMessage(msgText);
-          } else {
-            if (kDebugMode) {
-              print('Send query error s & e empty');
-            }
-            _toastMessage
-                .showToastMessage("An error occurred while sending query.");
-          }
+      if (responseData.status == 'Success') {
+        if (msgType == 's' || msgType == 'e') {
+          _toastMessage.showInfoToastMessage(msgText);
         } else {
-          if (kDebugMode) {
-            print('Send query error ${responseData.status}');
-          }
           _toastMessage
               .showToastMessage("An error occurred while sending query.");
         }
-      } catch (e) {
-        if (kDebugMode) {
-          print("Failed to sending query : $e");
-        }
+      } else {
         _toastMessage
             .showToastMessage("An error occurred while sending query.");
       }
     } catch (e) {
-      if (kDebugMode) {
-        print("Failed to sending query: $e");
-      }
       _toastMessage.showToastMessage("An error occurred while sending query.");
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
+  }
+
+  void clearData() {
+    hasData = false;
+    isLoading = true;
+    isConnected = true;
+    _submitted = false;
+    _isLoading = false;
+    _titleDetails = [];
+    clarificationExecutivesList = [];
+    _selectedClarificationExecutive = null;
+
+    _clarificationExecutiveController.clear();
+    _queryController.clear();
   }
 }
 
