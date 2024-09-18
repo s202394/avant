@@ -2486,6 +2486,7 @@ class SelfStockRequestService {
     if (kDebugMode) {
       print('Response status: ${response.statusCode}');
       print('Response body: ${response.body}');
+      print('Request URL: ${response.request?.url}');
     }
     if (response.statusCode == 200) {
       final jsonResponse = json.decode(response.body);

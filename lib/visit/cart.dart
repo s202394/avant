@@ -11,6 +11,7 @@ import '../common/toast.dart';
 import '../home.dart';
 import '../model/fetch_titles_model.dart';
 import '../model/login_model.dart';
+import '../model/self_stock_request_response.dart';
 import '../service/location_service.dart';
 import '../views/book_list_item.dart';
 import '../views/rich_text.dart';
@@ -60,6 +61,10 @@ class Cart extends StatefulWidget {
 class CartState extends State<Cart> with TickerProviderStateMixin {
   late TabController _tabController;
 
+  final TextEditingController _shippingInstructionsController =
+      TextEditingController();
+  final TextEditingController _remarksController = TextEditingController();
+
   late SharedPreferences prefs;
   late String token;
   int? executiveId;
@@ -80,7 +85,14 @@ class CartState extends State<Cart> with TickerProviderStateMixin {
   LocationService locationService = LocationService();
   ToastMessage toastMessage = ToastMessage();
 
+  late Future<SelfStockRequestResponse> _selfStockRequestData;
+
   int tabCount = 0;
+
+  String? selectedShipmentMode;
+  int? selectedShipmentModeId;
+
+  bool _submitted = false;
 
   @override
   void initState() {
@@ -92,6 +104,20 @@ class CartState extends State<Cart> with TickerProviderStateMixin {
 
     _fetchCartDetails();
     _fetchCartData();
+
+    _selfStockRequestData = _fetchSelfStockData();
+  }
+
+  Future<SelfStockRequestResponse> _fetchSelfStockData() async {
+    prefs = await SharedPreferences.getInstance();
+    setState(() {
+      token = prefs.getString('token') ?? '';
+    });
+    executiveId = await getExecutiveId();
+    profileCode = await getProfileCode();
+    userId = await getUserId();
+
+    return await SelfStockRequestService().getSelfStockRequest(token);
   }
 
   Future<void> _fetchCartData() async {
@@ -128,14 +154,6 @@ class CartState extends State<Cart> with TickerProviderStateMixin {
   }
 
   Future<void> _fetchCartDetails() async {
-    prefs = await SharedPreferences.getInstance();
-    setState(() {
-      token = prefs.getString('token') ?? '';
-    });
-    executiveId = await getExecutiveId();
-    profileCode = await getProfileCode();
-    userId = await getUserId();
-
     try {
       _isLoading = false;
     } catch (e) {
@@ -217,7 +235,7 @@ class CartState extends State<Cart> with TickerProviderStateMixin {
                                 if (widget.type == 'Visit') {
                                   _submitVisitForm();
                                 } else {
-                                  _submitSamplingForm();
+                                  openDialog(context);
                                 }
                               },
                               child: Container(
@@ -687,12 +705,12 @@ class CartState extends State<Cart> with TickerProviderStateMixin {
                 widget.customerId,
                 executiveId ?? 0,
                 profileCode ?? '',
-                widget.customerId,
+                executiveId ?? 0,
                 cartXML,
                 widget.customerType,
-                "",
-                "",
-                0,
+                _remarksController.text,
+                _shippingInstructionsController.text,
+                selectedShipmentModeId ?? 0,
                 totalPrice,
                 itemCount,
                 userId ?? 0,
@@ -718,7 +736,7 @@ class CartState extends State<Cart> with TickerProviderStateMixin {
               Navigator.pushAndRemoveUntil(
                 context,
                 MaterialPageRoute(builder: (context) => const HomePage()),
-                    (Route<dynamic> route) => false,
+                (Route<dynamic> route) => false,
               );
             }
           } else if (msgType == 'e') {
@@ -731,8 +749,8 @@ class CartState extends State<Cart> with TickerProviderStateMixin {
             if (kDebugMode) {
               print('Submit sampling request $msgType');
             }
-            toastMessage.showToastMessage(
-                "An error occurred submit sampling request.");
+            toastMessage
+                .showToastMessage("An error occurred submit sampling request.");
           }
         } else {
           if (kDebugMode) {
@@ -752,8 +770,8 @@ class CartState extends State<Cart> with TickerProviderStateMixin {
       if (kDebugMode) {
         print("Failed to submit sampling request: $e");
       }
-      toastMessage.showToastMessage(
-          "An error occurred while submit sampling request.");
+      toastMessage
+          .showToastMessage("An error occurred while submit sampling request.");
     } finally {
       setState(() {
         _isLoading = false;
@@ -783,5 +801,182 @@ class CartState extends State<Cart> with TickerProviderStateMixin {
     xmlString += "</DocumentElement>";
 
     return xmlString;
+  }
+
+  void openDialog(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (BuildContext context) {
+        return Padding(
+          padding:
+              EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: FutureBuilder<SelfStockRequestResponse>(
+                future: _selfStockRequestData,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  } else if (snapshot.hasError) {
+                    return const Center(child: Text('Error loading data'));
+                  } else if (!snapshot.hasData || snapshot.data == null) {
+                    return const Center(child: Text('No data found'));
+                  }
+
+                  final selfStockRequestData = snapshot.data!;
+
+                  return Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      // Dropdown field for shipment mode
+                      _buildDropdownField(
+                        'Shipment Mode',
+                        selectedShipmentMode,
+                        {
+                          for (var item in selfStockRequestData.shipmentMode)
+                            item.shipmentMode: item.shipmentModeId,
+                        },
+                        (value) =>
+                            _onShipmentModeChanged(value, selfStockRequestData),
+                      ),
+                      _buildTextField(
+                        'Shipping Instructions',
+                        _shippingInstructionsController,
+                        maxLines: 3,
+                      ),
+                      _buildTextField('Remarks', _remarksController,
+                          maxLines: 3),
+                      const SizedBox(height: 8.0),
+                      _isLoading
+                          ? const Center(child: CircularProgressIndicator())
+                          : Center(
+                              child: ElevatedButton(
+                                onPressed: () async {
+                                  submitSamplingRequest();
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.lightBlueAccent,
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 32.0, vertical: 12.0),
+                                  textStyle: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                child: const Text(
+                                  'Submit',
+                                  style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                            ),
+                    ],
+                  );
+                },
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // Builds a Dropdown Field with validation
+  Widget _buildDropdownField(String label, String? selectedValue,
+      Map<String, int> items, void Function(String?) onChanged) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: DropdownButtonFormField<String>(
+        isExpanded: true,
+        decoration: InputDecoration(
+          labelText: label,
+          border: const OutlineInputBorder(),
+        ),
+        value: selectedValue,
+        items: items.keys.map((key) {
+          return DropdownMenuItem<String>(
+            value: key,
+            child: Text(key),
+          );
+        }).toList(),
+        onChanged: onChanged,
+        validator: (value) {
+          if (value == null || value.isEmpty) {
+            return 'Please select $label';
+          }
+          return null;
+        },
+      ),
+    );
+  }
+
+  Widget _buildTextField(String label, TextEditingController controller,
+      {int maxLines = 1, bool enabled = true}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: TextFormField(
+        controller: controller,
+        maxLines: maxLines,
+        enabled: enabled,
+        decoration: InputDecoration(
+          labelText: label,
+          border: const OutlineInputBorder(),
+          errorText: _submitted && controller.text.isEmpty
+              ? 'Please enter $label'
+              : null,
+          alignLabelWithHint: true,
+          contentPadding:
+              const EdgeInsets.symmetric(vertical: 12.0, horizontal: 12.0),
+        ),
+        validator: (value) {
+          if (value == null || value.isEmpty) {
+            return 'Please enter $label';
+          }
+          return null;
+        },
+      ),
+    );
+  }
+
+  // Handles Shipment Mode Change
+  void _onShipmentModeChanged(
+      String? value, SelfStockRequestResponse response) {
+    setState(() {
+      selectedShipmentMode = value;
+      selectedShipmentModeId = response.shipmentMode
+          .firstWhere((item) => item.shipmentMode == value)
+          .shipmentModeId;
+    });
+  }
+
+  void submitSamplingRequest() {
+    if (selectedShipmentMode == null) {
+      toastMessage.showToastMessage('Please select Shipment Mode');
+      return;
+    }
+    if (_shippingInstructionsController.text.isEmpty) {
+      toastMessage.showToastMessage('Please enter Shipping Instructions');
+      return;
+    }
+    if (_remarksController.text.isEmpty) {
+      toastMessage.showToastMessage('Please enter remarks');
+      return;
+    }
+    setState(() {
+      _isLoading = true;
+    });
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+        _submitted = true;
+      });
+      Navigator.of(context).pop();
+
+      _submitSamplingForm();
+    }
   }
 }
