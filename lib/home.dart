@@ -19,6 +19,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:workmanager/workmanager.dart';
 
 import 'new_customer/new_customer_trade_library_form1.dart';
 
@@ -69,6 +70,8 @@ class HomePageState extends State<HomePage> {
     mobileNumber = await getExecutiveMobile();
     _hasInternet = await checkInternetConnection();
 
+    checkPunchStateOnAppStart();
+
     if (_hasInternet) {
       // Load the menu data from the database
       List<MenuData> menuDataList = await DatabaseHelper().getMenuDataFromDB();
@@ -89,19 +92,6 @@ class HomePageState extends State<HomePage> {
         futureMenuData = Future.value(menuDataList);
       }
 
-      // Fetch setup values from SetupValuesService
-      /*try {
-        List<SetupValues> setupValuesList =
-            await SetupValuesService().setupValues(token!);
-        if (kDebugMode) {
-          print('Setup values: $setupValuesList');
-        }
-      } catch (e) {
-        if (kDebugMode) {
-          print('Error fetching setup values: $e');
-        }
-      }
-*/
       if (executiveId != null) {
         futurePlanResponse =
             TravelPlanService().fetchTravelPlans(executiveId!, token!);
@@ -127,10 +117,50 @@ class HomePageState extends State<HomePage> {
 
   // Update Punch State in SharedPreferences
   Future<void> _updatePunchState(bool punchedIn) async {
+    // Get the current date and time
+    final DateTime currentTime = DateTime.now();
+
+    // Update punch-in state and set shared preferences
     setState(() {
       isPunchedIn = punchedIn;
     });
+
+    if (punchedIn) {
+      // If punched in, store the current time as punch-in time
+      await prefs.setString('punchInTime', currentTime.toIso8601String());
+    } else {
+      // If punched out, reset the punch-in time to 0
+      await prefs.setString('punchInTime', '0');
+    }
+
+    // Store the punch-in state
     await prefs.setBool('isPunchedIn', punchedIn);
+  }
+
+  Future<void> checkPunchStateOnAppStart() async {
+    // Retrieve the stored punch-in time
+    String? punchInTime = prefs.getString('punchInTime');
+
+    if (punchInTime != null && punchInTime != '0') {
+      // Parse the stored punch-in time
+      DateTime lastPunchInTime = DateTime.parse(punchInTime);
+      DateTime currentTime = DateTime.now();
+
+      // Check if the dates are different (i.e., a new day has started)
+      if (currentTime.day != lastPunchInTime.day ||
+          currentTime.month != lastPunchInTime.month ||
+          currentTime.year != lastPunchInTime.year) {
+        // If the date has changed, reset punch-in state to false
+        setState(() {
+          isPunchedIn = false;
+        });
+        if (kDebugMode) {
+          print('Date changed isPunchedIn : $isPunchedIn');
+        }
+        await Workmanager().cancelByUniqueName("fetchLocationTask");
+        await prefs.setBool('isPunchedIn', false);
+      }
+    }
   }
 
   // Method to handle Punch In
@@ -144,6 +174,7 @@ class HomePageState extends State<HomePage> {
 
   // Method to handle Punch Out
   void punchOut() async {
+    await Workmanager().cancelByUniqueName("fetchLocationTask");
     await _updatePunchState(false);
     if (kDebugMode) {
       print("You have punched out.");

@@ -16,7 +16,7 @@ void main() {
 
   Workmanager().registerPeriodicTask(
       "fetchAndSendLocation", "fetchLocationTask",
-      frequency: const Duration(minutes: 15));
+      frequency: const Duration(minutes: 1));
 
   runApp(
     MaterialApp(
@@ -85,13 +85,19 @@ void callbackDispatcher() {
     String token = prefs.getString('token') ?? '';
     int executiveId = await getExecutiveId() ?? 0;
     int userId = await getUserId() ?? 0;
+    bool isPunchedIn = prefs.getBool('isPunchedIn') ?? false;
 
-    if (executiveId > 0 && userId > 0) {
-      await LocationService().sendLocationToServer(executiveId, userId, token);
+    if (isPunchedIn) {
+      await Workmanager().cancelByUniqueName("fetchLocationTask");
     } else {
-      if (kDebugMode) {
-        print(
-            'Did not send location due to executiveId:$executiveId, userId:$userId');
+      if (executiveId > 0 && userId > 0) {
+        await LocationService()
+            .sendLocationToServer(executiveId, userId, token);
+      } else {
+        if (kDebugMode) {
+          print(
+              'Did not send location due to executiveId:$executiveId, userId:$userId');
+        }
       }
     }
     return Future.value(true);
