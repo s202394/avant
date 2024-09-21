@@ -87,7 +87,7 @@ void callbackDispatcher() {
     int userId = await getUserId() ?? 0;
     bool isPunchedIn = prefs.getBool('isPunchedIn') ?? false;
 
-    if (isPunchedIn) {
+    if (!isPunchedIn) {
       await Workmanager().cancelByUniqueName("fetchLocationTask");
     } else {
       if (executiveId > 0 && userId > 0) {

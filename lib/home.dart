@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:avant/api/api_service.dart';
 import 'package:avant/approval/approval_list_form.dart';
 import 'package:avant/checked_in.dart';
@@ -11,6 +13,8 @@ import 'package:avant/model/login_model.dart';
 import 'package:avant/model/menu_model.dart';
 import 'package:avant/model/travel_plan_model.dart';
 import 'package:avant/new_customer/new_customer_school_form1.dart';
+import 'package:avant/service/fetch_location_task.dart';
+import 'package:avant/service/location_service.dart';
 import 'package:avant/visit/customer_search.dart';
 import 'package:avant/visit/dsr_entry.dart';
 import 'package:avant/visit/self_stock_entry.dart';
@@ -18,6 +22,7 @@ import 'package:avant/visit/visit_detail_page.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:workmanager/workmanager.dart';
 
@@ -30,7 +35,7 @@ class HomePage extends StatefulWidget {
   HomePageState createState() => HomePageState();
 }
 
-class HomePageState extends State<HomePage> {
+class HomePageState extends State<HomePage> with WidgetsBindingObserver {
   late SharedPreferences prefs;
   final ToastMessage _toastMessage = ToastMessage();
 
@@ -50,12 +55,116 @@ class HomePageState extends State<HomePage> {
   bool _hasInternet = true;
   bool isPunchedIn = false;
 
+  Timer? _timer;
+
   @override
   void initState() {
     super.initState();
     _initialize();
 
     _loadPunchState();
+
+    _initForegroundTask();
+  }
+
+  Future<void> _initForegroundTask() async {
+    if (kDebugMode) {
+      print('Location FlutterForegroundTask init');
+    }
+    FlutterForegroundTask.init(
+      androidNotificationOptions: AndroidNotificationOptions(
+        channelId: 'avant',
+        channelName: 'Avant',
+        channelDescription: 'This is a foreground service channel',
+        channelImportance: NotificationChannelImportance.LOW,
+        priority: NotificationPriority.LOW,
+        iconData: const NotificationIconData(
+          resType: ResourceType.mipmap,
+          resPrefix: ResourcePrefix.ic,
+          name: 'launcher',
+        ),
+      ),
+      iosNotificationOptions: const IOSNotificationOptions(),
+      foregroundTaskOptions: const ForegroundTaskOptions(),
+    );
+  }
+
+  @override
+  void dispose() {
+    if (kDebugMode) {
+      print('Location dispose');
+    }
+    WidgetsBinding.instance.removeObserver(this);
+    stopForegroundTask();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused) {
+      if (kDebugMode) {
+        print('Location Foreground Service Start paused');
+      }
+      // App is in background, start foreground service
+      startForegroundService();
+    } else if (state == AppLifecycleState.resumed) {
+      if (kDebugMode) {
+        print('Location Foreground Task Stop resumed');
+      }
+      // App is in foreground, stop foreground service and start Timer
+      stopForegroundTask();
+    }
+  }
+
+  void startForegroundTask() {
+    if (kDebugMode) {
+      print('Location Foreground Task Start');
+    }
+    _timer = Timer.periodic(const Duration(minutes: 1), (timer) {
+      // Your task to be performed every minute
+      fetchLocation();
+    });
+  }
+
+  void stopForegroundTask() {
+    if (kDebugMode) {
+      print('Location Foreground Service Stop');
+    }
+    if (_timer != null) {
+      _timer!.cancel();
+    }
+  }
+
+  void fetchLocation() async {
+    prefs = await SharedPreferences.getInstance();
+
+    token = prefs.getString('token') ?? '';
+    executiveId = await getExecutiveId() ?? 0;
+    userId = await getUserId() ?? 0;
+    isPunchedIn = prefs.getBool('isPunchedIn') ?? false;
+    if (kDebugMode) {
+      print("Fetching location...");
+      LocationService()
+          .sendLocationToServer(executiveId ?? 0, userId ?? 0, token ?? '');
+    }
+  }
+
+  Future<void> startForegroundService() async {
+    if (kDebugMode) {
+      print('Location Foreground Service Start');
+    }
+    await FlutterForegroundTask.startService(
+      notificationTitle: 'Foreground Service',
+      notificationText: 'Running location fetch every minute',
+      callback: startCallback,
+    );
+  }
+
+  void startCallback() {
+    if (kDebugMode) {
+      print('Location startCallback');
+    }
+    FlutterForegroundTask.setTaskHandler(FetchLocationTask());
   }
 
   void _initialize() async {
@@ -75,9 +184,6 @@ class HomePageState extends State<HomePage> {
     if (_hasInternet) {
       // Load the menu data from the database
       List<MenuData> menuDataList = await DatabaseHelper().getMenuDataFromDB();
-      if (kDebugMode) {
-        print('Menu data from DB: $menuDataList');
-      }
 
       if (menuDataList.isEmpty) {
         if (kDebugMode) {
@@ -109,10 +215,21 @@ class HomePageState extends State<HomePage> {
 
   // Load Punch State from SharedPreferences
   Future<void> _loadPunchState() async {
+    if (kDebugMode) {
+      print('Location _loadPunchState');
+    }
     prefs = await SharedPreferences.getInstance();
     setState(() {
       isPunchedIn = prefs.getBool('isPunchedIn') ?? false;
     });
+
+    if (isPunchedIn) {
+      if (kDebugMode) {
+        print('Location startForegroundTask');
+      }
+      WidgetsBinding.instance.addObserver(this);
+      startForegroundTask();
+    }
   }
 
   // Update Punch State in SharedPreferences
@@ -131,6 +248,13 @@ class HomePageState extends State<HomePage> {
     } else {
       // If punched out, reset the punch-in time to 0
       await prefs.setString('punchInTime', '0');
+    }
+
+    if (!punchedIn) {
+      if (kDebugMode) {
+        print('Location punchedIn false fetchLocationTask cancel');
+      }
+      await Workmanager().cancelByUniqueName("fetchLocationTask");
     }
 
     // Store the punch-in state
@@ -157,8 +281,7 @@ class HomePageState extends State<HomePage> {
         if (kDebugMode) {
           print('Date changed isPunchedIn : $isPunchedIn');
         }
-        await Workmanager().cancelByUniqueName("fetchLocationTask");
-        await prefs.setBool('isPunchedIn', false);
+        await _updatePunchState(false);
       }
     }
   }
@@ -167,6 +290,13 @@ class HomePageState extends State<HomePage> {
   void punchIn() async {
     // You can also trigger an API call here if needed
     await _updatePunchState(true);
+
+    if (kDebugMode) {
+      print('Location punchedIn true startForegroundTask');
+    }
+    WidgetsBinding.instance.addObserver(this);
+    startForegroundTask();
+
     if (kDebugMode) {
       print("You have punched in.");
     }
@@ -174,7 +304,6 @@ class HomePageState extends State<HomePage> {
 
   // Method to handle Punch Out
   void punchOut() async {
-    await Workmanager().cancelByUniqueName("fetchLocationTask");
     await _updatePunchState(false);
     if (kDebugMode) {
       print("You have punched out.");

@@ -344,7 +344,7 @@ class NewCustomerSchoolForm2State extends State<NewCustomerSchoolForm2> {
                   if (_isLoading) ...[
                     const CircularProgressIndicator(),
                   ] else if (_booksellers.isNotEmpty) ...[
-                    Container(
+                    SizedBox(
                       height: 100,
                       child: ListView.builder(
                         itemCount: _booksellers.length,
@@ -728,34 +728,7 @@ class NewCustomerSchoolForm2State extends State<NewCustomerSchoolForm2> {
           },
         );
       } else {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => NewCustomerSchoolForm3(
-              type: widget.type,
-              customerName: widget.customerName,
-              address: widget.address,
-              cityId: widget.cityId,
-              cityName: widget.cityName,
-              pinCode: widget.pinCode,
-              phoneNumber: widget.phoneNumber,
-              emailId: widget.emailId,
-              boardId: widget.boardId,
-              chainSchoolId: widget.chainSchoolId,
-              keyCustomer: widget.keyCustomer,
-              customerStatus: widget.customerStatus,
-              startClassId: _selectedStartClass?.classNumId ?? 0,
-              endClassId: _selectedEndClass?.classNumId ?? 0,
-              samplingMonthId: _selectedSamplingMonth?.id ?? 0,
-              decisionMonthId: _selectedDecisionMonth?.id ?? 0,
-              medium: mediumController.text,
-              ranking: _selectedRanking ?? '',
-              pan: panController.text,
-              gst: gstController.text,
-              purchaseMode: _selectedPurchaseMode ?? '',
-            ),
-          ),
-        );
+        nextPage();
       }
     } else {
       // Focus on the first field with an error
@@ -874,5 +847,39 @@ class NewCustomerSchoolForm2State extends State<NewCustomerSchoolForm2> {
       });
       _toastMessage.showToastMessage('Error fetching booksellers: $e');
     }
+  }
+
+  void nextPage() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => NewCustomerSchoolForm3(
+          type: widget.type,
+          customerName: widget.customerName,
+          address: widget.address,
+          cityId: widget.cityId,
+          cityName: widget.cityName,
+          pinCode: widget.pinCode,
+          phoneNumber: widget.phoneNumber,
+          emailId: widget.emailId,
+          boardId: widget.boardId,
+          chainSchoolId: widget.chainSchoolId,
+          keyCustomer: widget.keyCustomer,
+          customerStatus: widget.customerStatus,
+          startClassId: _selectedStartClass?.classNumId ?? 0,
+          endClassId: _selectedEndClass?.classNumId ?? 0,
+          samplingMonthId: _selectedSamplingMonth?.id ?? 0,
+          decisionMonthId: _selectedDecisionMonth?.id ?? 0,
+          medium: mediumController.text,
+          ranking: _selectedRanking ?? '',
+          pan: panController.text,
+          gst: gstController.text,
+          purchaseMode: _selectedPurchaseMode ?? '',
+          booksellerName: _booksellerNameController.text,
+          booksellerCode: _booksellerCodeController.text,
+          booksellerCity: _selectedCity,
+        ),
+      ),
+    );
   }
 }

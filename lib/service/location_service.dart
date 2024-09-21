@@ -152,9 +152,6 @@ class LocationService {
       if (responseData.status == 'Success') {
         String msgType = responseData.success.msgType;
         String msgText = responseData.success.msgText;
-        if (kDebugMode) {
-          print(msgType);
-        }
         if (msgType.isNotEmpty && msgType == 's') {
           if (kDebugMode) {
             print(msgText);

@@ -55,6 +55,7 @@ dependencies:
   intl: ^0.19.0
   workmanager: ^0.5.0
   flutter_foreground_task: ^4.0.1
+  flutter_launcher_icons: ^0.11.0
 
 dev_dependencies:
   flutter_test:
@@ -117,3 +118,8 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/custom-fonts/#from-packages
+
+flutter_icons:
+  android: true
+  ios: true
+  image_path: "assets/dart_crm.jpeg"

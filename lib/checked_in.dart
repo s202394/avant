@@ -1,6 +1,5 @@
 import 'package:avant/api/api_service.dart';
 import 'package:avant/service/location_service.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -52,9 +51,6 @@ class PunchInToggleSwitchState extends State<PunchInToggleSwitch> {
   @override
   Widget build(BuildContext context) {
     final homeState = context.findAncestorStateOfType<HomePageState>();
-    if (kDebugMode) {
-      print('Print statement in build method');
-    }
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 16.0),
       decoration: BoxDecoration(color: Colors.grey[850]),

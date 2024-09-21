@@ -2083,7 +2083,6 @@ class CheckInCheckOutService {
     });
     if (kDebugMode) {
       print('Request body: $body');
-      print('Request body: $executiveLocationUrl');
     }
     final response = await http.post(Uri.parse(executiveLocationUrl),
         headers: <String, String>{

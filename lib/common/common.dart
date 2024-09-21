@@ -128,14 +128,14 @@ String getCurrentDate({String format = 'dd MMM yyyy'}) {
   return formatter.format(now);
 }
 
-String getCurrentDateTime({String format = 'dd MMM yyyy HH:MM a'}) {
+String getCurrentDateTime({String format = 'dd MMM yyyy HH:mm a'}) {
   DateTime now = DateTime.now();
   DateFormat formatter = DateFormat(format);
   return formatter.format(now);
 }
 
 String getCurrentDateTimeWithSecond(
-    {String format = 'dd MMM yyyy HH:MM:ss a'}) {
+    {String format = 'dd MMM yyyy HH:mm:ss a'}) {
   DateTime now = DateTime.now();
   DateFormat formatter = DateFormat(format);
   return formatter.format(now);

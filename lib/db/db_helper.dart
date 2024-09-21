@@ -325,9 +325,9 @@ class DatabaseHelper {
 
     return List.generate(maps.length, (i) {
       final menuData = MenuData.fromJson(maps[i]);
-      if (kDebugMode) {
+      /*if (kDebugMode) {
         print('Parsed MenuData: ${menuData.toJson()}');
-      }
+      }*/
       return menuData;
     });
   }

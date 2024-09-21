@@ -36,30 +36,37 @@ class NewCustomerSchoolForm3 extends StatefulWidget {
   final String pan;
   final String gst;
   final String purchaseMode;
+  final String booksellerName;
+  final String booksellerCode;
+  final Geography? booksellerCity;
 
-  const NewCustomerSchoolForm3(
-      {super.key,
-      required this.type,
-      required this.customerName,
-      required this.address,
-      required this.cityId,
-      required this.cityName,
-      required this.pinCode,
-      required this.phoneNumber,
-      required this.emailId,
-      required this.boardId,
-      required this.chainSchoolId,
-      required this.keyCustomer,
-      required this.customerStatus,
-      required this.startClassId,
-      required this.endClassId,
-      required this.samplingMonthId,
-      required this.decisionMonthId,
-      required this.medium,
-      required this.ranking,
-      required this.pan,
-      required this.gst,
-      required this.purchaseMode});
+  const NewCustomerSchoolForm3({
+    super.key,
+    required this.type,
+    required this.customerName,
+    required this.address,
+    required this.cityId,
+    required this.cityName,
+    required this.pinCode,
+    required this.phoneNumber,
+    required this.emailId,
+    required this.boardId,
+    required this.chainSchoolId,
+    required this.keyCustomer,
+    required this.customerStatus,
+    required this.startClassId,
+    required this.endClassId,
+    required this.samplingMonthId,
+    required this.decisionMonthId,
+    required this.medium,
+    required this.ranking,
+    required this.pan,
+    required this.gst,
+    required this.purchaseMode,
+    required this.booksellerName,
+    required this.booksellerCode,
+    required this.booksellerCity,
+  });
 
   @override
   NewCustomerSchoolForm3State createState() => NewCustomerSchoolForm3State();
