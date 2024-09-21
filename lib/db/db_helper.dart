@@ -876,9 +876,11 @@ class DatabaseHelper {
   }
 
   //Get Title Items
-  Future<List<Map<String, dynamic>>> getCartItemsWithSampleGiven(String sampleGiven) async {
+  Future<List<Map<String, dynamic>>> getCartItemsWithSampleGiven(
+      String sampleGiven) async {
     final db = await database;
-    return await db.query('Cart', where: 'SampleGiven = ?', whereArgs: [sampleGiven]);
+    return await db
+        .query('Cart', where: 'SampleGiven = ?', whereArgs: [sampleGiven]);
   }
 
   //Retrieve all records from Cart
@@ -905,11 +907,24 @@ class DatabaseHelper {
     return itemCount;
   }
 
+  Future<int> getTotalRequestedQty() async {
+    int totalRequestedQty = await database.then((db) async {
+      var result = await db
+          .rawQuery('SELECT SUM(RequestedQty) AS TotalRequestedQty FROM Cart');
+      if (result.isNotEmpty && result.first['TotalRequestedQty'] != null) {
+        return result.first['TotalRequestedQty'] as int;
+      }
+      return 0;
+    });
+    return totalRequestedQty;
+  }
+
   Future<double> getTotalPrice() async {
     final db = await database;
 
     // Query to calculate total price
-    final result = await db.rawQuery('SELECT SUM(ListPrice * RequestedQty) AS totalPrice FROM Cart');
+    final result = await db.rawQuery(
+        'SELECT SUM(ListPrice * RequestedQty) AS totalPrice FROM Cart');
 
     // Extracting the total price
     double totalPrice = result[0]['totalPrice'] != null

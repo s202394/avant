@@ -6,6 +6,7 @@ class MultiSelectDropdown<T> extends StatefulWidget {
   final List<T> selectedItems;
   final String Function(T) itemLabelBuilder;
   final ValueChanged<List<T>> onChanged;
+  final bool isMandatory;
   final bool isSubmitted;
 
   const MultiSelectDropdown({
@@ -15,6 +16,7 @@ class MultiSelectDropdown<T> extends StatefulWidget {
     required this.selectedItems,
     required this.itemLabelBuilder,
     required this.onChanged,
+    required this.isMandatory,
     required this.isSubmitted,
   });
 
@@ -82,7 +84,9 @@ class MultiSelectDropdownState<T> extends State<MultiSelectDropdown<T>> {
             decoration: InputDecoration(
               labelText: widget.label,
               border: const OutlineInputBorder(),
-              errorText: _selectedItems.isEmpty && widget.isSubmitted
+              errorText: widget.isMandatory &&
+                      _selectedItems.isEmpty &&
+                      widget.isSubmitted
                   ? 'Please select a ${widget.label}'
                   : null,
             ),

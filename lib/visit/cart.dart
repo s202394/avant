@@ -300,7 +300,7 @@ class CartState extends State<Cart> with TickerProviderStateMixin {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: _seriesItems.map((item) {
-            final titleList = TitleList(
+            TitleList titleList = TitleList(
               bookId: item['BookId'],
               title: item['Title'],
               isbn: item['ISBN'],
@@ -336,7 +336,7 @@ class CartState extends State<Cart> with TickerProviderStateMixin {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: _titleItems.map((item) {
-            final titleList = TitleList(
+            TitleList titleList = TitleList(
               bookId: item['BookId'],
               title: item['Title'],
               isbn: item['ISBN'],
@@ -497,7 +497,7 @@ class CartState extends State<Cart> with TickerProviderStateMixin {
         String generateToBeDispatchedCartXML =
             generateCartXmlSampleGiven(generateToBeDispatchedCartList);
 
-        int itemCount = await databaseHelper.getItemCount();
+        int totalRequestedQty = await databaseHelper.getTotalRequestedQty();
         double totalPrice = await databaseHelper.getTotalPrice();
 
         final responseData = await VisitEntryService().visitEntry(
@@ -521,7 +521,7 @@ class CartState extends State<Cart> with TickerProviderStateMixin {
             "",
             "",
             totalPrice,
-            itemCount,
+            totalRequestedQty,
             userId ?? 0,
             followUpActionXML,
             generateSampleGivenCartXML,

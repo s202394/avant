@@ -14,6 +14,8 @@ import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../model/search_bookseller_response.dart';
+
 class NewCustomerSchoolForm3 extends StatefulWidget {
   final String type;
   final String customerName;
@@ -36,9 +38,7 @@ class NewCustomerSchoolForm3 extends StatefulWidget {
   final String pan;
   final String gst;
   final String purchaseMode;
-  final String booksellerName;
-  final String booksellerCode;
-  final Geography? booksellerCity;
+  final List<BookSellers> bookseller;
 
   const NewCustomerSchoolForm3({
     super.key,
@@ -63,9 +63,7 @@ class NewCustomerSchoolForm3 extends StatefulWidget {
     required this.pan,
     required this.gst,
     required this.purchaseMode,
-    required this.booksellerName,
-    required this.booksellerCode,
-    required this.booksellerCity,
+    required this.bookseller,
   });
 
   @override
@@ -582,6 +580,12 @@ class NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
       }
     }
 
+    if (_emailIdController.text.isEmpty &&
+        _phoneNumberController.text.isEmpty) {
+      _toastMessage.showToastMessage('Please enter Email or Mobile');
+      return;
+    }
+
     if (!isAllClassQuantityEntered) {
       return;
     }
@@ -603,10 +607,23 @@ class NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
         print(
             "Latitude: ${position.latitude}, Longitude: ${position.longitude}");
       }
+      int bookseller1Id = 0;
+      int bookseller2Id = 0;
+      if (widget.purchaseMode == 'Bookseller') {
+        if (widget.bookseller.length == 1) {
+          bookseller1Id = widget.bookseller[0].action;
+        }
+        if (widget.bookseller.length == 2) {
+          bookseller1Id = widget.bookseller[0].action;
+          bookseller2Id = widget.bookseller[1].action;
+        }
+      }
 
       String xmlClassName = _generateXmlFromClassValues(classesList);
       if (kDebugMode) {
         print(xmlClassName);
+        print('bookseller1Id:$bookseller1Id');
+        print('bookseller2Id:$bookseller2Id');
       }
       final responseData = await CreateNewCustomerService().createNewCustomerSchool(
           widget.type,
@@ -631,7 +648,9 @@ class NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
           "Y",
           _contactAddressController.text,
           _selectedCity?.cityId ?? 0,
-          int.parse(_contactPinCodeController.text),
+          _contactPinCodeController.text.isNotEmpty
+              ? int.parse(_contactPinCodeController.text)
+              : 0,
           _selectedSalutationId ?? 0,
           _selectedContactDesignationId ?? 0,
           position.latitude,
@@ -648,6 +667,12 @@ class NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
           "",
           xmlClassName,
           _selectedDataSourceId ?? 0,
+          bookseller1Id,
+          bookseller2Id,
+          widget.gst,
+          widget.pan,
+          _dobController.text,
+          _anniversaryController.text,
           token);
 
       if (responseData.status == 'Success') {
@@ -742,7 +767,8 @@ class NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
           fieldKey.currentState?.validate();
         },
         validator: (newValue) {
-          if (newValue == null || newValue.isEmpty) {
+          if ((newValue == null || newValue.isEmpty) &&
+              (label == 'Contact Designation')) {
             return 'Please select $label';
           }
           return null;
@@ -808,16 +834,29 @@ class NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
             textAlign: TextAlign.start,
             maxLines: maxLines,
             validator: (value) {
-              if (value == null || value.isEmpty) {
+              if ((value == null || value.isEmpty) &&
+                  (label == 'Contact Last Name' ||
+                      (_contactAddressController.text.isNotEmpty &&
+                          label == 'Pin Code'))) {
                 return 'Please enter $label';
               }
-              if (label == 'Mobile' && !Validator.isValidMobile(value)) {
+              if (label == 'Mobile' &&
+                  value != null &&
+                  value.isNotEmpty &&
+                  !Validator.isValidMobile(value)) {
                 return 'Please enter valid $label';
               }
-              if (label == 'Email' && !Validator.isValidEmail(value)) {
+              if (label == 'Email' &&
+                  value != null &&
+                  value.isNotEmpty &&
+                  !Validator.isValidEmail(value)) {
                 return 'Please enter valid $label';
               }
-              if (label == 'Pin Code' && value.length < 6) {
+              if (label == 'Pin Code' &&
+                  _contactAddressController.text.isNotEmpty &&
+                  value != null &&
+                  value.isNotEmpty &&
+                  value.length < 6) {
                 return 'Please enter valid $label';
               }
               return null;
@@ -895,7 +934,8 @@ class NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
           border: const OutlineInputBorder(),
         ),
         validator: (value) {
-          if (value == null || value.city.isEmpty) {
+          if ((value == null || value.city.isEmpty) &&
+              (_contactAddressController.text.isNotEmpty)) {
             return 'Please select $label';
           }
           return null;

@@ -1791,6 +1791,12 @@ class CreateNewCustomerService {
       String xmlSubjectClassDM,
       String xmlClassName,
       int dataSourceId,
+      int bookSeller1,
+      int bookSeller2,
+      String gstNumber,
+      String panNumber,
+      String birthday,
+      String anniversary,
       String token) async {
     final body = jsonEncode(<String, dynamic>{
       'CustomerType': customerType,
@@ -1829,11 +1835,20 @@ class CreateNewCustomerService {
       'SamplingMonth': samplingMonth,
       'DecisionMonth': decisionMonth,
       'PurchaseMode': purchaseMode,
+      'DataSourceId': dataSourceId,
+      if (bookSeller1 > 0) 'BookSeller1': bookSeller1,
+      if (bookSeller2 > 0) 'BookSeller2': bookSeller2,
+      'GstNumber': gstNumber,
+      'PanNumber': panNumber,
+      'BirthDay': birthday,
+      'Anniversary': anniversary,
       'xmlSubjectClassDM': xmlSubjectClassDM,
       'xmlClassName': xmlClassName,
-      'DataSourceId': dataSourceId,
     });
-
+    print('Request URL body: $customerCreationUrl');
+    if (kDebugMode) {
+      print("Request Body: $body");
+    }
     final response = await http.post(
       Uri.parse(customerCreationUrl),
       headers: <String, String>{
@@ -1894,9 +1909,15 @@ class CreateNewCustomerService {
         xmlSubjectClassDM,
         xmlClassName,
         dataSourceId,
+        bookSeller1,
+        bookSeller2,
+        gstNumber,
+        panNumber,
+        birthday,
+        anniversary,
       );
     } else {
-      throw Exception('Failed to load refreshAndRetrySchool');
+      throw Exception('Failed to load create new customer school');
     }
   }
 
@@ -1940,6 +1961,12 @@ class CreateNewCustomerService {
     String xmlSubjectClassDM,
     String xmlClassName,
     int dataSourceId,
+    int bookSeller1,
+    int bookSeller2,
+    String gstNumber,
+    String panNumber,
+    String birthday,
+    String anniversary,
   ) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String username = prefs.getString('token_username') ?? '';
@@ -1990,6 +2017,12 @@ class CreateNewCustomerService {
             xmlSubjectClassDM,
             xmlClassName,
             dataSourceId,
+            bookSeller1,
+            bookSeller2,
+            gstNumber,
+            panNumber,
+            birthday,
+            anniversary,
             newToken);
       } else {
         throw Exception('Failed to retrieve new token');

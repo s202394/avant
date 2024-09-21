@@ -633,6 +633,9 @@ class ApprovalDetailFormState extends State<ApprovalDetailForm> {
   Widget buildTitleListItem(TitleDetails titleDetails, int position) {
     TextEditingController qtyController =
         TextEditingController(text: "${titleDetails.approvedQty}");
+    qtyController.text = titleDetails.approvedQty > 0
+        ? '${titleDetails.approvedQty}'
+        : '${titleDetails.requestedQty}';
     return Container(
       margin: const EdgeInsets.only(bottom: 8.0),
       decoration: BoxDecoration(
@@ -722,7 +725,7 @@ class ApprovalDetailFormState extends State<ApprovalDetailForm> {
               const SizedBox(width: 8.0),
               GestureDetector(
                 onTap: () {
-                  // Handle delete action
+                  qtyController.text = '0';
                 },
                 child: const Icon(Icons.cancel, color: Colors.red, size: 35),
               ),
@@ -871,8 +874,9 @@ class ApprovalDetailFormState extends State<ApprovalDetailForm> {
                                   _isLoading = false;
                                 });
                                 Navigator.of(context).pop(); // Close dialog
-                                clearData(); //clear data
-                                _checkConnectivity(); // Refresh query items
+                                Navigator.of(context).pop(); // Back Screen
+                                // clearData(); //clear data
+                                // _checkConnectivity(); // Refresh query items
                               }
                             },
                             style: ElevatedButton.styleFrom(

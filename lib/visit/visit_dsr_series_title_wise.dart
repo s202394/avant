@@ -1,3 +1,4 @@
+import 'package:avant/common/toast.dart';
 import 'package:avant/db/db_helper.dart';
 import 'package:avant/views/label_text.dart';
 import 'package:flutter/foundation.dart';
@@ -78,6 +79,7 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
 
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   DatabaseHelper databaseHelper = DatabaseHelper();
+  ToastMessage toastMessage = ToastMessage();
 
   List<TitleList> books = [];
   List<SamplingType> samplingTypes = [];
@@ -96,6 +98,8 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
   late int? executiveId;
   late int? profileId;
 
+  int _cartBooksCount = 0;
+
   @override
   void initState() {
     super.initState();
@@ -108,7 +112,7 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
         _handleTabChange(_tabController.index);
       }
     });
-
+    _fetchBooksCount();
     _fetchData();
   }
 
@@ -116,6 +120,13 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
   void dispose() {
     _tabController.dispose();
     super.dispose();
+  }
+
+  Future<void> _fetchBooksCount() async {
+    int count = await databaseHelper.getItemCount();
+    setState(() {
+      _cartBooksCount = count;
+    });
   }
 
   Future<void> _fetchData() async {
@@ -507,31 +518,71 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
       ),
       bottomNavigationBar: Padding(
         padding: const EdgeInsets.all(8.0),
-        child: ElevatedButton(
-          onPressed: () {
-            setState(() {
-              _submitted = true;
-            });
-            if (_formKey.currentState?.validate() == true &&
-                _areDropdownsSelected()) {
-              _submitForm();
-            }
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.blue,
-            foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          ),
-          child: const Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.shopping_cart),
-              SizedBox(width: 8),
-              Text('Next'),
-            ],
+        child: _cartBooksCount > 0 ? _buildTwoOptions() : _buildSingleOption(),
+      ),
+    );
+  }
+
+  // Widget to display when book count is greater than 0
+  Widget _buildTwoOptions() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Expanded(
+          child: ElevatedButton(
+            onPressed: () {
+              setState(() {
+                _submitted = true;
+              });
+              if (_formKey.currentState?.validate() == true &&
+                  _areDropdownsSelected()) {
+                _submitForm();
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.blue,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            ),
+            child: const Text('Next'),
           ),
         ),
+        const SizedBox(width: 8), // Spacing between the buttons
+        Expanded(
+          child: ElevatedButton(
+            onPressed: () {
+              gotoCart();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            ),
+            child: const Text('Go to Cart'),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // Widget to display when book count is 0
+  Widget _buildSingleOption() {
+    return ElevatedButton(
+      onPressed: () {
+        setState(() {
+          _submitted = true;
+        });
+        if (_formKey.currentState?.validate() == true &&
+            _areDropdownsSelected()) {
+          _submitForm();
+        }
+      },
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.blue,
+        foregroundColor: Colors.white,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       ),
+      child: const Text('Next'),
     );
   }
 
@@ -592,6 +643,19 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
     if (kDebugMode) {
       print('Form submitted!');
     }
+
+    // Get the selected book count
+    int selectedBookCount = getSelectedBookCount();
+
+    if (kDebugMode) {
+      print('Selected Book Count: $selectedBookCount');
+    }
+
+    if (selectedBookCount == 0) {
+      toastMessage.showToastMessage('PLease add some books to continue');
+      return;
+    }
+
     if (widget.followUpAction) {
       Navigator.push(
         context,
@@ -616,29 +680,7 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
         ),
       );
     } else {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => Cart(
-            type: 'Visit',
-            title: 'DSR Entry',
-            customerId: widget.customerId,
-            customerName: widget.customerName,
-            customerCode: widget.customerCode,
-            customerType: widget.customerType,
-            address: widget.address,
-            city: widget.city,
-            state: widget.state,
-            visitFeedback: widget.visitFeedback,
-            visitDate: widget.visitDate,
-            visitPurposeId: widget.visitPurposeId,
-            jointVisitWithIds: widget.jointVisitWithIds,
-            personMetId: widget.personMetId,
-            samplingDone: widget.samplingDone,
-            followUpAction: widget.followUpAction,
-          ),
-        ),
-      );
+      gotoCart();
     }
   }
 
@@ -659,5 +701,35 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
       );
       selectedSampleToId = selectedSampleToObj.customerContactId;
     });
+  }
+
+  int getSelectedBookCount() {
+    return books.where((book) => book.quantity > 0).length;
+  }
+
+  void gotoCart() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => Cart(
+          type: 'Visit',
+          title: 'DSR Entry',
+          customerId: widget.customerId,
+          customerName: widget.customerName,
+          customerCode: widget.customerCode,
+          customerType: widget.customerType,
+          address: widget.address,
+          city: widget.city,
+          state: widget.state,
+          visitFeedback: widget.visitFeedback,
+          visitDate: widget.visitDate,
+          visitPurposeId: widget.visitPurposeId,
+          jointVisitWithIds: widget.jointVisitWithIds,
+          personMetId: widget.personMetId,
+          samplingDone: widget.samplingDone,
+          followUpAction: widget.followUpAction,
+        ),
+      ),
+    );
   }
 }

@@ -345,16 +345,26 @@ class NewCustomerSchoolForm2State extends State<NewCustomerSchoolForm2> {
                     const CircularProgressIndicator(),
                   ] else if (_booksellers.isNotEmpty) ...[
                     SizedBox(
-                      height: 100,
+                      height: 110,
                       child: ListView.builder(
                         itemCount: _booksellers.length,
                         itemBuilder: (context, index) {
                           final bookseller = _booksellers[index];
-                          return ListTile(
-                            title: Text(bookseller.bookSellerName),
-                            subtitle: Text(
-                                "${bookseller.address}\n${bookseller.city}\n${bookseller.state}"),
-                            // Add any other details you want to display
+                          return Container(
+                            margin: const EdgeInsets.symmetric(vertical: 4), // For spacing between items
+                            decoration: BoxDecoration(
+                              border: Border.all(
+                                color: Colors.grey, // Border color
+                                width: 1.0, // Border width
+                              ),
+                              borderRadius: BorderRadius.circular(8), // Rounded corners
+                            ),
+                            child: ListTile(
+                              title: Text(bookseller.bookSellerName),
+                              subtitle: Text(
+                                  "${bookseller.address}\n${bookseller.city}\n${bookseller.state}, ${bookseller.country}"),
+                              // Add any other details you want to display
+                            ),
                           );
                         },
                       ),
@@ -875,9 +885,7 @@ class NewCustomerSchoolForm2State extends State<NewCustomerSchoolForm2> {
           pan: panController.text,
           gst: gstController.text,
           purchaseMode: _selectedPurchaseMode ?? '',
-          booksellerName: _booksellerNameController.text,
-          booksellerCode: _booksellerCodeController.text,
-          booksellerCity: _selectedCity,
+          bookseller: _booksellers
         ),
       ),
     );

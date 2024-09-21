@@ -258,8 +258,8 @@ class ApprovalListFormState extends State<ApprovalListForm> {
   void _handleRequest(BuildContext context, String action) async {
     // Validate inputs
     setState(() {
-      if (_commentController.text.isEmpty) {
-        _commentError = 'Please enter a comment before $action.';
+      if (action == 'Reject' && _commentController.text.isEmpty) {
+        _commentError = 'Please enter comment before $action.';
       } else {
         _commentError = null;
       }

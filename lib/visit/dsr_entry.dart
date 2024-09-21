@@ -202,6 +202,7 @@ class DsrEntryPageState extends State<DsrEntry> {
                               selectedItems: _selectedJointVisitWithItems,
                               itemLabelBuilder: (item) => item.executiveName,
                               onChanged: _handleSelectionChange,
+                              isMandatory: false,
                               isSubmitted: _submitted,
                             ),
                             buildDropdownField(
@@ -529,7 +530,7 @@ class DsrEntryPageState extends State<DsrEntry> {
           labelText: label,
           border: const OutlineInputBorder(),
           errorText: _submitted && selectedValue == null
-              ? 'Please select a $label'
+              ? 'Please select $label'
               : null,
         ),
         child: DropdownButtonHideUnderline(
@@ -693,7 +694,9 @@ class DsrEntryPageState extends State<DsrEntry> {
             maxLines: maxLines,
             validator: (value) {
               if (value == null || value.isEmpty) {
-                return 'Please select $label';
+                return (label == 'Visit Date')
+                    ? 'Please select $label'
+                    : 'Please enter $label';
               }
               return null;
             },
