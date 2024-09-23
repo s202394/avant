@@ -203,7 +203,7 @@ class TitleDetails {
   final int bookId;
   final String title;
   final double price;
-  final String previousApprovedQty;
+  final int previousApprovedQty;
   final String author;
   final String series;
   int approvedQty;
@@ -257,7 +257,7 @@ class TitleDetails {
       bookId: json['BookId'] ?? 0,
       title: json['Title'] ?? '',
       price: json['Price'] ?? 0,
-      previousApprovedQty: json['PreviousApprovedQty'] ?? '',
+      previousApprovedQty: json['PreviousApprovedQty'] ?? 0,
       author: json['Author'] ?? '',
       series: json['Series'] ?? '',
       approvedQty: json['ApprovedQty'] ?? 0,

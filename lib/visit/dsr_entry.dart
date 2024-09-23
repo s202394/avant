@@ -315,7 +315,9 @@ class DsrEntryPageState extends State<DsrEntry> {
     // Convert list of IDs to comma-separated string
     String commaSeparatedIds = selectedIds.join(', ');
 
-    if (samplingDone == null) {
+    if (_dateController.text.isEmpty) {
+      toastMessage.showToastMessage('Please select Visit Date.');
+    } else if (samplingDone == null) {
       toastMessage.showToastMessage('Please select Sampling Done.');
     } else if (followUpAction == null) {
       toastMessage.showToastMessage('Please select Follow Up Action.');

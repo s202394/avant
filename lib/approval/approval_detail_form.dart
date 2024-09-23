@@ -52,12 +52,16 @@ class ApprovalDetailFormState extends State<ApprovalDetailForm> {
   final TextEditingController _clarificationExecutiveController =
       TextEditingController();
   final TextEditingController _queryController = TextEditingController();
+  final TextEditingController _remarksController = TextEditingController();
+  final _remarksFieldKey = GlobalKey<FormFieldState>();
 
   late String token;
   late int? executiveId;
   late int? userId;
   late String downHierarchy;
   late String? profileCode;
+
+  String? _remarksError;
 
   bool hasData = false;
   bool isLoading = true;
@@ -138,6 +142,18 @@ class ApprovalDetailFormState extends State<ApprovalDetailForm> {
 
   void _handleRequest(BuildContext context, String approvalFor,
       List<TitleDetails> titleDetailsList) async {
+    setState(() {
+      if (approvalFor == 'Reject' && _remarksController.text.isEmpty) {
+        _remarksError = 'Please enter remarks before $approvalFor.';
+      } else {
+        _remarksError = null;
+      }
+    });
+
+    if (approvalFor == 'Reject' && _remarksController.text.isEmpty) {
+      return;
+    }
+
     // Show loading indicator
     showDialog(
       context: context,
@@ -160,11 +176,11 @@ class ApprovalDetailFormState extends State<ApprovalDetailForm> {
           false,
           approvalFor,
           profileCode ?? "",
-          "${executiveId ?? 0}",
-          "$userId",
-          "${widget.requestId}",
-          generateTitleDetailsXML(titleDetailsList),
-          "",
+          executiveId ?? 0,
+          userId ?? 0,
+          '${widget.requestId}',
+          generateTitleDetailsXML(titleDetailsList, approvalFor),
+          _remarksController.text,
           token,
         );
       } else {
@@ -174,11 +190,11 @@ class ApprovalDetailFormState extends State<ApprovalDetailForm> {
           false,
           approvalFor,
           profileCode ?? "",
-          "${executiveId ?? 0}",
-          "$userId",
+          executiveId ?? 0,
+          userId ?? 0,
           "${widget.requestId}",
-          generateTitleDetailsXML(titleDetailsList),
-          "",
+          generateTitleDetailsXML(titleDetailsList, approvalFor),
+          _remarksController.text,
           token,
         );
       }
@@ -370,11 +386,10 @@ class ApprovalDetailFormState extends State<ApprovalDetailForm> {
                                     shrinkWrap: true,
                                     physics:
                                         const NeverScrollableScrollPhysics(),
-                                    itemCount:
-                                        response.titleDetails?.length ?? 0,
+                                    itemCount: _titleDetails.length,
                                     itemBuilder: (context, index) {
                                       return buildTitleListItem(
-                                          response.titleDetails![index], index);
+                                          _titleDetails[index], index);
                                     },
                                   ),
                                 ],
@@ -551,7 +566,28 @@ class ApprovalDetailFormState extends State<ApprovalDetailForm> {
                                       ),
                                     ),
                                   ],
-                                ))
+                                )),
+                            Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: TextField(
+                                key: _remarksFieldKey,
+                                controller: _remarksController,
+                                maxLines: 3,
+                                decoration: InputDecoration(
+                                  border: const OutlineInputBorder(),
+                                  alignLabelWithHint: true,
+                                  labelText: 'Remarks',
+                                  errorText: _remarksError,
+                                ),
+                                onChanged: (value) {
+                                  if (value.isNotEmpty) {
+                                    setState(() {
+                                      _remarksError = null;
+                                    });
+                                  }
+                                },
+                              ),
+                            ),
                           ],
                         );
                       }
@@ -603,16 +639,18 @@ class ApprovalDetailFormState extends State<ApprovalDetailForm> {
     );
   }
 
-  String generateTitleDetailsXML(List<TitleDetails> titleDetailsList) {
+  String generateTitleDetailsXML(
+      List<TitleDetails> titleDetailsList, String approvalFor) {
     StringBuffer xmlBuffer = StringBuffer();
     xmlBuffer.write('<DocumentElement>');
 
     for (var details in titleDetailsList) {
+      int approvedQty = (approvalFor == 'Reject') ? 0 : details.approvedQty;
       xmlBuffer.write('<ApprovedBooksAndQty>');
       xmlBuffer.write('<RequestId>${details.requestId}</RequestId>');
       xmlBuffer.write('<BookId>${details.bookId}</BookId>');
       xmlBuffer.write('<RequestedQty>${details.requestedQty}</RequestedQty>');
-      xmlBuffer.write('<ApprovedQty>${details.approvedQty}</ApprovedQty>');
+      xmlBuffer.write('<ApprovedQty>$approvedQty</ApprovedQty>');
       xmlBuffer.write('</ApprovedBooksAndQty>');
     }
 
@@ -631,11 +669,12 @@ class ApprovalDetailFormState extends State<ApprovalDetailForm> {
   }
 
   Widget buildTitleListItem(TitleDetails titleDetails, int position) {
-    TextEditingController qtyController =
-        TextEditingController(text: "${titleDetails.approvedQty}");
-    qtyController.text = titleDetails.approvedQty > 0
-        ? '${titleDetails.approvedQty}'
-        : '${titleDetails.requestedQty}';
+    int qty = titleDetails.approvedQty > 0
+        ? titleDetails.approvedQty
+        : titleDetails.requestedQty;
+    TextEditingController qtyController = TextEditingController(text: "$qty");
+    titleDetails.approvedQty = qty;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 8.0),
       decoration: BoxDecoration(
@@ -667,11 +706,11 @@ class ApprovalDetailFormState extends State<ApprovalDetailForm> {
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                   Text(
-                    titleDetails.series,
+                    titleDetails.bookTypeName,
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                   Text(
-                    '₹ ${titleDetails.price}',
+                    titleDetails.seriesName,
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                 ],
@@ -717,7 +756,22 @@ class ApprovalDetailFormState extends State<ApprovalDetailForm> {
                       LengthLimitingTextInputFormatter(3),
                     ],
                     onChanged: (value) {
-                      titleDetails.approvedQty = int.tryParse(value) ?? 0;
+                      int? newQty = int.tryParse(value);
+                      if (newQty != null) {
+                        // Ensure approvedQty does not exceed requestedQty
+                        if (newQty > titleDetails.requestedQty) {
+                          // If greater, set it to requestedQty
+                          titleDetails.approvedQty = titleDetails.requestedQty;
+                          qtyController.text = '${titleDetails.requestedQty}';
+                          qtyController.selection = TextSelection.fromPosition(
+                            TextPosition(offset: qtyController.text.length),
+                          );
+                        } else {
+                          titleDetails.approvedQty = newQty;
+                        }
+                      } else {
+                        titleDetails.approvedQty = 0;
+                      }
                     },
                   ),
                 ),
@@ -725,7 +779,8 @@ class ApprovalDetailFormState extends State<ApprovalDetailForm> {
               const SizedBox(width: 8.0),
               GestureDetector(
                 onTap: () {
-                  qtyController.text = '0';
+                  titleDetails.approvedQty = 0;
+                  qtyController.text = '${titleDetails.approvedQty}';
                 },
                 child: const Icon(Icons.cancel, color: Colors.red, size: 35),
               ),
@@ -916,7 +971,7 @@ class ApprovalDetailFormState extends State<ApprovalDetailForm> {
               const EdgeInsets.symmetric(vertical: 12.0, horizontal: 12.0),
           alignLabelWithHint: true,
           errorText: _submitted && controller.text.isEmpty
-              ? 'Please select a $label'
+              ? 'Please enter $label'
               : null,
         ),
         onChanged: (value) {

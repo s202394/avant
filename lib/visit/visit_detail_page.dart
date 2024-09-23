@@ -10,7 +10,8 @@ class VisitDetailsPage extends StatefulWidget {
   final int visitId;
   final bool isTodayPlan;
 
-  const VisitDetailsPage({super.key,
+  const VisitDetailsPage({
+    super.key,
     required this.customerId,
     required this.visitId,
     required this.isTodayPlan,
@@ -128,6 +129,32 @@ class VisitDetailsPageState extends State<VisitDetailsPage> {
                       '${sample.title} - ${sample.samplingType} (${sample.isbn}) Qty: ${sample.requestedQty}'),
                 const SizedBox(height: 16.0),
               ],
+            ),
+          ),
+          Visibility(
+            visible: (data.uploadedDocuments?.length ?? 0) > 0,
+            child: ListView.builder(
+              itemCount: data.uploadedDocuments?.length,
+              itemBuilder: (context, index) {
+                final uploadedDocument = data.uploadedDocuments?[index];
+                return Container(
+                  margin: const EdgeInsets.symmetric(vertical: 4),
+                  // For spacing between items
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey, width: 1.0),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: ListTile(
+                    title: Text('${uploadedDocument?.sNo}'),
+                    subtitle: Column(
+                      children: [
+                        Text("${uploadedDocument?.documentName}"),
+                        Text("${uploadedDocument?.uploadedFile}"),
+                      ],
+                    ),
+                  ),
+                );
+              },
             ),
           ),
           const Text('Visit Feedback:',
