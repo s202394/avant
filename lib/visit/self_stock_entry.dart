@@ -157,19 +157,10 @@ class SelfStockEntryPageState extends State<SelfStockEntry> {
         decoration: InputDecoration(
           labelText: label,
           border: const OutlineInputBorder(),
-          errorText: _submitted && controller.text.isEmpty
-              ? 'Please enter $label'
-              : null,
           alignLabelWithHint: true,
           contentPadding:
           const EdgeInsets.symmetric(vertical: 12.0, horizontal: 12.0),
         ),
-        validator: (value) {
-          if (value == null || value.isEmpty) {
-            return 'Please enter $label';
-          }
-          return null;
-        },
       ),
     );
   }
@@ -215,6 +206,9 @@ class SelfStockEntryPageState extends State<SelfStockEntry> {
       items: shipToItems,
       onChanged: (value) {
         setState(() {
+          if (value != null && value.isNotEmpty) {
+            _formKey.currentState!.validate();
+          }
           selectedShipTo = value;
           selectedDeliveryTrade = null;
           shipmentResponse = null;
@@ -385,6 +379,9 @@ class SelfStockEntryPageState extends State<SelfStockEntry> {
   // Handles Shipment Mode Change
   void _onShipmentModeChanged(
       String? value, SelfStockRequestResponse response) {
+    if (value != null && value.isNotEmpty) {
+      _formKey.currentState!.validate();
+    }
     setState(() {
       selectedShipmentMode = value;
       selectedShipmentModeId = response.shipmentMode

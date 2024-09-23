@@ -344,30 +344,61 @@ class NewCustomerSchoolForm2State extends State<NewCustomerSchoolForm2> {
                   if (_isLoading) ...[
                     const CircularProgressIndicator(),
                   ] else if (_booksellers.isNotEmpty) ...[
-                    SizedBox(
-                      height: 110,
-                      child: ListView.builder(
-                        itemCount: _booksellers.length,
-                        itemBuilder: (context, index) {
-                          final bookseller = _booksellers[index];
-                          return Container(
-                            margin: const EdgeInsets.symmetric(vertical: 4),
-                            // For spacing between items
-                            decoration: BoxDecoration(
-                              border:
-                                  Border.all(color: Colors.grey, width: 1.0),
-                              borderRadius: BorderRadius.circular(8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          "Bookseller Details",
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16.0,
+                            decoration: TextDecoration.underline,
+                          ),
+                        ),
+                        ElevatedButton(
+                          onPressed: () => {_showBooksellerSearchModal()},
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.lightBlueAccent,
+                            textStyle: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
                             ),
-                            child: ListTile(
-                              title: Text(bookseller.bookSellerName),
-                              subtitle: Text(
-                                  "${bookseller.address}\n${bookseller.city}\n${bookseller.state}, ${bookseller.country}"),
-                              // Add any other details you want to display
+                          ),
+                          child: Visibility(
+                            visible: _booksellers.length == 1,
+                            child: const Text(
+                              '+ Add Bookseller',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
-                          );
-                        },
-                      ),
-                    )
+                          ),
+                        ),
+                      ],
+                    ),
+                    ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: _booksellers.length,
+                      itemBuilder: (context, index) {
+                        final bookseller = _booksellers[index];
+                        return Container(
+                          margin: const EdgeInsets.symmetric(vertical: 4),
+                          // For spacing between items
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.grey, width: 1.0),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: ListTile(
+                            title: Text(bookseller.bookSellerName),
+                            subtitle: Text(
+                                "${bookseller.address}\n${bookseller.city}\n${bookseller.state}, ${bookseller.country}"),
+                            // Add any other details you want to display
+                          ),
+                        );
+                      },
+                    ),
                   ] else ...[
                     const Text('No booksellers found.'),
                   ],
@@ -664,99 +695,110 @@ class NewCustomerSchoolForm2State extends State<NewCustomerSchoolForm2> {
     FocusScope.of(context).unfocus();
 
     if (_formKey.currentState!.validate()) {
-      if (_selectedPurchaseMode == null) {
-        _toastMessage.showToastMessage("Please select Purchase Mode");
-      } else if ((_selectedPurchaseMode == 'Book Seller' ||
-              _selectedPurchaseMode == 'Bookseller') &&
-          _booksellers.isEmpty) {
-        showModalBottomSheet(
-          context: context,
-          isScrollControlled: true,
-          // This ensures that the bottom sheet can adjust its height
-          builder: (BuildContext context) {
-            final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
-
-            return Padding(
-              padding: EdgeInsets.only(bottom: keyboardHeight),
-              child: SingleChildScrollView(
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      const Text(
-                        'Search Bookseller',
-                        style: TextStyle(
-                          color: Colors.black,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      buildTextField(
-                          'Name', _booksellerNameController, _submitted),
-                      buildTextField(
-                          'Code', _booksellerCodeController, _submitted),
-                      _buildDropdownFieldCity('City', _booksellerCityController,
-                          _cityFieldKey, _cityFocusNode),
-                      const SizedBox(height: 20),
-                      Center(
-                        child: ElevatedButton(
-                          onPressed: () {
-                            Navigator.pop(context);
-                            setState(() {
-                              _submitted = true;
-                            });
-                            if (_formKey.currentState!.validate()) {
-                              searchBookseller();
-                            }
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.lightBlueAccent,
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 32.0, vertical: 12.0),
-                            textStyle: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          child: const Text(
-                            'Search',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            );
-          },
-        );
-      } else {
-        nextPage();
-      }
+      _handlePurchaseMode();
     } else {
-      // Focus on the first field with an error
-      List<FocusNode> focusNodes = [
-        _startClassFocusNode,
-        _endClassFocusNode,
-        _samplingMonthFocusNode,
-        _decisionMonthFocusNode,
-        _mediumFocusNode,
-        _rankingFocusNode,
-        _panFocusNode,
-        _gstFocusNode,
-      ];
+      _focusOnErrorField();
+    }
+  }
 
-      for (FocusNode focusNode in focusNodes) {
-        if (focusNode.hasFocus) {
-          focusNode.requestFocus();
-          break;
-        }
+  void _handlePurchaseMode() {
+    if (_selectedPurchaseMode == null) {
+      _toastMessage.showToastMessage("Please select Purchase Mode");
+    } else if ((_selectedPurchaseMode == 'Book Seller' ||
+            _selectedPurchaseMode == 'Bookseller') &&
+        _booksellers.isEmpty) {
+      _showBooksellerSearchModal();
+    } else {
+      nextPage();
+    }
+  }
+
+  void _showBooksellerSearchModal() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (BuildContext context) {
+        final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
+
+        return Padding(
+          padding: EdgeInsets.only(bottom: keyboardHeight),
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  const Text(
+                    'Search Bookseller',
+                    style: TextStyle(
+                      color: Colors.black,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  buildTextField('Name', _booksellerNameController, _submitted),
+                  buildTextField('Code', _booksellerCodeController, _submitted),
+                  _buildDropdownFieldCity('City', _booksellerCityController,
+                      _cityFieldKey, _cityFocusNode),
+                  const SizedBox(height: 20),
+                  _buildSearchButton(),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildSearchButton() {
+    return Center(
+      child: ElevatedButton(
+        onPressed: () {
+          Navigator.pop(context);
+          setState(() {
+            _submitted = true;
+          });
+          if (_formKey.currentState!.validate()) {
+            searchBookseller();
+          }
+        },
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.lightBlueAccent,
+          padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 12.0),
+          textStyle: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        child: const Text(
+          'Search',
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _focusOnErrorField() {
+    List<FocusNode> focusNodes = [
+      _startClassFocusNode,
+      _endClassFocusNode,
+      _samplingMonthFocusNode,
+      _decisionMonthFocusNode,
+      _mediumFocusNode,
+      _rankingFocusNode,
+      _panFocusNode,
+      _gstFocusNode,
+    ];
+
+    for (FocusNode focusNode in focusNodes) {
+      if (focusNode.hasFocus) {
+        focusNode.requestFocus();
+        break;
       }
     }
   }
@@ -769,7 +811,7 @@ class NewCustomerSchoolForm2State extends State<NewCustomerSchoolForm2> {
         decoration: InputDecoration(
           labelText: label,
           border: const OutlineInputBorder(),
-          errorText: submitted && controller.text.isEmpty
+          errorText: label == 'Code' && submitted && controller.text.isEmpty
               ? 'Please enter $label'
               : null,
           contentPadding: const EdgeInsets.symmetric(
@@ -848,7 +890,10 @@ class NewCustomerSchoolForm2State extends State<NewCustomerSchoolForm2> {
 
       setState(() {
         _isLoading = false;
-        _booksellers = response.bookSellers ?? [];
+        // If the response contains booksellers, append them to the existing list
+        if (response.bookSellers != null) {
+          _booksellers.addAll(response.bookSellers!);
+        }
       });
     } catch (e) {
       setState(() {

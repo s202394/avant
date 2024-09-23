@@ -380,6 +380,21 @@ Future<String?> getExecutiveMobile() async {
     return null; // Handle the case where the executiveData is not found
   }
 }
+// Function to retrieve executive mobile
+Future<String?> getExecutiveCode() async {
+  final prefs = await SharedPreferences.getInstance();
+  final String? executiveDataString = prefs.getString('executiveData');
+
+  if (executiveDataString != null) {
+    final Map<String, dynamic> executiveDataJson =
+        jsonDecode(executiveDataString);
+    final ExecutiveData executiveData =
+        ExecutiveData.fromJson(executiveDataJson);
+    return executiveData.executiveCode;
+  } else {
+    return null; // Handle the case where the executiveData is not found
+  }
+}
 
 // Function to retrieve executive designation name
 Future<String?> getExecutiveDesignationName() async {

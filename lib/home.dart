@@ -48,6 +48,8 @@ class HomePageState extends State<HomePage> with WidgetsBindingObserver {
   String? profileName;
   int? executiveId;
   String? executiveName;
+  String? profileCode;
+  String? executiveCode;
   String? mobileNumber;
   String? upHierarchy;
   String? downHierarchy;
@@ -173,10 +175,12 @@ class HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
     userId = await getUserId();
     profileId = await getProfileId();
-    profileName = await getProfileName();
+    profileName = await getProfileName() ?? '';
     executiveId = await getExecutiveId();
-    executiveName = await getExecutiveName();
+    executiveName = await getExecutiveName() ?? '';
     mobileNumber = await getExecutiveMobile();
+    profileCode = await getProfileCode() ?? '';
+    executiveCode = await getExecutiveCode() ?? '';
     _hasInternet = await checkInternetConnection();
 
     checkPunchStateOnAppStart();
@@ -371,6 +375,14 @@ class HomePageState extends State<HomePage> with WidgetsBindingObserver {
     return true;
   }
 
+  String getProfileNameWithCode() {
+    return '$profileName ($profileCode)';
+  }
+
+  String getExecutiveNameWithCode() {
+    return '$executiveName ($executiveCode)';
+  }
+
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
@@ -425,9 +437,9 @@ class HomePageState extends State<HomePage> with WidgetsBindingObserver {
                     padding: EdgeInsets.zero,
                     children: <Widget>[
                       UserAccountsDrawerHeader(
-                        accountName: Text(executiveName ?? "",
+                        accountName: Text(getExecutiveNameWithCode(),
                             style: const TextStyle(color: Colors.white)),
-                        accountEmail: Text(mobileNumber ?? "",
+                        accountEmail: Text(getProfileNameWithCode(),
                             style: const TextStyle(color: Colors.white)),
                         currentAccountPicture: CircleAvatar(
                           backgroundColor: Colors.white,

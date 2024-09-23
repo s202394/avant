@@ -892,7 +892,7 @@ class ApprovalDetailFormState extends State<ApprovalDetailForm> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const Text(
-                        'Raise Query',
+                        'Send back for Clarification',
                         style: TextStyle(
                             fontWeight: FontWeight.bold, fontSize: 16.0),
                       ),
@@ -907,7 +907,7 @@ class ApprovalDetailFormState extends State<ApprovalDetailForm> {
                   const Divider(thickness: 1.5),
                   const SizedBox(height: 8.0),
                   _buildDropdownFieldClarificationExecutives(
-                    'Query To',
+                    'Executive',
                     _clarificationExecutiveController,
                     _clarificationExecutiveFieldKey,
                     _clarificationExecutiveFocusNode,
