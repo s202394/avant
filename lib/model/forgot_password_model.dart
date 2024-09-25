@@ -1,10 +1,14 @@
 class ForgotPasswordResponse {
   final String? status;
+  final String? msgType;
+  final String? msgText;
   final Password? password;
 
   ForgotPasswordResponse({
     this.status,
     this.password,
+    this.msgType,
+    this.msgText,
   });
 
   factory ForgotPasswordResponse.fromJson(Map<String, dynamic> json) {
@@ -16,6 +20,8 @@ class ForgotPasswordResponse {
 
     return ForgotPasswordResponse(
       status: json['Status'] as String?,
+      msgType: json['MsgType'] as String?,
+      msgText: json['MsgText'] as String?,
       password: passwordData,
     );
   }
@@ -23,6 +29,8 @@ class ForgotPasswordResponse {
   Map<String, dynamic> toJson() {
     return {
       'Status': status,
+      'MsgType': msgType,
+      'MsgText': msgText,
       'RequestDetails': password?.toJson(),
     };
   }

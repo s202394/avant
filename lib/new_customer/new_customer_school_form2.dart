@@ -331,8 +331,10 @@ class NewCustomerSchoolForm2State extends State<NewCustomerSchoolForm2> {
                 'Medium', mediumController, _mediumFieldKey, _mediumFocusNode),
             _buildDropdownRankingField('Ranking', rankingController,
                 _rankingFieldKey, ['A', 'B', 'C'], _rankingFocusNode),
-            _buildTextField('PAN', panController, _panFieldKey, _panFocusNode),
-            _buildTextField('GST', gstController, _gstFieldKey, _gstFocusNode),
+            _buildTextField(
+                'PAN Number', panController, _panFieldKey, _panFocusNode),
+            _buildTextField(
+                'GST Number', gstController, _gstFieldKey, _gstFocusNode),
             buildPurchaseModeField(data.purchaseModeList),
             const SizedBox(height: 20),
             Visibility(
@@ -453,6 +455,17 @@ class NewCustomerSchoolForm2State extends State<NewCustomerSchoolForm2> {
           enabled: enabled,
           maxLines: maxLines,
           validator: (value) {
+            if (label == 'GST Number' || label == 'GST Number') {
+              if (value == null || value.isEmpty) {
+                return null;
+              }
+              if (label == 'PAN Number' && value.length < 10) {
+                return 'Please enter valid $label';
+              }
+              if (label == 'GST Number' && value.length < 15) {
+                return 'Please enter valid $label';
+              }
+            }
             if (value == null || value.isEmpty) {
               return 'Please enter $label';
             }
@@ -463,12 +476,6 @@ class NewCustomerSchoolForm2State extends State<NewCustomerSchoolForm2> {
               return 'Please enter valid $label';
             }
             if (label == 'Email Id' && !Validator.isValidEmail(value)) {
-              return 'Please enter valid $label';
-            }
-            if (label == 'PAN' && value.length < 10) {
-              return 'Please enter valid $label';
-            }
-            if (label == 'GST' && value.length < 15) {
               return 'Please enter valid $label';
             }
             return null;
@@ -484,7 +491,7 @@ class NewCustomerSchoolForm2State extends State<NewCustomerSchoolForm2> {
           keyboardType: (label == 'Phone Number' || label == 'Pin Code')
               ? TextInputType.phone
               : TextInputType.text,
-          textCapitalization: (label == 'PAN' || label == 'GST')
+          textCapitalization: (label == 'PAN Number' || label == 'GST Number')
               ? TextCapitalization.characters
               : TextCapitalization.none,
           inputFormatters: _getInputFormatters(label),

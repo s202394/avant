@@ -540,10 +540,7 @@ class DsrEntryPageState extends State<DsrEntry> {
             isDense: true,
             value: selectedValue,
             items: items.keys.map((key) {
-              return DropdownMenuItem<String>(
-                value: key,
-                child: Text(key),
-              );
+              return DropdownMenuItem<String>(value: key, child: Text(key));
             }).toList(),
             onChanged: onChanged,
           ),
@@ -564,10 +561,7 @@ class DsrEntryPageState extends State<DsrEntry> {
             child: Row(
               children: [
                 Radio<bool>(
-                  value: true,
-                  groupValue: groupValue,
-                  onChanged: onChanged,
-                ),
+                    value: true, groupValue: groupValue, onChanged: onChanged),
                 const Text('Yes'),
               ],
             ),
@@ -577,10 +571,7 @@ class DsrEntryPageState extends State<DsrEntry> {
             child: Row(
               children: [
                 Radio<bool>(
-                  value: false,
-                  groupValue: groupValue,
-                  onChanged: onChanged,
-                ),
+                    value: false, groupValue: groupValue, onChanged: onChanged),
                 const Text('No'),
               ],
             ),
@@ -609,15 +600,11 @@ class DsrEntryPageState extends State<DsrEntry> {
                   minimumSize: const Size(double.infinity, 300),
                   // Match parent width and height 300
                   shape: RoundedRectangleBorder(
-                    borderRadius:
-                        BorderRadius.circular(12.0), // Rounded corners
+                    borderRadius: BorderRadius.circular(12.0),
                   ),
                 ),
-                child: const Icon(
-                  Icons.camera_alt,
-                  color: Colors.grey, // Icon color
-                  size: 50, // Size of the camera icon
-                ),
+                child:
+                    const Icon(Icons.camera_alt, color: Colors.grey, size: 50),
               )
             : Stack(
                 children: [
@@ -625,8 +612,7 @@ class DsrEntryPageState extends State<DsrEntry> {
                     width: double.infinity,
                     height: 300,
                     decoration: BoxDecoration(
-                      borderRadius:
-                          BorderRadius.circular(12.0), // Rounded corners
+                      borderRadius: BorderRadius.circular(12.0),
                       image: DecorationImage(
                         image: FileImage(File(_imageFile!.path)),
                         // Convert XFile to File
@@ -668,10 +654,7 @@ class DsrEntryPageState extends State<DsrEntry> {
                   firstDate: DateTime(1970, 1, 1),
                   lastDate: DateTime.now(),
                   builder: (BuildContext context, Widget? child) {
-                    return Theme(
-                      data: ThemeData.light(),
-                      child: child!,
-                    );
+                    return Theme(data: ThemeData.light(), child: child!);
                   },
                 );
 

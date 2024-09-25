@@ -168,7 +168,7 @@ class ChangePasswordScreenState extends State<ChangePasswordScreen> {
   void _navigateToHomePage() {
     Navigator.pushAndRemoveUntil(
       context,
-      MaterialPageRoute(builder: (context) => LoginPage()),
+      MaterialPageRoute(builder: (context) => const LoginPage()),
       (Route<dynamic> route) => false,
     );
   }
@@ -218,7 +218,7 @@ class ChangePasswordScreenState extends State<ChangePasswordScreen> {
               child: Container(
                 margin: const EdgeInsets.only(top: 200),
                 child: const Center(
-                    child: Image(image: AssetImage('images/logo.png'))),
+                    child: Image(image: AssetImage('images/dart_logo.png'))),
               ),
             ),
           ),

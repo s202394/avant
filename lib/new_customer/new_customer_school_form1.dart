@@ -474,6 +474,14 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
           enabled: enabled,
           maxLines: maxLines,
           validator: (value) {
+            if (label == 'Email Id') {
+              if (value == null || value.isEmpty) {
+                return null;
+              }
+              if (!Validator.isValidEmail(value)) {
+                return 'Please enter valid $label';
+              }
+            }
             if (value == null || value.isEmpty) {
               return 'Please enter $label';
             }
@@ -481,9 +489,6 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
               return 'Please enter valid $label';
             }
             if (label == 'Phone Number' && !Validator.isValidMobile(value)) {
-              return 'Please enter valid $label';
-            }
-            if (label == 'Email Id' && !Validator.isValidEmail(value)) {
               return 'Please enter valid $label';
             }
             return null;

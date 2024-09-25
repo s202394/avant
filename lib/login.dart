@@ -242,7 +242,7 @@ class LoginPageState extends State<LoginPage> {
               child: Container(
                 margin: const EdgeInsets.only(top: 200),
                 child: const Center(
-                    child: Image(image: AssetImage('images/logo.png'))),
+                    child: Image(image: AssetImage('images/dart_logo.png'))),
               ),
             ),
           ),

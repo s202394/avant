@@ -15,6 +15,7 @@ import 'package:avant/common/constants.dart';
 
 import '../common/common.dart';
 import '../model/submit_approval_model.dart';
+import 'approval_list_form.dart';
 
 class ApprovalDetailForm extends StatefulWidget {
   final String type;
@@ -79,7 +80,7 @@ class ApprovalDetailFormState extends State<ApprovalDetailForm> {
   String getType() {
     return widget.type == customerSampleApproval
         ? 'CustomerSampling'
-        : 'Approval';
+        : 'Selfstock';
   }
 
   Future<void> _checkConnectivity() async {
@@ -919,20 +920,7 @@ class ApprovalDetailFormState extends State<ApprovalDetailForm> {
                       : Center(
                           child: ElevatedButton(
                             onPressed: () async {
-                              setState(() {
-                                _submitted = true;
-                                _isLoading = true;
-                              });
-                              await _submitQuery();
-                              if (mounted) {
-                                setState(() {
-                                  _isLoading = false;
-                                });
-                                Navigator.of(context).pop(); // Close dialog
-                                Navigator.of(context).pop(); // Back Screen
-                                // clearData(); //clear data
-                                // _checkConnectivity(); // Refresh query items
-                              }
+                              _submitQuery();
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.lightBlueAccent,
@@ -1041,7 +1029,7 @@ class ApprovalDetailFormState extends State<ApprovalDetailForm> {
 
   Future<void> _submitQuery() async {
     if (_selectedClarificationExecutive == null) {
-      _toastMessage.showToastMessage("Please select Query To");
+      _toastMessage.showToastMessage("Please select Executive");
       return;
     }
     if (_queryController.text.isEmpty) {
@@ -1052,6 +1040,7 @@ class ApprovalDetailFormState extends State<ApprovalDetailForm> {
     if (!await _checkInternetConnection()) return;
 
     setState(() {
+      _submitted = true;
       _isLoading = true;
     });
 
@@ -1072,6 +1061,18 @@ class ApprovalDetailFormState extends State<ApprovalDetailForm> {
       if (responseData.status == 'Success') {
         if (msgType == 's' || msgType == 'e') {
           _toastMessage.showInfoToastMessage(msgText);
+          if (mounted) {
+            setState(() {
+              _isLoading = false;
+            });
+            Navigator.pop(context);
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (context) =>
+                      const ApprovalListForm(type: customerSampleApproval)),
+            );
+          }
         } else {
           _toastMessage
               .showToastMessage("An error occurred while sending query.");

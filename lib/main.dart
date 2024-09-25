@@ -71,7 +71,7 @@ class SplashScreenState extends State<SplashScreen> {
       body: Container(
         color: Colors.white,
         child: const Center(
-          child: Image(image: AssetImage('images/logo.png')),
+          child: Image(image: AssetImage('images/dart_logo.png')),
         ),
       ),
     );

@@ -110,6 +110,12 @@ class ForgotPasswordPageState extends State<ForgotPasswordPage> {
       if (responseData.password != null) {
         _navigateToChangePasswordPage(responseData.password!);
       }
+    } else if (responseData.msgType == 'e') {
+      if (kDebugMode) {
+        print('Forgot password error! User ID: ${responseData.password}');
+      }
+      _toastMessage.showToastMessage(responseData.msgText ??
+          'There are any issue while forgot your password.');
     } else {
       if (kDebugMode) {
         print('Forgot password error! User ID: ${responseData.password}');
@@ -172,7 +178,7 @@ class ForgotPasswordPageState extends State<ForgotPasswordPage> {
               child: Container(
                 margin: const EdgeInsets.only(top: 200),
                 child: const Center(
-                    child: Image(image: AssetImage('images/logo.png'))),
+                    child: Image(image: AssetImage('images/dart_logo.png'))),
               ),
             ),
           ),

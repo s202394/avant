@@ -75,8 +75,8 @@ class HomePageState extends State<HomePage> with WidgetsBindingObserver {
     }
     FlutterForegroundTask.init(
       androidNotificationOptions: AndroidNotificationOptions(
-        channelId: 'avant',
-        channelName: 'Avant',
+        channelId: 'dart_crm',
+        channelName: 'DART CRM',
         channelDescription: 'This is a foreground service channel',
         channelImportance: NotificationChannelImportance.LOW,
         priority: NotificationPriority.LOW,
@@ -144,10 +144,12 @@ class HomePageState extends State<HomePage> with WidgetsBindingObserver {
     executiveId = await getExecutiveId() ?? 0;
     userId = await getUserId() ?? 0;
     isPunchedIn = prefs.getBool('isPunchedIn') ?? false;
-    if (kDebugMode) {
-      print("Fetching location...");
-      LocationService()
-          .sendLocationToServer(executiveId ?? 0, userId ?? 0, token ?? '');
+    if (isPunchedIn) {
+      if (kDebugMode) {
+        print("Fetching location...");
+        LocationService()
+            .sendLocationToServer(executiveId ?? 0, userId ?? 0, token ?? '');
+      }
     }
   }
 
@@ -395,10 +397,10 @@ class HomePageState extends State<HomePage> with WidgetsBindingObserver {
         child: Scaffold(
           appBar: AppBar(
             centerTitle: true,
-            title: Image.asset('images/dart_crm.jpeg', height: 30),
+            title: Image.asset('images/dart_logo.png', height: 30),
             leading: Padding(
               padding: const EdgeInsets.only(left: 10.0),
-              child: Image.asset('images/logo.png', height: 30),
+              child: Image.asset('images/avant-logo.png', height: 30),
             ),
             backgroundColor: const Color(0xFFFFF8E1),
             bottom: PreferredSize(
