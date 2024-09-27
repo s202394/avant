@@ -5,6 +5,8 @@ import 'package:avant/visit/dsr_entry.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../views/custom_text.dart';
+
 class VisitDetailsPage extends StatefulWidget {
   final int customerId;
   final int visitId;
@@ -43,7 +45,7 @@ class VisitDetailsPageState extends State<VisitDetailsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Last Visit Details'),
+        title: const CustomText('Last Visit Details'),
       ),
       body: FutureBuilder<VisitDetailsResponse>(
         future: futureVisitDetails,
@@ -55,7 +57,7 @@ class VisitDetailsPageState extends State<VisitDetailsPage> {
           } else if (!snapshot.hasData ||
               snapshot.data == null ||
               snapshot.data!.isEmpty()) {
-            return const Center(child: Text("No Data Found"));
+            return const Center(child: CustomText("No Data Found"));
           } else {
             return buildVisitDetails(snapshot.data!);
           }
@@ -66,23 +68,21 @@ class VisitDetailsPageState extends State<VisitDetailsPage> {
 
   Widget buildVisitDetails(VisitDetailsResponse data) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16.0),
+      padding: const EdgeInsets.all(12.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           ListTile(
-            title: Text(
+            title: CustomText(
               data.customerDetails?.customerName ?? '',
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
             ),
-            subtitle: Text(
-              data.customerDetails?.address.replaceAll('<br>', '\n') ?? '',
-              style: const TextStyle(
-                fontSize: 16.0,
+            subtitle: CustomText(
+                data.customerDetails?.address.replaceAll('<br>', '\n') ?? '',
+                fontSize: 14.0,
                 color: Colors.black,
-              ),
-              textAlign: TextAlign.left, // Adjust alignment as needed
-            ),
+                textAlign: TextAlign.left),
             trailing: Visibility(
               visible: widget.isTodayPlan,
               child: InkWell(
@@ -122,11 +122,12 @@ class VisitDetailsPageState extends State<VisitDetailsPage> {
                 data.promotionalDetails!.isNotEmpty,
             child: Column(
               children: [
-                const Text('Sampling Done:',
-                    style: TextStyle(fontWeight: FontWeight.bold)),
+                const CustomText('Sampling Done:',
+                    fontWeight: FontWeight.bold, fontSize: 14),
                 for (var sample in data.promotionalDetails ?? [])
-                  Text(
-                      '${sample.title} - ${sample.samplingType} (${sample.isbn}) Qty: ${sample.requestedQty}'),
+                  CustomText(
+                      '${sample.title} - ${sample.samplingType} (${sample.isbn}) Qty: ${sample.requestedQty}',
+                      fontSize: 14),
                 const SizedBox(height: 16.0),
               ],
             ),
@@ -148,8 +149,10 @@ class VisitDetailsPageState extends State<VisitDetailsPage> {
                     title: Text('${uploadedDocument?.sNo}'),
                     subtitle: Column(
                       children: [
-                        Text("${uploadedDocument?.documentName}"),
-                        Text("${uploadedDocument?.uploadedFile}"),
+                        CustomText("${uploadedDocument?.documentName}",
+                            fontSize: 14),
+                        CustomText("${uploadedDocument?.uploadedFile}",
+                            fontSize: 14),
                       ],
                     ),
                   ),
@@ -157,9 +160,9 @@ class VisitDetailsPageState extends State<VisitDetailsPage> {
               },
             ),
           ),
-          const Text('Visit Feedback:',
-              style: TextStyle(fontWeight: FontWeight.bold)),
-          Text(data.visitDetails?.visitFeedback ?? ''),
+          const CustomText('Visit Feedback:',
+              fontWeight: FontWeight.bold, fontSize: 14),
+          CustomText(data.visitDetails?.visitFeedback ?? '', fontSize: 12),
         ],
       ),
     );

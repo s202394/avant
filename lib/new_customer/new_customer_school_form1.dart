@@ -11,6 +11,8 @@ import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../views/custom_text.dart';
+
 class NewCustomerSchoolForm1 extends StatefulWidget {
   final String type;
 
@@ -232,7 +234,7 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('New Customer - ${widget.type}'),
+        title: CustomText('New Customer - ${widget.type}'),
         backgroundColor: const Color(0xFFFFF8E1),
       ),
       body: FutureBuilder<CustomerEntryMasterResponse>(
@@ -282,12 +284,12 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
                 data.chainSchoolList,
                 _chainSchoolFocusNode),
             const SizedBox(height: 16.0),
-            const Text('Key Customer:'),
+            const CustomText('Key Customer:'),
             Row(
               children: [
                 Expanded(
                   child: RadioListTile<bool>(
-                    title: const Text('Yes'),
+                    title: const CustomText('Yes'),
                     value: true,
                     groupValue: _selectedKeyCustomer,
                     onChanged: (newValue) {
@@ -302,7 +304,7 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
                 ),
                 Expanded(
                   child: RadioListTile<bool>(
-                    title: const Text('No'),
+                    title: const CustomText('No'),
                     value: false,
                     groupValue: _selectedKeyCustomer,
                     onChanged: (newValue) {
@@ -317,12 +319,12 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
                 ),
               ],
             ),
-            const Text('Customer Status:'),
+            const CustomText('Customer Status:'),
             Row(
               children: [
                 Expanded(
                   child: RadioListTile<bool>(
-                    title: const Text('Active'),
+                    title: const CustomText('Active'),
                     value: true,
                     groupValue: _selectedCustomerStatus,
                     onChanged: (newValue) {
@@ -338,7 +340,7 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
                 ),
                 Expanded(
                   child: RadioListTile<bool>(
-                    title: const Text('Inactive'),
+                    title: const CustomText('Inactive'),
                     value: false,
                     groupValue: _selectedCustomerStatus,
                     onChanged: (newValue) {
@@ -370,7 +372,7 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
                     style: TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
-                      fontSize: 18,
+                      fontSize: 16,
                     ),
                   ),
                 ),
@@ -454,9 +456,16 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
     }
   }
 
-  Widget _buildTextField(String label, TextEditingController controller,
-      GlobalKey<FormFieldState> fieldKey, FocusNode focusNode,
-      {bool enabled = true, int maxLines = 1}) {
+  Widget _buildTextField(
+    String label,
+    TextEditingController controller,
+    GlobalKey<FormFieldState> fieldKey,
+    FocusNode focusNode, {
+    bool enabled = true,
+    int maxLines = 1,
+    double labelFontSize = 14.0,
+    double textFontSize = 14.0,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: ConstrainedBox(
@@ -467,8 +476,10 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
           key: fieldKey,
           controller: controller,
           focusNode: focusNode,
+          style: TextStyle(fontSize: textFontSize),
           decoration: InputDecoration(
               labelText: label,
+              labelStyle: TextStyle(fontSize: labelFontSize),
               border: const OutlineInputBorder(),
               alignLabelWithHint: true),
           enabled: enabled,
@@ -514,43 +525,40 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
     String label,
     TextEditingController controller,
     GlobalKey<FormFieldState> fieldKey,
-    FocusNode focusNode,
-  ) {
+    FocusNode focusNode, {
+    double labelFontSize = 14.0,
+    double textFontSize = 14.0,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: DropdownButtonFormField<Geography>(
         key: fieldKey,
-        value: _selectedCity,
         focusNode: focusNode,
-        items: _filteredCities
-            .map(
-              (geography) => DropdownMenuItem<Geography>(
-                value: geography,
-                child: Text(geography.city),
-              ),
-            )
-            .toList(),
+        value: _selectedCity,
+        items: [
+          const DropdownMenuItem<Geography>(
+            value: null,
+            child: CustomText('Select'),
+          ),
+          ..._filteredCities.map(
+            (geography) => DropdownMenuItem<Geography>(
+              value: geography,
+              child: CustomText(geography.city, fontSize: textFontSize),
+            ),
+          ),
+        ],
         onChanged: (Geography? value) {
           setState(() {
             _selectedCity = value;
-
-            // Update the text controller with the selected city name
             controller.text = value?.city ?? '';
-
-            // Validate the field
             fieldKey.currentState?.validate();
           });
         },
         decoration: InputDecoration(
           labelText: label,
+          labelStyle: TextStyle(fontSize: labelFontSize),
           border: const OutlineInputBorder(),
         ),
-        validator: (value) {
-          if (value == null || value.city.isEmpty) {
-            return 'Please select $label';
-          }
-          return null;
-        },
       ),
     );
   }
@@ -560,20 +568,29 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
     TextEditingController controller,
     GlobalKey<FormFieldState> fieldKey,
     List<BoardMaster> boardList,
-    FocusNode focusNode,
-  ) {
+    FocusNode focusNode, {
+    double labelFontSize = 14.0,
+    double textFontSize = 14.0,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: DropdownButtonFormField<BoardMaster>(
         key: fieldKey,
         value: _selectedBoard,
         focusNode: focusNode,
-        items: boardList
-            .map((board) => DropdownMenuItem<BoardMaster>(
-                  value: board,
-                  child: Text(board.boardName),
-                ))
-            .toList(),
+        style: TextStyle(fontSize: textFontSize),
+        items: [
+          const DropdownMenuItem<BoardMaster>(
+            value: null,
+            child: CustomText('Select'),
+          ),
+          ...boardList.map(
+            (board) => DropdownMenuItem<BoardMaster>(
+              value: board,
+              child: CustomText(board.boardName, fontSize: textFontSize),
+            ),
+          ),
+        ],
         onChanged: (BoardMaster? value) {
           setState(() {
             _selectedBoard = value;
@@ -587,6 +604,7 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
         },
         decoration: InputDecoration(
           labelText: label,
+          labelStyle: TextStyle(fontSize: labelFontSize),
           border: const OutlineInputBorder(),
         ),
         validator: (value) {
@@ -604,20 +622,30 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
     TextEditingController controller,
     GlobalKey<FormFieldState> fieldKey,
     List<ChainSchool> chainSchoolList,
-    FocusNode focusNode,
-  ) {
+    FocusNode focusNode, {
+    double labelFontSize = 14.0,
+    double textFontSize = 14.0,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: DropdownButtonFormField<ChainSchool>(
         key: fieldKey,
         value: _selectedChainSchool,
         focusNode: focusNode,
-        items: chainSchoolList
-            .map((chainSchool) => DropdownMenuItem<ChainSchool>(
-                  value: chainSchool,
-                  child: Text(chainSchool.chainSchoolName),
-                ))
-            .toList(),
+        style: TextStyle(fontSize: textFontSize),
+        items: [
+          const DropdownMenuItem<ChainSchool>(
+            value: null,
+            child: CustomText('Select'),
+          ),
+          ...chainSchoolList.map(
+            (chainSchool) => DropdownMenuItem<ChainSchool>(
+              value: chainSchool,
+              child: CustomText(chainSchool.chainSchoolName,
+                  fontSize: textFontSize),
+            ),
+          ),
+        ],
         onChanged: (ChainSchool? value) {
           setState(() {
             _selectedChainSchool = value;
@@ -631,6 +659,7 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
         },
         decoration: InputDecoration(
           labelText: label,
+          labelStyle: TextStyle(fontSize: labelFontSize),
           border: const OutlineInputBorder(),
         ),
         validator: (value) {

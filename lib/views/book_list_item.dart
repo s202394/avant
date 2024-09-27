@@ -1,3 +1,4 @@
+import 'package:avant/views/custom_text.dart';
 import 'package:flutter/material.dart';
 
 import '../model/fetch_titles_model.dart';
@@ -38,11 +39,11 @@ class BookListItemState extends State<BookListItem> {
             children: [
               // Image on the left side
               SizedBox(
-                width: 100,
-                height: 120,
+                width: 70,
+                height: 80,
                 child: widget.book.image.isEmpty
                     ? const Icon(Icons.book_outlined,
-                        size: 48, color: Colors.grey)
+                        size: 40, color: Colors.grey)
                     : Image.network(
                         widget.book.imageUrl,
                         fit: BoxFit.cover,
@@ -74,37 +75,24 @@ class BookListItemState extends State<BookListItem> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      widget.book.title,
-                      style: const TextStyle(
-                          fontSize: 15, fontWeight: FontWeight.bold),
-                    ),
-                    Text(
-                      widget.book.author,
-                      style: const TextStyle(fontSize: 13, color: Colors.grey),
-                    ),
-                    Text(
-                      widget.book.isbn,
-                      style: const TextStyle(fontSize: 13, color: Colors.grey),
-                    ),
-                    Text(
-                      widget.book.bookType,
-                      style: const TextStyle(fontSize: 13, color: Colors.grey),
-                    ),
-                    Text(
-                      widget.book.price,
-                      style: const TextStyle(fontSize: 13, color: Colors.grey),
-                    ),
+                    CustomText(widget.book.title,
+                        fontSize: 13, fontWeight: FontWeight.bold),
+                    CustomText(widget.book.author,
+                        fontSize: 11, color: Colors.grey),
+                    CustomText(widget.book.isbn,
+                        fontSize: 11, color: Colors.grey),
+                    CustomText(widget.book.bookType,
+                        fontSize: 11, color: Colors.grey),
+                    CustomText(widget.book.price,
+                        fontSize: 13, color: Colors.grey),
                   ],
                 ),
               ),
               const SizedBox(width: 8),
               Column(
                 children: [
-                  Text(
-                    'Stock Available: ${widget.book.physicalStock}',
-                    style: const TextStyle(fontSize: 12),
-                  ),
+                  CustomText('Stock Available: ${widget.book.physicalStock}',
+                      fontSize: 10),
                   const SizedBox(height: 8),
                   SizedBox(
                     width: 100,
@@ -132,7 +120,7 @@ class BookListItemState extends State<BookListItem> {
                                       borderRadius: BorderRadius.circular(8.0),
                                     ),
                                   ),
-                                  child: const Text('Add'),
+                                  child: const CustomText('Add', fontSize: 10),
                                 ),
                               )
                             : Positioned.fill(
@@ -169,6 +157,7 @@ class BookListItemState extends State<BookListItem> {
                                           child: Text(
                                             '$_quantity',
                                             style: const TextStyle(
+                                                fontSize: 10,
                                                 color: Colors.white),
                                             textAlign: TextAlign.center,
                                           ),

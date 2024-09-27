@@ -11,6 +11,7 @@ import '../model/fetch_titles_model.dart';
 import '../model/get_visit_dsr_model.dart';
 import '../model/login_model.dart';
 import '../model/series_and_class_level_list_response.dart';
+import '../views/custom_text.dart';
 
 class VisitSeriesSearch extends StatefulWidget {
   final GetVisitDsrResponse visitDsrData;
@@ -152,7 +153,7 @@ class VisitSeriesSearchPageState extends State<VisitSeriesSearch>
                   (e) => DropdownMenuItem<ClassLevelList>(
                     value: e,
                     key: ValueKey(e.classLevelId),
-                    child: Text(e.classLevelName),
+                    child: CustomText(e.classLevelName, fontSize: 14),
                   ),
                 )
                 .toList() ??
@@ -163,7 +164,7 @@ class VisitSeriesSearchPageState extends State<VisitSeriesSearch>
                   (e) => DropdownMenuItem<SeriesList>(
                     value: e,
                     key: ValueKey(e.seriesId),
-                    child: Text(e.seriesName),
+                    child: CustomText(e.seriesName, fontSize: 14),
                   ),
                 )
                 .toList() ??
@@ -225,7 +226,7 @@ class VisitSeriesSearchPageState extends State<VisitSeriesSearch>
       child: Scaffold(
         appBar: AppBar(
           backgroundColor: Colors.amber[100],
-          title: const Text('DSR Entry'),
+          title: const CustomText('DSR Entry'),
         ),
         body: _isLoading
             ? const Center(child: CircularProgressIndicator())
@@ -239,11 +240,8 @@ class VisitSeriesSearchPageState extends State<VisitSeriesSearch>
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            widget.customerName,
-                            style: const TextStyle(
-                                fontWeight: FontWeight.bold, fontSize: 18),
-                          ),
+                          CustomText(widget.customerName,
+                              fontWeight: FontWeight.bold, fontSize: 16),
                           RichTextWidget(label: widget.address),
                           const Divider(height: 1),
                           const SizedBox(height: 16),
@@ -297,15 +295,11 @@ class VisitSeriesSearchPageState extends State<VisitSeriesSearch>
                               child: const Padding(
                                 padding: EdgeInsets.symmetric(
                                     vertical: 8.0, horizontal: 16),
-                                child: Text(
-                                  'Search Customer',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
+                                child: CustomText('Search Customer',
+                                    textAlign: TextAlign.center,
                                     color: Colors.white,
                                     fontWeight: FontWeight.bold,
-                                    fontSize: 18,
-                                  ),
-                                ),
+                                    fontSize: 16),
                               ),
                             ),
                           ),
@@ -377,7 +371,7 @@ class VisitSeriesSearchPageState extends State<VisitSeriesSearch>
               },
               selectedId: selectedSeries?.seriesId,
               onIdChanged: (id) {
-                // No longer needed
+                // Not needed anymore
               },
             ),
             buildDropdownField<ClassLevelList>(
@@ -391,7 +385,7 @@ class VisitSeriesSearchPageState extends State<VisitSeriesSearch>
               },
               selectedId: selectedClassLevel?.classLevelId,
               onIdChanged: (id) {
-                // No longer needed
+                // Not needed anymore
               },
             ),
           ],
@@ -420,7 +414,7 @@ class VisitSeriesSearchPageState extends State<VisitSeriesSearch>
             if (titleSuggestions.isNotEmpty)
               ...titleSuggestions.map(
                 (title) => ListTile(
-                  title: Text(title.title),
+                  title: CustomText(title.title, fontSize: 14),
                   onTap: () {
                     setState(() {
                       selectedTitle = title;
@@ -444,8 +438,10 @@ class VisitSeriesSearchPageState extends State<VisitSeriesSearch>
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: TextFormField(
         controller: controller,
+        style: const TextStyle(fontSize: 14),
         decoration: InputDecoration(
           labelText: label,
+          labelStyle: const TextStyle(fontSize: 14),
           border: const OutlineInputBorder(),
           contentPadding:
               const EdgeInsets.symmetric(vertical: 12.0, horizontal: 12.0),
@@ -469,31 +465,46 @@ class VisitSeriesSearchPageState extends State<VisitSeriesSearch>
     );
   }
 
-  Widget buildDropdownField<T>(String label, T? selectedValue,
-      List<DropdownMenuItem<T>> items, ValueChanged<T?> onChanged,
-      {required int? selectedId, required ValueChanged<int?> onIdChanged}) {
+  Widget buildDropdownField<T>(
+    String label,
+    T? selectedValue,
+    List<DropdownMenuItem<T>> items,
+    ValueChanged<T?> onChanged, {
+    required int? selectedId,
+    required ValueChanged<int?> onIdChanged,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: InputDecorator(
         decoration: InputDecoration(
           labelText: label,
+          labelStyle: const TextStyle(fontSize: 14),
           border: const OutlineInputBorder(),
           errorText: _submitted && selectedValue == null && label == 'Series'
-              ? 'Please select a $label'
+              ? 'Please select $label'
               : null,
         ),
         child: DropdownButtonHideUnderline(
           child: DropdownButton<T>(
             isDense: true,
+            style: const TextStyle(fontSize: 14),
             value: selectedValue,
-            items: items,
+            items: [
+              DropdownMenuItem<T>(
+                value: null,
+                child: const CustomText('Select', fontSize: 14),
+              ),
+              ...items,
+            ],
             onChanged: (value) {
-              if (value == null) return;
-
               onChanged(value);
-              final selectedItem =
-                  items.firstWhere((item) => item.value == value);
-              onIdChanged((selectedItem.key as ValueKey).value as int);
+              if (value != null) {
+                final selectedItem =
+                    items.firstWhere((item) => item.value == value);
+                onIdChanged((selectedItem.key as ValueKey).value as int);
+              } else {
+                onIdChanged(null);
+              }
 
               setState(() {
                 if (_submitted) {

@@ -5,6 +5,7 @@ import 'package:avant/common/toast.dart';
 import 'package:avant/login.dart';
 import 'package:avant/model/change_password_model.dart';
 import 'package:avant/model/forgot_password_model.dart';
+import 'package:avant/views/custom_text.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -293,9 +294,11 @@ class ChangePasswordScreenState extends State<ChangePasswordScreen> {
           : null,
       child: TextField(
         controller: controller,
+        style: const TextStyle(fontSize: 14),
         focusNode: focusNode,
         obscureText: obscureText,
         decoration: InputDecoration(
+          labelStyle: const TextStyle(fontSize: 14),
           border: InputBorder.none,
           hintText: hintText,
           hintStyle: TextStyle(color: Colors.grey[700]),
@@ -324,11 +327,8 @@ class ChangePasswordScreenState extends State<ChangePasswordScreen> {
             ),
           ),
           child: const Center(
-            child: Text(
-              "Change Password",
-              style:
-                  TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-            ),
+            child: CustomText("Change Password",
+                color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
           ),
         ),
       ),

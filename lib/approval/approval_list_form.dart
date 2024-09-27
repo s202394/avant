@@ -8,6 +8,7 @@ import 'package:avant/common/toast.dart';
 import 'package:avant/home.dart';
 import 'package:avant/model/approval_list_model.dart';
 import 'package:avant/model/login_model.dart';
+import 'package:avant/views/custom_text.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -124,7 +125,7 @@ class ApprovalListFormState extends State<ApprovalListForm> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('${widget.type} Approval'),
+        title: CustomText(widget.type),
         backgroundColor: const Color(0xFFFFF8E1),
       ),
       body: isLoading
@@ -173,10 +174,13 @@ class ApprovalListFormState extends State<ApprovalListForm> {
                             Padding(
                               padding: const EdgeInsets.all(8.0),
                               child: TextField(
+                                style: const TextStyle(
+                                    fontSize: 14, fontWeight: FontWeight.bold),
                                 key: _commentFieldKey,
                                 controller: _commentController,
                                 maxLines: 3,
                                 decoration: InputDecoration(
+                                  labelStyle: const TextStyle(fontSize: 14),
                                   border: const OutlineInputBorder(),
                                   alignLabelWithHint: true,
                                   labelText: 'Remarks',
@@ -194,10 +198,8 @@ class ApprovalListFormState extends State<ApprovalListForm> {
                             if (_selectionError != null)
                               Padding(
                                 padding: const EdgeInsets.all(8.0),
-                                child: Text(
-                                  _selectionError!,
-                                  style: const TextStyle(color: Colors.red),
-                                ),
+                                child: CustomText(_selectionError!,
+                                    color: Colors.red),
                               ),
                           ],
                         ),
@@ -220,14 +222,10 @@ class ApprovalListFormState extends State<ApprovalListForm> {
                     backgroundColor: Colors.green,
                     padding: const EdgeInsets.symmetric(vertical: 16.0),
                   ),
-                  child: const Text(
-                    'Approve',
-                    style: TextStyle(
+                  child: const CustomText('Approve',
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
+                      fontSize: 16),
                 ),
               ),
               const SizedBox(width: 16),
@@ -238,13 +236,11 @@ class ApprovalListFormState extends State<ApprovalListForm> {
                     backgroundColor: Colors.red,
                     padding: const EdgeInsets.symmetric(vertical: 16.0),
                   ),
-                  child: const Text(
+                  child: const CustomText(
                     'Reject',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
                   ),
                 ),
               ),
@@ -430,10 +426,11 @@ class RequestCardState extends State<RequestCard> {
             children: [
               const TextSpan(
                 text: 'Request No: ',
-                style: TextStyle(fontWeight: FontWeight.bold),
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
               ),
               TextSpan(
                 text: widget.request.requestNumber,
+                style: const TextStyle(fontSize: 14),
               ),
             ],
           ),
@@ -446,10 +443,11 @@ class RequestCardState extends State<RequestCard> {
                 children: [
                   const TextSpan(
                     text: 'Executive Name: ',
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                   ),
                   TextSpan(
                     text: widget.request.executiveName,
+                    style: const TextStyle(fontSize: 14),
                   ),
                 ],
               ),
@@ -459,10 +457,11 @@ class RequestCardState extends State<RequestCard> {
                 children: [
                   const TextSpan(
                     text: 'Request Date: ',
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                   ),
                   TextSpan(
                     text: widget.request.requestDate,
+                    style: const TextStyle(fontSize: 14),
                   ),
                 ],
               ),
@@ -472,10 +471,11 @@ class RequestCardState extends State<RequestCard> {
                 children: [
                   const TextSpan(
                     text: 'Address: ',
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                   ),
                   TextSpan(
                     text: widget.request.address,
+                    style: const TextStyle(fontSize: 14),
                   ),
                 ],
               ),
@@ -485,10 +485,11 @@ class RequestCardState extends State<RequestCard> {
                 children: [
                   const TextSpan(
                     text: 'Request Status: ',
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                   ),
                   TextSpan(
                     text: widget.request.requestStatus,
+                    style: const TextStyle(fontSize: 14),
                   ),
                 ],
               ),
@@ -539,9 +540,10 @@ class NoInternetLayoutState extends State<NoInternetLayout> {
                 children: [
                   const Icon(Icons.wifi_off, size: 100, color: Colors.grey),
                   const SizedBox(height: 20),
-                  const Text(
+                  const CustomText(
                     'No Internet Connection',
-                    style: TextStyle(fontSize: 18, color: Colors.grey),
+                    fontSize: 18,
+                    color: Colors.grey,
                   ),
                   const SizedBox(height: 20),
                   ElevatedButton(
@@ -554,7 +556,7 @@ class NoInternetLayoutState extends State<NoInternetLayout> {
                         ),
                       );
                     },
-                    child: const Text('Retry'),
+                    child: const CustomText('Retry'),
                   ),
                 ],
               ),

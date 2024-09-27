@@ -18,6 +18,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../views/custom_text.dart';
+
 class DsrEntry extends StatefulWidget {
   final int customerId;
   final String customerName;
@@ -132,7 +134,7 @@ class DsrEntryPageState extends State<DsrEntry> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('DSR Entry'),
+        title: const CustomText('DSR Entry'),
         backgroundColor: const Color(0xFFFFF8E1),
       ),
       body: FutureBuilder<GetVisitDsrResponse>(
@@ -143,7 +145,7 @@ class DsrEntryPageState extends State<DsrEntry> {
           } else if (snapshot.hasError) {
             return Center(child: Text('Error: ${snapshot.error}'));
           } else if (!snapshot.hasData) {
-            return const Center(child: Text('No data available'));
+            return const Center(child: CustomText('No data available'));
           }
 
           final visitDsrData = snapshot.data!;
@@ -162,10 +164,10 @@ class DsrEntryPageState extends State<DsrEntry> {
                         padding: const EdgeInsets.all(16.0),
                         child: ListView(
                           children: [
-                            Text(
+                            CustomText(
                               visitDsrData.customerSummery.customerName,
-                              style: const TextStyle(
-                                  fontWeight: FontWeight.bold, fontSize: 18),
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
                             ),
                             RichTextWidget(
                               label: visitDsrData.customerSummery.address,
@@ -239,10 +241,10 @@ class DsrEntryPageState extends State<DsrEntry> {
                                 followUpAction = value;
                               });
                             }),
-                            const Text(
+                            const CustomText(
                               'Capture Image',
-                              style: TextStyle(
-                                  fontWeight: FontWeight.bold, fontSize: 16),
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
                             ),
                             buildCaptureImage(),
                             _buildTextField(
@@ -273,14 +275,12 @@ class DsrEntryPageState extends State<DsrEntry> {
                               child: const Padding(
                                 padding: EdgeInsets.symmetric(
                                     vertical: 8.0, horizontal: 16),
-                                child: Text(
+                                child: CustomText(
                                   'Submit',
                                   textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 18,
-                                  ),
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 18,
                                 ),
                               ),
                             ),
@@ -498,13 +498,20 @@ class DsrEntryPageState extends State<DsrEntry> {
     return true;
   }
 
-  Widget buildTextField(String label,
-      {String initialValue = '', bool enabled = true, int maxLines = 1}) {
+  Widget buildTextField(
+    String label, {
+    String initialValue = '',
+    bool enabled = true,
+    int maxLines = 1,
+    double labelFontSize = 14.0,
+    double textFontSize = 14.0,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: TextFormField(
         decoration: InputDecoration(
           labelText: label,
+          labelStyle: TextStyle(fontSize: labelFontSize),
           border: const OutlineInputBorder(),
           contentPadding:
               const EdgeInsets.symmetric(vertical: 12.0, horizontal: 12.0),
@@ -513,6 +520,7 @@ class DsrEntryPageState extends State<DsrEntry> {
         initialValue: initialValue,
         enabled: enabled,
         maxLines: maxLines,
+        style: TextStyle(fontSize: textFontSize),
         validator: (value) {
           if (value == null || value.isEmpty) {
             return 'Please enter $label';
@@ -523,13 +531,20 @@ class DsrEntryPageState extends State<DsrEntry> {
     );
   }
 
-  Widget buildDropdownField(String label, String? selectedValue,
-      Map<String, int> items, ValueChanged<String?> onChanged) {
+  Widget buildDropdownField(
+    String label,
+    String? selectedValue,
+    Map<String, int> items,
+    ValueChanged<String?> onChanged, {
+    double labelFontSize = 14.0,
+    double textFontSize = 14.0,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: InputDecorator(
         decoration: InputDecoration(
           labelText: label,
+          labelStyle: TextStyle(fontSize: labelFontSize),
           border: const OutlineInputBorder(),
           errorText: _submitted && selectedValue == null
               ? 'Please select $label'
@@ -539,9 +554,18 @@ class DsrEntryPageState extends State<DsrEntry> {
           child: DropdownButton<String>(
             isDense: true,
             value: selectedValue,
-            items: items.keys.map((key) {
-              return DropdownMenuItem<String>(value: key, child: Text(key));
-            }).toList(),
+            items: [
+              const DropdownMenuItem<String>(
+                value: null,
+                child: CustomText('Select'),
+              ),
+              ...items.keys.map(
+                (key) => DropdownMenuItem<String>(
+                  value: key,
+                  child: CustomText(key, fontSize: textFontSize),
+                ),
+              ),
+            ],
             onChanged: onChanged,
           ),
         ),
@@ -550,34 +574,36 @@ class DsrEntryPageState extends State<DsrEntry> {
   }
 
   Widget buildRadioButtons(
-      String label, bool? groupValue, ValueChanged<bool?> onChanged) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Row(
-        children: [
-          Expanded(flex: 2, child: Text(label)),
-          Expanded(
-            flex: 1,
-            child: Row(
-              children: [
-                Radio<bool>(
-                    value: true, groupValue: groupValue, onChanged: onChanged),
-                const Text('Yes'),
-              ],
-            ),
+    String label,
+    bool? groupValue,
+    ValueChanged<bool?> onChanged, {
+    double labelFontSize = 14.0,
+    double textFontSize = 14.0,
+  }) {
+    return Row(
+      children: [
+        Expanded(flex: 2, child: Text(label)),
+        Expanded(
+          flex: 1,
+          child: Row(
+            children: [
+              Radio<bool>(
+                  value: true, groupValue: groupValue, onChanged: onChanged),
+              CustomText('Yes', fontSize: textFontSize),
+            ],
           ),
-          Expanded(
-            flex: 1,
-            child: Row(
-              children: [
-                Radio<bool>(
-                    value: false, groupValue: groupValue, onChanged: onChanged),
-                const Text('No'),
-              ],
-            ),
+        ),
+        Expanded(
+          flex: 1,
+          child: Row(
+            children: [
+              Radio<bool>(
+                  value: false, groupValue: groupValue, onChanged: onChanged),
+              CustomText('No', fontSize: textFontSize),
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -595,9 +621,9 @@ class DsrEntryPageState extends State<DsrEntry> {
             ? OutlinedButton(
                 onPressed: _takePhoto,
                 style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: Colors.grey, width: 2),
+                  side: const BorderSide(color: Colors.grey, width: 1),
                   // Border color and width
-                  minimumSize: const Size(double.infinity, 300),
+                  minimumSize: const Size(double.infinity, 250),
                   // Match parent width and height 300
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12.0),
@@ -612,7 +638,7 @@ class DsrEntryPageState extends State<DsrEntry> {
                     width: double.infinity,
                     height: 300,
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12.0),
+                      borderRadius: BorderRadius.circular(10.0),
                       image: DecorationImage(
                         image: FileImage(File(_imageFile!.path)),
                         // Convert XFile to File
@@ -640,6 +666,8 @@ class DsrEntryPageState extends State<DsrEntry> {
     TextEditingController controller,
     GlobalKey<FormFieldState> fieldKey, {
     int maxLines = 1,
+    double labelFontSize = 14.0,
+    double textFontSize = 14.0,
   }) {
     bool isDateField = label == "Visit Date";
 
@@ -668,9 +696,11 @@ class DsrEntryPageState extends State<DsrEntry> {
           ignoring: isDateField,
           child: TextFormField(
             key: fieldKey,
+            style: TextStyle(fontSize: textFontSize),
             controller: controller,
             decoration: InputDecoration(
               labelText: label,
+              labelStyle: TextStyle(fontSize: labelFontSize),
               border: const OutlineInputBorder(),
               alignLabelWithHint: true,
               suffixIcon: isDateField ? const Icon(Icons.calendar_month) : null,

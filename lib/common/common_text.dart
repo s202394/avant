@@ -7,11 +7,9 @@ class DetailText {
         children: [
           TextSpan(
             text: label,
-            style: const TextStyle(fontWeight: FontWeight.bold),
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14.0),
           ),
-          TextSpan(
-            text: value,
-          ),
+          TextSpan(text: value),
         ],
       ),
     );

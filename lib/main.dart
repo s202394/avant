@@ -14,13 +14,12 @@ void main() {
   WidgetsFlutterBinding.ensureInitialized();
   Workmanager().initialize(callbackDispatcher, isInDebugMode: true);
 
-  Workmanager().registerPeriodicTask(
-      "fetchAndSendLocation", "fetchLocationTask",
+  Workmanager().registerPeriodicTask("DART CRM", "DART CRM",
       frequency: const Duration(minutes: 1));
 
   runApp(
     MaterialApp(
-      title: 'Splash Screen',
+      title: 'DART CRM',
       theme: ThemeData(
         primaryColor: const Color(0xFFFCF2DB),
       ),
@@ -71,7 +70,14 @@ class SplashScreenState extends State<SplashScreen> {
       body: Container(
         color: Colors.white,
         child: const Center(
-          child: Image(image: AssetImage('images/dart_logo.png')),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Image(image: AssetImage('images/dart_logo.png')),
+              SizedBox(height: 50),
+              Image(image: AssetImage('images/avant-logo.png'), height: 30),
+            ],
+          ),
         ),
       ),
     );
@@ -88,7 +94,7 @@ void callbackDispatcher() {
     bool isPunchedIn = prefs.getBool('isPunchedIn') ?? false;
 
     if (!isPunchedIn) {
-      await Workmanager().cancelByUniqueName("fetchLocationTask");
+      await Workmanager().cancelByUniqueName("DART CRM");
     } else {
       if (executiveId > 0 && userId > 0) {
         await LocationService()

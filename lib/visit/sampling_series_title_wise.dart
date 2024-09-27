@@ -10,6 +10,7 @@ import '../model/login_model.dart';
 import '../model/sampling_details_response.dart';
 import '../model/series_and_class_level_list_response.dart';
 import '../views/book_list_item.dart';
+import '../views/custom_text.dart';
 import '../views/rich_text.dart';
 import 'cart.dart';
 
@@ -235,7 +236,7 @@ class SamplingSeriesTitleWiseState extends State<SamplingSeriesTitleWise>
       child: Scaffold(
         appBar: AppBar(
           backgroundColor: Colors.amber[100],
-          title: Text(widget.title),
+          title: CustomText(widget.title),
         ),
         body: isLoading
             ? const Center(child: CircularProgressIndicator())
@@ -251,10 +252,10 @@ class SamplingSeriesTitleWiseState extends State<SamplingSeriesTitleWise>
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
+                              CustomText(
                                 widget.customerName,
-                                style: const TextStyle(
-                                    fontWeight: FontWeight.bold, fontSize: 18),
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
                               ),
                               RichTextWidget(label: widget.address),
                             ],
@@ -302,14 +303,14 @@ class SamplingSeriesTitleWiseState extends State<SamplingSeriesTitleWise>
     final samplingTypeItems = samplingTypes.map((type) {
       return DropdownMenuItem<String>(
         value: type.samplingTypeValue,
-        child: Text(type.samplingType),
+        child: CustomText(type.samplingType, fontSize: 14),
       );
     }).toList();
 
     final sampleToItems = sampleTos.map((value) {
       return DropdownMenuItem<String>(
         value: value.customerName,
-        child: Text(value.customerName),
+        child: CustomText(value.customerName, fontSize: 14),
       );
     }).toList();
 
@@ -335,12 +336,14 @@ class SamplingSeriesTitleWiseState extends State<SamplingSeriesTitleWise>
                       isExpanded: true,
                       decoration: InputDecoration(
                         labelText: 'Sample To',
+                        labelStyle: const TextStyle(fontSize: 14.0),
                         border: const OutlineInputBorder(),
                         errorText: _submitted && selectedSampleTo == null
                             ? 'Please select Sample To'
                             : null,
                       ),
                       items: sampleToItems,
+                      style: const TextStyle(fontSize: 14),
                       onChanged: _onSampleToChanged,
                     ),
                   ),
@@ -352,12 +355,14 @@ class SamplingSeriesTitleWiseState extends State<SamplingSeriesTitleWise>
                       isExpanded: true,
                       decoration: InputDecoration(
                         labelText: 'Sampling Type',
+                        labelStyle: const TextStyle(fontSize: 14.0),
                         border: const OutlineInputBorder(),
                         errorText: _submitted && selectedSamplingType == null
                             ? 'Please select Sampling Type'
                             : null,
                       ),
                       items: samplingTypeItems,
+                      style: const TextStyle(fontSize: 14),
                       onChanged: (value) {
                         setState(() {
                           selectedSamplingType = value;
@@ -378,20 +383,27 @@ class SamplingSeriesTitleWiseState extends State<SamplingSeriesTitleWise>
                       isExpanded: true,
                       decoration: InputDecoration(
                         labelText: 'Ship To',
+                        labelStyle: const TextStyle(fontSize: 14.0),
                         border: const OutlineInputBorder(),
                         errorText: _submitted && selectedShipTo == null
                             ? 'Please select Ship To'
                             : null,
                       ),
-                      items: shipToOptions
-                          .map(
-                            (address) => DropdownMenuItem<String>(
-                              value: address,
-                              child: Text(address,
-                                  overflow: TextOverflow.ellipsis),
-                            ),
-                          )
-                          .toList(),
+                      style: const TextStyle(fontSize: 14),
+                      items: [
+                        const DropdownMenuItem<String>(
+                          value: null,
+                          child: CustomText('Select'),
+                        ),
+                        ...shipToOptions.map(
+                          (shipTo) => DropdownMenuItem<String>(
+                            value: shipTo,
+                            child: Text(shipTo,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(fontSize: 14)),
+                          ),
+                        ),
+                      ],
                       onChanged: (value) {
                         setState(() {
                           selectedShipTo = value;
@@ -407,9 +419,7 @@ class SamplingSeriesTitleWiseState extends State<SamplingSeriesTitleWise>
                   ),
                 ),
                 const Expanded(
-                  child: Padding(
-                    padding: EdgeInsets.only(left: 8.0),
-                  ),
+                  child: Padding(padding: EdgeInsets.only(left: 8.0)),
                 ),
               ],
             ),
@@ -454,7 +464,7 @@ class SamplingSeriesTitleWiseState extends State<SamplingSeriesTitleWise>
             children: [
               Icon(Icons.shopping_cart),
               SizedBox(width: 8),
-              Text('Next'),
+              CustomText('Next'),
             ],
           ),
         ),
@@ -466,10 +476,8 @@ class SamplingSeriesTitleWiseState extends State<SamplingSeriesTitleWise>
     return const Center(
       child: Padding(
         padding: EdgeInsets.all(16.0),
-        child: Text(
-          'No data found.',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        ),
+        child: CustomText('No data found.',
+            fontSize: 18, fontWeight: FontWeight.bold),
       ),
     );
   }

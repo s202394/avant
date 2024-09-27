@@ -14,6 +14,8 @@ import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:avant/common/toast.dart';
 
+import '../views/custom_text.dart';
+
 class NewCustomerTradeLibraryForm2 extends StatefulWidget {
   final String type;
   final String customerName;
@@ -261,7 +263,7 @@ class NewCustomerTradeLibraryForm2State
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('New Customer - ${widget.type}'),
+        title: CustomText('New Customer - ${widget.type}'),
         backgroundColor: const Color(0xFFFFF8E1),
       ),
       body: FutureBuilder<CustomerEntryMasterResponse>(
@@ -470,20 +472,24 @@ class NewCustomerTradeLibraryForm2State
     required List<String> items,
     required ValueChanged<String?> onChanged,
     required GlobalKey<FormFieldState> fieldKey,
+    double labelFontSize = 14.0,
+    double textFontSize = 14.0,
   }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: DropdownButtonFormField<String>(
         key: fieldKey,
         value: value,
+        style: TextStyle(fontSize: textFontSize),
         decoration: InputDecoration(
           labelText: label,
+          labelStyle: TextStyle(fontSize: labelFontSize),
           border: const OutlineInputBorder(),
         ),
         items: items.map((item) {
           return DropdownMenuItem(
             value: item,
-            child: Text(item),
+            child: CustomText(item, fontSize: 14),
           );
         }).toList(),
         onChanged: (newValue) {
@@ -505,6 +511,8 @@ class NewCustomerTradeLibraryForm2State
     TextEditingController controller,
     GlobalKey<FormFieldState> fieldKey, {
     int maxLines = 1,
+    double labelFontSize = 14.0,
+    double textFontSize = 14.0,
   }) {
     bool isDateField = label == "Date of Birth" || label == "Anniversary";
 
@@ -537,12 +545,14 @@ class NewCustomerTradeLibraryForm2State
           child: TextFormField(
             key: fieldKey,
             controller: controller,
+            style: TextStyle(fontSize: textFontSize),
             keyboardType: (label == 'Mobile' || label == 'Pin Code')
                 ? TextInputType.phone
                 : TextInputType.text,
             inputFormatters: _getInputFormatters(label),
             decoration: InputDecoration(
               labelText: label,
+              labelStyle: TextStyle(fontSize: labelFontSize),
               border: const OutlineInputBorder(),
               alignLabelWithHint: true,
               suffixIcon: isDateField ? const Icon(Icons.calendar_month) : null,
@@ -606,34 +616,40 @@ class NewCustomerTradeLibraryForm2State
     }
   }
 
-  Widget _buildDropdownFieldCity(String label, TextEditingController controller,
-      GlobalKey<FormFieldState> fieldKey) {
+  Widget _buildDropdownFieldCity(
+    String label,
+    TextEditingController controller,
+    GlobalKey<FormFieldState> fieldKey, {
+    double labelFontSize = 14.0,
+    double textFontSize = 14.0,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: DropdownButtonFormField<Geography>(
         key: fieldKey,
         value: _selectedCity,
-        items: _filteredCities
-            .map(
-              (geography) => DropdownMenuItem<Geography>(
-                value: geography,
-                child: Text(geography.city),
-              ),
-            )
-            .toList(),
+        items: [
+          const DropdownMenuItem<Geography>(
+            value: null,
+            child: CustomText('Select'),
+          ),
+          ..._filteredCities.map(
+            (geography) => DropdownMenuItem<Geography>(
+              value: geography,
+              child: CustomText(geography.city, fontSize: textFontSize),
+            ),
+          ),
+        ],
         onChanged: (Geography? value) {
           setState(() {
             _selectedCity = value;
-
-            // Update the text controller with the selected city name
             controller.text = value?.city ?? '';
-
-            // Validate the field
             fieldKey.currentState?.validate();
           });
         },
         decoration: InputDecoration(
           labelText: label,
+          labelStyle: TextStyle(fontSize: labelFontSize),
           border: const OutlineInputBorder(),
         ),
         validator: (value) {

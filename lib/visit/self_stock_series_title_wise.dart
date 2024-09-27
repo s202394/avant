@@ -10,6 +10,7 @@ import '../model/fetch_titles_model.dart';
 import '../model/login_model.dart';
 import '../model/series_and_class_level_list_response.dart';
 import '../views/book_list_item.dart';
+import '../views/custom_text.dart';
 import '../views/rich_text.dart';
 
 class SelfStockSeriesTitleWise extends StatefulWidget {
@@ -147,7 +148,7 @@ class SelfStockSeriesTitleWiseState extends State<SelfStockSeriesTitleWise>
       child: Scaffold(
         appBar: AppBar(
           backgroundColor: Colors.amber[100],
-          title: Text(widget.title),
+          title: CustomText(widget.title),
         ),
         body: isLoading
             ? const Center(child: CircularProgressIndicator())
@@ -163,11 +164,8 @@ class SelfStockSeriesTitleWiseState extends State<SelfStockSeriesTitleWise>
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                widget.customerName,
-                                style: const TextStyle(
-                                    fontWeight: FontWeight.bold, fontSize: 18),
-                              ),
+                              CustomText(widget.customerName,
+                                  fontWeight: FontWeight.bold, fontSize: 16),
                               RichTextWidget(label: widget.address),
                             ],
                           ),
@@ -263,7 +261,7 @@ class SelfStockSeriesTitleWiseState extends State<SelfStockSeriesTitleWise>
             children: [
               Icon(Icons.shopping_cart),
               SizedBox(width: 8),
-              Text('Next'),
+              CustomText('Next'),
             ],
           ),
         ),
@@ -275,10 +273,8 @@ class SelfStockSeriesTitleWiseState extends State<SelfStockSeriesTitleWise>
     return const Center(
       child: Padding(
         padding: EdgeInsets.all(16.0),
-        child: Text(
-          'No data found.',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        ),
+        child: CustomText('No data found.',
+            fontSize: 16, fontWeight: FontWeight.bold),
       ),
     );
   }

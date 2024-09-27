@@ -15,6 +15,7 @@ import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../model/search_bookseller_response.dart';
+import '../views/custom_text.dart';
 
 class NewCustomerSchoolForm3 extends StatefulWidget {
   final String type;
@@ -287,7 +288,7 @@ class NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('New Customer - ${widget.type}'),
+        title: CustomText('New Customer - ${widget.type}'),
         backgroundColor: const Color(0xFFFFF8E1),
       ),
       body: FutureBuilder<CustomerEntryMasterResponse>(
@@ -329,35 +330,33 @@ class NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                CustomText(
                   textAlign: TextAlign.center,
                   widget.customerName,
-                  style: const TextStyle(
-                      fontSize: 16, fontWeight: FontWeight.bold),
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
                 ),
-                Text(
+                CustomText(
                   textAlign: TextAlign.center,
                   widget.address,
-                  style: const TextStyle(
-                      fontSize: 16, fontWeight: FontWeight.bold),
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
                 ),
-                Text(
+                CustomText(
                   textAlign: TextAlign.center,
                   '${widget.cityName} - ${widget.pinCode}',
-                  style: const TextStyle(
-                      fontSize: 16, fontWeight: FontWeight.bold),
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
                 ),
                 const SizedBox(height: 10),
                 Container(
                     width: double.infinity, height: 1, color: Colors.grey),
                 const SizedBox(height: 10),
-                const Text(
+                const CustomText(
                   textAlign: TextAlign.center,
                   'Enrolment',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
                 ),
                 GridView.builder(
                   shrinkWrap: true,
@@ -387,14 +386,13 @@ class NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
                           width: 60,
                           height: 40,
                           child: Center(
-                            child: Text(
+                            child: CustomText(
                               textAlign: TextAlign.center,
                               classItem.classNumId >= 0
                                   ? 'Class ${classItem.className}'
                                   : classItem.className,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                              ),
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
                             ),
                           ),
                         ),
@@ -414,7 +412,7 @@ class NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
                                 keyboardType: TextInputType.number,
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
-                                  fontSize: 15,
+                                  fontSize: 14,
                                   fontWeight: FontWeight.bold,
                                   color: isEnabled ? Colors.black : Colors.grey,
                                 ),
@@ -451,10 +449,11 @@ class NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
                   color: Colors.grey,
                 ),
                 const SizedBox(height: 10),
-                const Text(
+                const CustomText(
                   textAlign: TextAlign.center,
                   'Primary Contact',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
                 ),
                 const SizedBox(height: 10),
                 _buildTextField('Contact First Name',
@@ -746,6 +745,8 @@ class NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
     required List<String> items,
     required ValueChanged<String?> onChanged,
     required GlobalKey<FormFieldState> fieldKey,
+    double labelFontSize = 14.0,
+    double textFontSize = 14.0,
   }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
@@ -754,14 +755,21 @@ class NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
         value: value,
         decoration: InputDecoration(
           labelText: label,
+          labelStyle: TextStyle(fontSize: labelFontSize),
           border: const OutlineInputBorder(),
         ),
-        items: items.map((item) {
-          return DropdownMenuItem(
-            value: item,
-            child: Text(item),
-          );
-        }).toList(),
+        items: [
+          const DropdownMenuItem<String>(
+            value: null,
+            child: CustomText('Select'),
+          ),
+          ...items.map(
+            (item) => DropdownMenuItem<String>(
+              value: item,
+              child: CustomText(item, fontSize: textFontSize),
+            ),
+          ),
+        ],
         onChanged: (newValue) {
           onChanged(newValue);
           fieldKey.currentState?.validate();
@@ -782,6 +790,8 @@ class NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
     TextEditingController controller,
     GlobalKey<FormFieldState> fieldKey, {
     int maxLines = 1,
+    double labelFontSize = 14.0,
+    double textFontSize = 14.0,
   }) {
     bool isDateField = label == "Date of Birth" || label == "Anniversary";
 
@@ -820,6 +830,7 @@ class NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
           ignoring: isDateField,
           child: TextFormField(
             key: fieldKey,
+            style: TextStyle(fontSize: textFontSize),
             controller: controller,
             keyboardType: (label == 'Mobile' || label == 'Pin Code')
                 ? TextInputType.phone
@@ -827,6 +838,7 @@ class NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
             inputFormatters: _getInputFormatters(label),
             decoration: InputDecoration(
               labelText: label,
+              labelStyle: TextStyle(fontSize: labelFontSize),
               border: const OutlineInputBorder(),
               alignLabelWithHint: true,
               suffixIcon: isDateField ? const Icon(Icons.calendar_month) : null,
@@ -903,34 +915,40 @@ class NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
     }
   }
 
-  Widget _buildDropdownFieldCity(String label, TextEditingController controller,
-      GlobalKey<FormFieldState> fieldKey) {
+  Widget _buildDropdownFieldCity(
+    String label,
+    TextEditingController controller,
+    GlobalKey<FormFieldState> fieldKey, {
+    double labelFontSize = 14.0,
+    double textFontSize = 14.0,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: DropdownButtonFormField<Geography>(
         key: fieldKey,
         value: _selectedCity,
-        items: _filteredCities
-            .map(
-              (geography) => DropdownMenuItem<Geography>(
-                value: geography,
-                child: Text(geography.city),
-              ),
-            )
-            .toList(),
+        items: [
+          const DropdownMenuItem<Geography>(
+            value: null,
+            child: CustomText('Select'),
+          ),
+          ..._filteredCities.map(
+            (geography) => DropdownMenuItem<Geography>(
+              value: geography,
+              child: CustomText(geography.city, fontSize: textFontSize),
+            ),
+          ),
+        ],
         onChanged: (Geography? value) {
           setState(() {
             _selectedCity = value;
-
-            // Update the text controller with the selected city name
             controller.text = value?.city ?? '';
-
-            // Validate the field
             fieldKey.currentState?.validate();
           });
         },
         decoration: InputDecoration(
           labelText: label,
+          labelStyle: TextStyle(fontSize: labelFontSize),
           border: const OutlineInputBorder(),
         ),
         validator: (value) {

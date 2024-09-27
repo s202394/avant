@@ -13,6 +13,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../model/followup_action_model.dart';
 import '../service/location_service.dart';
+import '../views/custom_text.dart';
 import 'cart.dart';
 
 class FollowUpAction extends StatefulWidget {
@@ -113,7 +114,7 @@ class FollowUpActionState extends State<FollowUpAction> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('DSR Entry'),
+        title: const CustomText('DSR Entry'),
         backgroundColor: const Color(0xFFFFF8E1),
       ),
       body: Stack(
@@ -127,13 +128,14 @@ class FollowUpActionState extends State<FollowUpAction> {
                     padding: const EdgeInsets.all(16.0),
                     child: ListView(
                       children: [
-                        Text(
+                        CustomText(
                           widget.customerName,
-                          style: const TextStyle(
-                              fontWeight: FontWeight.bold, fontSize: 18),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
                         ),
                         RichTextWidget(
                           label: widget.address,
+                          fontSize: 14,
                         ),
                         const SizedBox(height: 16),
                         buildDropdownField(
@@ -215,15 +217,11 @@ class FollowUpActionState extends State<FollowUpAction> {
                           child: const Padding(
                             padding: EdgeInsets.symmetric(
                                 vertical: 8.0, horizontal: 16),
-                            child: Text(
-                              'Add More',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
+                            child: CustomText('Add More',
+                                textAlign: TextAlign.center,
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
-                                fontSize: 18,
-                              ),
-                            ),
+                                fontSize: 18),
                           ),
                         ),
                       ),
@@ -249,15 +247,11 @@ class FollowUpActionState extends State<FollowUpAction> {
                           child: const Padding(
                             padding: EdgeInsets.symmetric(
                                 vertical: 8.0, horizontal: 16),
-                            child: Text(
-                              'Add',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
+                            child: CustomText('Add',
+                                textAlign: TextAlign.center,
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
-                                fontSize: 18,
-                              ),
-                            ),
+                                fontSize: 18),
                           ),
                         ),
                       ),
@@ -332,17 +326,23 @@ class FollowUpActionState extends State<FollowUpAction> {
   ) {
     return DropdownButtonFormField<String>(
       value: selectedValue,
-      items: items.keys
-          .map(
-            (key) => DropdownMenuItem<String>(
-              value: key,
-              child: Text(key),
-            ),
-          )
-          .toList(),
+      items: [
+        const DropdownMenuItem<String>(
+          value: null,
+          child: CustomText('Select'),
+        ),
+        ...items.keys.map(
+          (key) => DropdownMenuItem<String>(
+            value: key,
+            child: CustomText(key, fontSize: 14),
+          ),
+        ),
+      ],
       onChanged: onChanged,
+      style: const TextStyle(fontSize: 14),
       decoration: InputDecoration(
         labelText: label,
+        labelStyle: const TextStyle(fontSize: 14.0),
         border: const OutlineInputBorder(),
         errorText: _submitted && selectedValue == null
             ? 'Please select a $label'
@@ -387,9 +387,11 @@ class FollowUpActionState extends State<FollowUpAction> {
           ignoring: isDateField,
           child: TextFormField(
             key: fieldKey,
+            style: const TextStyle(fontSize: 14),
             controller: controller,
             decoration: InputDecoration(
               labelText: label,
+              labelStyle: const TextStyle(fontSize: 14.0),
               border: const OutlineInputBorder(),
               alignLabelWithHint: true,
               suffixIcon: isDateField ? const Icon(Icons.calendar_month) : null,

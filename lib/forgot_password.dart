@@ -4,6 +4,7 @@ import 'package:avant/change_password.dart';
 import 'package:avant/common/common.dart';
 import 'package:avant/common/toast.dart';
 import 'package:avant/model/forgot_password_model.dart';
+import 'package:avant/views/custom_text.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -248,9 +249,11 @@ class ForgotPasswordPageState extends State<ForgotPasswordPage> {
         controller: controller,
         focusNode: focusNode,
         obscureText: obscureText,
+        style: const TextStyle(fontSize: 14),
         decoration: InputDecoration(
           border: InputBorder.none,
           hintText: hintText,
+          labelStyle: const TextStyle(fontSize: 14),
           hintStyle: TextStyle(color: Colors.grey[700]),
         ),
       ),
@@ -277,11 +280,8 @@ class ForgotPasswordPageState extends State<ForgotPasswordPage> {
             ),
           ),
           child: const Center(
-            child: Text(
-              "Forgot Password",
-              style:
-                  TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-            ),
+            child: CustomText("Forgot Password",
+                fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold),
           ),
         ),
       ),

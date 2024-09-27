@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../model/login_model.dart';
 import '../model/self_stock_request_response.dart';
 import '../model/self_stock_request_trade_response.dart';
+import '../views/custom_text.dart';
 
 class SelfStockEntry extends StatefulWidget {
   const SelfStockEntry({super.key});
@@ -64,7 +65,7 @@ class SelfStockEntryPageState extends State<SelfStockEntry> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Self Stock Sample Request'),
+        title: const CustomText('Self Stock Sample Request'),
         backgroundColor: const Color(0xFFFFF8E1),
       ),
       body: FutureBuilder<SelfStockRequestResponse>(
@@ -147,19 +148,24 @@ class SelfStockEntryPageState extends State<SelfStockEntry> {
 
 // Builds a TextField with validation
   Widget _buildTextField(String label, TextEditingController controller,
-      {int maxLines = 1, bool enabled = true}) {
+      {int maxLines = 1,
+      bool enabled = true,
+      double labelFontSize = 14.0,
+      double textFontSize = 14.0}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: TextFormField(
+        style: TextStyle(fontSize: textFontSize),
         controller: controller,
         maxLines: maxLines,
         enabled: enabled,
         decoration: InputDecoration(
           labelText: label,
+          labelStyle: TextStyle(fontSize: labelFontSize),
           border: const OutlineInputBorder(),
           alignLabelWithHint: true,
           contentPadding:
-          const EdgeInsets.symmetric(vertical: 12.0, horizontal: 12.0),
+              const EdgeInsets.symmetric(vertical: 12.0, horizontal: 12.0),
         ),
       ),
     );
@@ -167,13 +173,16 @@ class SelfStockEntryPageState extends State<SelfStockEntry> {
 
   // Builds a Dropdown Field with validation
   Widget _buildDropdownField(String label, String? selectedValue,
-      Map<String, int> items, void Function(String?) onChanged) {
+      Map<String, int> items, void Function(String?) onChanged,
+      {double labelFontSize = 14.0, double textFontSize = 14.0}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: DropdownButtonFormField<String>(
         isExpanded: true,
+        style: TextStyle(fontSize: textFontSize),
         decoration: InputDecoration(
           labelText: label,
+          labelStyle: TextStyle(fontSize: labelFontSize),
           border: const OutlineInputBorder(),
         ),
         value: selectedValue,
@@ -195,12 +204,15 @@ class SelfStockEntryPageState extends State<SelfStockEntry> {
   }
 
   // Builds the 'Ship To' dropdown with validation
-  Widget _buildShipToDropdown(List<DropdownMenuItem<String>> shipToItems) {
+  Widget _buildShipToDropdown(List<DropdownMenuItem<String>> shipToItems,
+      {double labelFontSize = 14.0, double textFontSize = 14.0}) {
     return DropdownButtonFormField<String>(
       isExpanded: true,
-      decoration: const InputDecoration(
+      style: TextStyle(fontSize: textFontSize),
+      decoration: InputDecoration(
         labelText: 'Ship To',
-        border: OutlineInputBorder(),
+        labelStyle: TextStyle(fontSize: labelFontSize),
+        border: const OutlineInputBorder(),
       ),
       value: selectedShipTo,
       items: shipToItems,
@@ -239,15 +251,18 @@ class SelfStockEntryPageState extends State<SelfStockEntry> {
   }
 
   // Builds the 'Delivery Trade' dropdown if 'Trade' is selected
-  Widget _buildTradeAddressDropdown() {
+  Widget _buildTradeAddressDropdown(
+      {double labelFontSize = 14.0, double textFontSize = 14.0}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 16),
         DropdownButtonFormField<String>(
           isExpanded: true,
+          style: TextStyle(fontSize: textFontSize),
           decoration: InputDecoration(
             labelText: 'Delivery Trade',
+            labelStyle: TextStyle(fontSize: labelFontSize),
             border: const OutlineInputBorder(),
             errorText: _submitted && selectedDeliveryTrade == null
                 ? 'Please select Delivery Trade'
@@ -296,10 +311,8 @@ class SelfStockEntryPageState extends State<SelfStockEntry> {
           const Column(
             children: [
               SizedBox(height: 8),
-              Text(
-                'Delivery Address',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-              ),
+              CustomText('Delivery Address',
+                  fontWeight: FontWeight.bold, fontSize: 16),
               SizedBox(height: 8),
             ],
           ),
@@ -314,11 +327,12 @@ class SelfStockEntryPageState extends State<SelfStockEntry> {
         // Case for Residence Address or By Hand
         if (selectedShipTo == 'Residence Address' ||
             selectedShipTo == 'By Hand')
-          Text(
+          CustomText(
             address != null && address is Address
                 ? (address as Address).shippingAddress1
-                : '', // Address placeholder
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                : '',
+            fontWeight: FontWeight.bold,
+            fontSize: 14,
           ),
       ],
     );
@@ -332,7 +346,8 @@ class SelfStockEntryPageState extends State<SelfStockEntry> {
           child: GestureDetector(
             onTap: () {
               setState(() {
-                _submitted = true; // Set submitted to true to trigger validation
+                _submitted =
+                    true; // Set submitted to true to trigger validation
               });
               if (_formKey.currentState!.validate()) {
                 // Only proceed if the form is valid and required fields are filled
@@ -346,7 +361,8 @@ class SelfStockEntryPageState extends State<SelfStockEntry> {
                       shipmentModeId: selectedShipmentModeId ?? 0,
                       shipToId: selectedShipTo ?? '',
                       deliveryTradeId: selectedDeliveryTradeId ?? 0,
-                      shippingInstructions: _shippingInstructionsController.text,
+                      shippingInstructions:
+                          _shippingInstructionsController.text,
                       remarks: _remarksController.text,
                       address: getSelectedAddress(),
                     ),
@@ -359,15 +375,11 @@ class SelfStockEntryPageState extends State<SelfStockEntry> {
               color: Colors.blue,
               child: const Padding(
                 padding: EdgeInsets.symmetric(vertical: 8.0, horizontal: 16),
-                child: Text(
-                  'Submit',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
+                child: CustomText('Submit',
+                    textAlign: TextAlign.center,
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
-                    fontSize: 18,
-                  ),
-                ),
+                    fontSize: 16),
               ),
             ),
           ),

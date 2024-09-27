@@ -6,6 +6,7 @@ import 'package:avant/dialog/custom_alert_dialog.dart';
 import 'package:avant/forgot_password.dart';
 import 'package:avant/home.dart';
 import 'package:avant/model/login_model.dart';
+import 'package:avant/views/custom_text.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -317,9 +318,11 @@ class LoginPageState extends State<LoginPage> {
         controller: controller,
         focusNode: focusNode,
         obscureText: obscureText,
+        style: const TextStyle(fontSize: 14),
         decoration: InputDecoration(
           border: InputBorder.none,
           hintText: hintText,
+          labelStyle: const TextStyle(fontSize: 14),
           hintStyle: TextStyle(color: Colors.grey[700]),
         ),
       ),
@@ -346,11 +349,8 @@ class LoginPageState extends State<LoginPage> {
             ),
           ),
           child: const Center(
-            child: Text(
-              "Login",
-              style:
-                  TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-            ),
+            child: CustomText("Login",
+                color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
           ),
         ),
       ),
@@ -365,10 +365,8 @@ class LoginPageState extends State<LoginPage> {
       },
       child: FadeInUp(
         duration: const Duration(milliseconds: 2000),
-        child: const Text(
-          "Forgot Password?",
-          style: TextStyle(color: Color.fromRGBO(244, 155, 32, 1)),
-        ),
+        child: const CustomText("Forgot Password?",
+            color: Color.fromRGBO(244, 155, 32, 1), fontSize: 10),
       ),
     );
   }

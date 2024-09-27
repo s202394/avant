@@ -1,3 +1,4 @@
+import 'package:avant/views/custom_text.dart';
 import 'package:flutter/material.dart';
 
 class CustomAlertDialog extends StatelessWidget {
@@ -17,16 +18,16 @@ class CustomAlertDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(title),
-      content: Text(content),
+      title: CustomText(title, fontSize: 16),
+      content: CustomText(content, fontSize: 14),
       actions: <Widget>[
         ElevatedButton(
           onPressed: onCancel,
-          child: const Text("Cancel"),
+          child: const CustomText("Cancel", fontSize: 14),
         ),
         ElevatedButton(
           onPressed: onConfirm,
-          child: const Text("Confirm"),
+          child: const CustomText("Confirm", fontSize: 14),
         ),
       ],
       shape: RoundedRectangleBorder(
@@ -35,12 +36,12 @@ class CustomAlertDialog extends StatelessWidget {
       backgroundColor: Colors.white,
       titleTextStyle: const TextStyle(
         color: Colors.blue,
-        fontSize: 24.0,
+        fontSize: 16.0,
         fontWeight: FontWeight.bold,
       ),
       contentTextStyle: const TextStyle(
         color: Colors.black,
-        fontSize: 18.0,
+        fontSize: 14.0,
       ),
     );
   }
@@ -61,12 +62,12 @@ class SingleAlertDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(title),
-      content: Text(content),
+      title: CustomText(title, fontSize: 16),
+      content: CustomText(content, fontSize: 14),
       actions: <Widget>[
         ElevatedButton(
           onPressed: onOk,
-          child: const Text("OK"),
+          child: const CustomText("OK", fontSize: 14),
         ),
       ],
       shape: RoundedRectangleBorder(
@@ -75,12 +76,12 @@ class SingleAlertDialog extends StatelessWidget {
       backgroundColor: Colors.white,
       titleTextStyle: const TextStyle(
         color: Colors.blue,
-        fontSize: 24.0,
+        fontSize: 16.0,
         fontWeight: FontWeight.bold,
       ),
       contentTextStyle: const TextStyle(
         color: Colors.black,
-        fontSize: 18.0,
+        fontSize: 14.0,
       ),
     );
   }

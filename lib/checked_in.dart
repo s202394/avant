@@ -74,7 +74,7 @@ class PunchInToggleSwitchState extends State<PunchInToggleSwitch> {
             ],
           ),
           _isLoading
-              ? const CircularProgressIndicator() // Show progress bar when loading
+              ? const CircularProgressIndicator()
               : Switch(
                   value: isPunchedIn,
                   onChanged: (value) {

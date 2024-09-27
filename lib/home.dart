@@ -15,6 +15,7 @@ import 'package:avant/model/travel_plan_model.dart';
 import 'package:avant/new_customer/new_customer_school_form1.dart';
 import 'package:avant/service/fetch_location_task.dart';
 import 'package:avant/service/location_service.dart';
+import 'package:avant/views/custom_text.dart';
 import 'package:avant/visit/customer_search.dart';
 import 'package:avant/visit/dsr_entry.dart';
 import 'package:avant/visit/self_stock_entry.dart';
@@ -258,9 +259,9 @@ class HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
     if (!punchedIn) {
       if (kDebugMode) {
-        print('Location punchedIn false fetchLocationTask cancel');
+        print('Location punchedIn false DART CRM cancel');
       }
-      await Workmanager().cancelByUniqueName("fetchLocationTask");
+      await Workmanager().cancelByUniqueName("DART CRM");
     }
 
     // Store the punch-in state
@@ -413,10 +414,8 @@ class HomePageState extends State<HomePage> with WidgetsBindingObserver {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(executiveName ?? "",
-                          style: const TextStyle(color: Colors.black)),
-                      Text(profileName ?? "",
-                          style: const TextStyle(color: Colors.black)),
+                      CustomText(executiveName ?? "", color: Colors.black),
+                      CustomText(profileName ?? "", color: Colors.black),
                     ],
                   ),
                 ),
@@ -458,13 +457,19 @@ class HomePageState extends State<HomePage> with WidgetsBindingObserver {
                       PunchInToggleSwitch(isPunchedIn: isPunchedIn),
                       ...groupedMenuData.keys.map((menuName) {
                         return ExpansionTile(
-                          title: Text(menuName),
+                          title: CustomText(
+                            menuName,
+                            fontSize: 14,
+                          ),
                           children: groupedMenuData[menuName]!.map((childMenu) {
                             return Padding(
                               padding:
                                   const EdgeInsets.symmetric(horizontal: 8.0),
                               child: ListTile(
-                                title: Text(childMenu.childMenuName),
+                                title: CustomText(
+                                  childMenu.childMenuName,
+                                  fontSize: 12,
+                                ),
                                 onTap: () {
                                   Navigator.pop(context);
                                   if (childMenu.menuName == 'Customer') {
@@ -517,7 +522,10 @@ class HomePageState extends State<HomePage> with WidgetsBindingObserver {
                         );
                       }),
                       ListTile(
-                        title: const Text('Visit DSR'),
+                        title: const CustomText(
+                          'Visit DSR',
+                          fontSize: 14,
+                        ),
                         onTap: () {
                           Navigator.pop(context);
                           Navigator.push(
@@ -532,7 +540,8 @@ class HomePageState extends State<HomePage> with WidgetsBindingObserver {
                         },
                       ),
                       ListTile(
-                        title: const Text('Customer Sample Request'),
+                        title: const CustomText('Customer Sample Request',
+                            fontSize: 14),
                         onTap: () {
                           Navigator.pop(context);
                           Navigator.push(
@@ -546,7 +555,8 @@ class HomePageState extends State<HomePage> with WidgetsBindingObserver {
                         },
                       ),
                       ListTile(
-                        title: const Text('Self Stock Sample Request'),
+                        title: const CustomText('Self Stock Sample Request',
+                            fontSize: 14),
                         onTap: () {
                           Navigator.pop(context);
                           Navigator.push(
@@ -558,7 +568,8 @@ class HomePageState extends State<HomePage> with WidgetsBindingObserver {
                         },
                       ),
                       ListTile(
-                        title: const Text(customerSampleApproval),
+                        title: const CustomText(customerSampleApproval,
+                            fontSize: 14),
                         onTap: () {
                           Navigator.pop(context);
                           Navigator.push(
@@ -570,7 +581,8 @@ class HomePageState extends State<HomePage> with WidgetsBindingObserver {
                         },
                       ),
                       ListTile(
-                        title: const Text('Self Stock Request Approval'),
+                        title: const CustomText('Self Stock Request Approval',
+                            fontSize: 14),
                         onTap: () {
                           Navigator.pop(context);
                           Navigator.push(
@@ -582,7 +594,7 @@ class HomePageState extends State<HomePage> with WidgetsBindingObserver {
                         },
                       ),
                       ListTile(
-                        title: const Text('Logout'),
+                        title: const CustomText('Logout', fontSize: 14),
                         onTap: _logout,
                       ),
                     ],
@@ -617,14 +629,12 @@ class HomePageState extends State<HomePage> with WidgetsBindingObserver {
           color: Colors.blue,
           child: const Padding(
             padding: EdgeInsets.symmetric(vertical: 8.0, horizontal: 16),
-            child: Text(
+            child: CustomText(
               'Travel Plan',
               textAlign: TextAlign.start,
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 18,
-              ),
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 18,
             ),
           ),
         ),
@@ -674,20 +684,21 @@ class HomePageState extends State<HomePage> with WidgetsBindingObserver {
       barrierDismissible: false, // User must tap a button to close the dialog
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Confirm Exit'),
-          content: const Text('Do you really want to exit the app?'),
+          title: const CustomText('Confirm Exit'),
+          content: const CustomText('Do you really want to exit the app?',
+              fontSize: 14),
           actions: <Widget>[
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop(false); // Do not exit
               },
-              child: const Text('Cancel'),
+              child: const CustomText('Cancel', fontSize: 14),
             ),
             TextButton(
               onPressed: () {
                 SystemNavigator.pop();
               },
-              child: const Text('Exit'),
+              child: const CustomText('Exit', fontSize: 14),
             ),
           ],
         );
@@ -723,13 +734,17 @@ class TodayPlanList extends StatelessWidget {
               return Column(
                 children: [
                   ListTile(
-                    title: Text('${plan.customerName} (${plan.customerCode})'),
+                    title: CustomText(
+                      '${plan.customerName} (${plan.customerCode})',
+                      fontSize: 16,
+                      color: Colors.black,
+                    ),
                     subtitle: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(plan.address),
-                        Text(plan.city),
-                        Text(plan.state),
+                        CustomText(plan.address, fontSize: 14),
+                        CustomText(plan.city, fontSize: 14),
+                        CustomText(plan.state, fontSize: 14),
                       ],
                     ),
                     trailing: InkWell(
@@ -770,7 +785,7 @@ class TodayPlanList extends StatelessWidget {
             },
           );
         } else {
-          return const Center(child: Text('No data available'));
+          return const Center(child: CustomText('No data available'));
         }
       },
     );
@@ -804,13 +819,17 @@ class TomorrowPlanList extends StatelessWidget {
               return Column(
                 children: [
                   ListTile(
-                    title: Text('${plan.customerName} (${plan.customerCode})'),
+                    title: CustomText(
+                      '${plan.customerName} (${plan.customerCode})',
+                      fontSize: 16,
+                      color: Colors.black,
+                    ),
                     subtitle: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(plan.address),
-                        Text(plan.city),
-                        Text(plan.state),
+                        CustomText(plan.address, fontSize: 14),
+                        CustomText(plan.city, fontSize: 14),
+                        CustomText(plan.state, fontSize: 14),
                       ],
                     ),
                     onTap: () {
@@ -831,7 +850,7 @@ class TomorrowPlanList extends StatelessWidget {
             },
           );
         } else {
-          return const Center(child: Text('No data available'));
+          return const Center(child: CustomText('No data available'));
         }
       },
     );
@@ -848,10 +867,10 @@ class WebViewScreen extends StatelessWidget {
     // Implement WebView to load the given URL
     return Scaffold(
       appBar: AppBar(
-        title: const Text('WebView'),
+        title: const CustomText('WebView'),
       ),
       body: Center(
-        child: Text('Load URL: $url'),
+        child: CustomText('Load URL: $url', fontSize: 14),
       ),
     );
   }
@@ -870,14 +889,12 @@ class NoInternetScreen extends StatelessWidget {
         children: [
           const Icon(Icons.wifi_off, size: 80, color: Colors.grey),
           const SizedBox(height: 20),
-          const Text(
-            'No Internet Connection',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-          ),
+          const CustomText('No Internet Connection',
+              fontSize: 16, fontWeight: FontWeight.bold),
           const SizedBox(height: 20),
           ElevatedButton(
             onPressed: onRefresh,
-            child: const Text('Retry'),
+            child: const CustomText('Retry'),
           ),
         ],
       ),
@@ -898,14 +915,12 @@ class ServerErrorScreen extends StatelessWidget {
         children: [
           const Icon(Icons.error_outline, size: 80, color: Colors.grey),
           const SizedBox(height: 20),
-          const Text(
-            'Server Error',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-          ),
+          const CustomText('Server Error',
+              fontSize: 16, fontWeight: FontWeight.bold),
           const SizedBox(height: 20),
           ElevatedButton(
             onPressed: onRefresh,
-            child: const Text('Retry'),
+            child: const CustomText('Retry'),
           ),
         ],
       ),

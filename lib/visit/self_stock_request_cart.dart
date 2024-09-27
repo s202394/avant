@@ -12,6 +12,7 @@ import '../model/fetch_titles_model.dart';
 import '../model/login_model.dart';
 import '../service/location_service.dart';
 import '../views/book_list_item.dart';
+import '../views/custom_text.dart';
 import '../views/rich_text.dart';
 
 class SelfStockRequestCart extends StatefulWidget {
@@ -125,7 +126,7 @@ class SelfStockRequestCartState extends State<SelfStockRequestCart>
       child: Scaffold(
         appBar: AppBar(
           backgroundColor: Colors.amber[100],
-          title: Text(widget.title),
+          title: CustomText(widget.title),
         ),
         body: _isLoading
             ? const Center(child: CircularProgressIndicator())
@@ -137,11 +138,8 @@ class SelfStockRequestCartState extends State<SelfStockRequestCart>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          widget.customerName,
-                          style: const TextStyle(
-                              fontWeight: FontWeight.bold, fontSize: 18),
-                        ),
+                        CustomText(widget.customerName,
+                            fontWeight: FontWeight.bold, fontSize: 16),
                         RichTextWidget(label: widget.address),
                       ],
                     ),
@@ -175,14 +173,12 @@ class SelfStockRequestCartState extends State<SelfStockRequestCart>
                             child: const Padding(
                               padding: EdgeInsets.symmetric(
                                   vertical: 8.0, horizontal: 16),
-                              child: Text(
+                              child: CustomText(
                                 'Submit',
                                 textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 18,
-                                ),
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
                               ),
                             ),
                           ),
@@ -284,7 +280,7 @@ class SelfStockRequestCartState extends State<SelfStockRequestCart>
               Navigator.pushAndRemoveUntil(
                 context,
                 MaterialPageRoute(builder: (context) => const HomePage()),
-                    (Route<dynamic> route) => false,
+                (Route<dynamic> route) => false,
               );
             }
           } else if (msgType == 'e') {

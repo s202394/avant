@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../model/city_list_for_search_customer_response.dart';
+import '../views/custom_text.dart';
 import 'customer_search_list.dart';
 
 class CustomerSearch extends StatefulWidget {
@@ -100,7 +101,7 @@ class CustomerSearchPageState extends State<CustomerSearch> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.title),
+        title: CustomText(widget.title),
         backgroundColor: const Color(0xFFFFF8E1),
       ),
       body: _isLoading // Show progress bar while loading
@@ -115,14 +116,10 @@ class CustomerSearchPageState extends State<CustomerSearch> {
                     child: Padding(
                       padding: const EdgeInsets.symmetric(
                           vertical: 8.0, horizontal: 16),
-                      child: Text(
+                      child: CustomText(
                         'Search Customer - ${widget.type}',
+                        color: Colors.white,
                         textAlign: TextAlign.start,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 18,
-                        ),
                       ),
                     ),
                   ),
@@ -131,12 +128,15 @@ class CustomerSearchPageState extends State<CustomerSearch> {
                       padding: const EdgeInsets.all(16.0),
                       child: ListView(
                         children: [
-                          buildTextField(
-                              'Customer Name', _customerNameController),
-                          buildTextField(
-                              'Customer Code', _customerCodeController),
-                          buildTextField('Principal / Teacher Name',
-                              _teacherNameController),
+                          CustomEditTextField(
+                              label: 'Customer Name',
+                              controller: _customerNameController),
+                          CustomEditTextField(
+                              label: 'Customer Code',
+                              controller: _customerCodeController),
+                          CustomEditTextField(
+                              label: 'Principal / Teacher Name',
+                              controller: _teacherNameController),
                           _buildDropdownFieldCity('City', _cityController,
                               _cityFieldKey, _cityFocusNode),
                           _buildDropdownFieldCustomerType(
@@ -174,7 +174,7 @@ class CustomerSearchPageState extends State<CustomerSearch> {
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontWeight: FontWeight.bold,
-                                  fontSize: 18,
+                                  fontSize: 16,
                                 ),
                               ),
                             ),
@@ -212,57 +212,42 @@ class CustomerSearchPageState extends State<CustomerSearch> {
     );
   }
 
-  Widget buildTextField(String label, TextEditingController controller) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: TextFormField(
-        decoration: InputDecoration(
-          labelText: label,
-          border: const OutlineInputBorder(),
-          contentPadding: const EdgeInsets.symmetric(
-            vertical: 12.0,
-            horizontal: 12.0,
-          ),
-          alignLabelWithHint: true,
-        ),
-        controller: controller,
-      ),
-    );
-  }
-
   Widget _buildDropdownFieldCity(
     String label,
     TextEditingController controller,
     GlobalKey<FormFieldState> fieldKey,
-    FocusNode focusNode,
-  ) {
+    FocusNode focusNode, {
+    double labelFontSize = 14.0,
+    double textFontSize = 14.0,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: DropdownButtonFormField<CityList>(
         key: fieldKey,
         focusNode: focusNode,
         value: _selectedCity,
-        items: cityList
-            .map(
-              (city) => DropdownMenuItem<CityList>(
-                value: city,
-                child: Text(city.cityName),
-              ),
-            )
-            .toList(),
+        items: [
+          const DropdownMenuItem<CityList>(
+            value: null,
+            child: CustomText('Select'),
+          ),
+          ...cityList.map(
+            (city) => DropdownMenuItem<CityList>(
+              value: city,
+              child: CustomText(city.cityName, fontSize: textFontSize),
+            ),
+          ),
+        ],
         onChanged: (CityList? value) {
           setState(() {
             _selectedCity = value;
-
-            // Update the text controller with the selected city name
             controller.text = value?.cityName ?? '';
-
-            // Validate the field
             fieldKey.currentState?.validate();
           });
         },
         decoration: InputDecoration(
           labelText: label,
+          labelStyle: TextStyle(fontSize: labelFontSize),
           border: const OutlineInputBorder(),
         ),
       ),
@@ -273,38 +258,39 @@ class CustomerSearchPageState extends State<CustomerSearch> {
     String label,
     TextEditingController controller,
     GlobalKey<FormFieldState> fieldKey,
-    FocusNode focusNode,
-  ) {
+    FocusNode focusNode, {
+    double labelFontSize = 14.0,
+    double textFontSize = 14.0,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: DropdownButtonFormField<String>(
         key: fieldKey,
         focusNode: focusNode,
         value: _selectedCustomerType,
-        items: customerTypesList
-            .map(
-              (type) => DropdownMenuItem<String>(
-                value: type,
-                child: Text(type),
-              ),
-            )
-            .toList(),
+        items: [
+          const DropdownMenuItem<String>(
+              value: null, child: CustomText('Select')),
+          ...customerTypesList.map(
+            (type) => DropdownMenuItem<String>(
+              value: type,
+              child: CustomText(type, fontSize: textFontSize),
+            ),
+          ),
+        ],
         onChanged: (String? value) {
           setState(() {
             _selectedCustomerType = value;
-
-            // Update the text controller with the selected customer type
             controller.text = value ?? '';
-
-            // Validate the field
             fieldKey.currentState?.validate();
           });
         },
         decoration: InputDecoration(
           labelText: label,
+          labelStyle: TextStyle(fontSize: labelFontSize),
           border: const OutlineInputBorder(),
           errorText: _submitted && _selectedCustomerType == null
-              ? 'Please select a $label'
+              ? 'Please select $label'
               : null,
         ),
       ),

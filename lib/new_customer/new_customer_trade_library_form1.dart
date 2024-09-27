@@ -11,6 +11,8 @@ import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../views/custom_text.dart';
+
 class NewCustomerTradeLibraryForm1 extends StatefulWidget {
   final String type;
 
@@ -238,7 +240,7 @@ class NewCustomerTradeLibraryForm1State
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('New Customer - ${widget.type}'),
+        title: CustomText('New Customer - ${widget.type}'),
         backgroundColor: const Color(0xFFFFF8E1),
       ),
       body: FutureBuilder<CustomerEntryMasterResponse>(
@@ -474,9 +476,16 @@ class NewCustomerTradeLibraryForm1State
     }
   }
 
-  Widget _buildTextField(String label, TextEditingController controller,
-      GlobalKey<FormFieldState> fieldKey, FocusNode focusNode,
-      {bool enabled = true, int maxLines = 1}) {
+  Widget _buildTextField(
+    String label,
+    TextEditingController controller,
+    GlobalKey<FormFieldState> fieldKey,
+    FocusNode focusNode, {
+    bool enabled = true,
+    int maxLines = 1,
+    double labelFontSize = 14.0,
+    double textFontSize = 14.0,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: ConstrainedBox(
@@ -485,10 +494,12 @@ class NewCustomerTradeLibraryForm1State
         ),
         child: TextFormField(
           key: fieldKey,
+          style: TextStyle(fontSize: textFontSize),
           controller: controller,
           focusNode: focusNode,
           decoration: InputDecoration(
               labelText: label,
+              labelStyle: TextStyle(fontSize: labelFontSize),
               border: const OutlineInputBorder(),
               alignLabelWithHint: true),
           enabled: enabled,
@@ -538,35 +549,38 @@ class NewCustomerTradeLibraryForm1State
     String label,
     TextEditingController controller,
     GlobalKey<FormFieldState> fieldKey,
-    FocusNode focusNode,
-  ) {
+    FocusNode focusNode, {
+    double labelFontSize = 14.0,
+    double textFontSize = 14.0,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: DropdownButtonFormField<Geography>(
         key: fieldKey,
-        value: _selectedCity,
         focusNode: focusNode,
-        items: _filteredCities
-            .map(
-              (geography) => DropdownMenuItem<Geography>(
-                value: geography,
-                child: Text(geography.city),
-              ),
-            )
-            .toList(),
+        value: _selectedCity,
+        items: [
+          const DropdownMenuItem<Geography>(
+            value: null,
+            child: CustomText('Select'),
+          ),
+          ..._filteredCities.map(
+            (geography) => DropdownMenuItem<Geography>(
+              value: geography,
+              child: CustomText(geography.city, fontSize: textFontSize),
+            ),
+          ),
+        ],
         onChanged: (Geography? value) {
           setState(() {
             _selectedCity = value;
-
-            // Update the text controller with the selected city name
             controller.text = value?.city ?? '';
-
-            // Validate the field
             fieldKey.currentState?.validate();
           });
         },
         decoration: InputDecoration(
           labelText: label,
+          labelStyle: TextStyle(fontSize: labelFontSize),
           border: const OutlineInputBorder(),
         ),
         validator: (value) {
@@ -584,20 +598,30 @@ class NewCustomerTradeLibraryForm1State
     TextEditingController controller,
     GlobalKey<FormFieldState> fieldKey,
     List<CustomerCategory> customerCategoryList,
-    FocusNode focusNode,
-  ) {
+    FocusNode focusNode, {
+    double labelFontSize = 14.0,
+    double textFontSize = 14.0,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: DropdownButtonFormField<CustomerCategory>(
         key: fieldKey,
+        style: TextStyle(fontSize: textFontSize),
         value: _selectedCustomerCategory,
         focusNode: focusNode,
-        items: customerCategoryList
-            .map((customerCategory) => DropdownMenuItem<CustomerCategory>(
-                  value: customerCategory,
-                  child: Text(customerCategory.customerCategoryName),
-                ))
-            .toList(),
+        items: [
+          const DropdownMenuItem<CustomerCategory>(
+            value: null,
+            child: CustomText('Select'),
+          ),
+          ...customerCategoryList.map(
+            (customerCategory) => DropdownMenuItem<CustomerCategory>(
+              value: customerCategory,
+              child: CustomText(customerCategory.customerCategoryName,
+                  fontSize: textFontSize),
+            ),
+          ),
+        ],
         onChanged: (CustomerCategory? value) {
           setState(() {
             _selectedCustomerCategory = value;
@@ -611,6 +635,7 @@ class NewCustomerTradeLibraryForm1State
         },
         decoration: InputDecoration(
           labelText: label,
+          labelStyle: TextStyle(fontSize: labelFontSize),
           border: const OutlineInputBorder(),
         ),
         validator: (value) {

@@ -9,6 +9,7 @@ import '../common/toast.dart';
 import '../model/fetch_titles_model.dart';
 import '../model/login_model.dart';
 import '../model/series_and_class_level_list_response.dart';
+import '../views/custom_text.dart';
 
 class SelfStockRequestSearch extends StatefulWidget {
   final String type;
@@ -134,7 +135,7 @@ class SelfStockRequestSearchPageState extends State<SelfStockRequestSearch>
                   (e) => DropdownMenuItem<ClassLevelList>(
                     value: e,
                     key: ValueKey(e.classLevelId),
-                    child: Text(e.classLevelName),
+                    child: CustomText(e.classLevelName, fontSize: 14),
                   ),
                 )
                 .toList() ??
@@ -145,7 +146,7 @@ class SelfStockRequestSearchPageState extends State<SelfStockRequestSearch>
                   (e) => DropdownMenuItem<SeriesList>(
                     value: e,
                     key: ValueKey(e.seriesId),
-                    child: Text(e.seriesName),
+                    child: CustomText(e.seriesName, fontSize: 14),
                   ),
                 )
                 .toList() ??
@@ -208,7 +209,7 @@ class SelfStockRequestSearchPageState extends State<SelfStockRequestSearch>
       child: Scaffold(
         appBar: AppBar(
           backgroundColor: Colors.amber[100],
-          title: Text(widget.title),
+          title: CustomText(widget.title),
         ),
         body: _isLoading
             ? const Center(child: CircularProgressIndicator())
@@ -222,11 +223,8 @@ class SelfStockRequestSearchPageState extends State<SelfStockRequestSearch>
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            widget.customerName,
-                            style: const TextStyle(
-                                fontWeight: FontWeight.bold, fontSize: 18),
-                          ),
+                          CustomText(widget.customerName,
+                              fontWeight: FontWeight.bold, fontSize: 16),
                           RichTextWidget(label: widget.address),
                         ],
                       ),
@@ -270,15 +268,11 @@ class SelfStockRequestSearchPageState extends State<SelfStockRequestSearch>
                               child: const Padding(
                                 padding: EdgeInsets.symmetric(
                                     vertical: 8.0, horizontal: 16),
-                                child: Text(
-                                  'Search Customer',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
+                                child: CustomText('Search Customer',
+                                    textAlign: TextAlign.center,
                                     color: Colors.white,
                                     fontWeight: FontWeight.bold,
-                                    fontSize: 18,
-                                  ),
-                                ),
+                                    fontSize: 16),
                               ),
                             ),
                           ),
@@ -406,13 +400,18 @@ class SelfStockRequestSearchPageState extends State<SelfStockRequestSearch>
   }
 
   Widget buildTextField(String label, TextEditingController controller,
-      {bool enabled = true, int maxLines = 1}) {
+      {bool enabled = true,
+      int maxLines = 1,
+      double labelFontSize = 14.0,
+      double textFontSize = 14.0}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: TextFormField(
         controller: controller,
+        style: TextStyle(fontSize: textFontSize),
         decoration: InputDecoration(
           labelText: label,
+          labelStyle: TextStyle(fontSize: labelFontSize),
           border: const OutlineInputBorder(),
           contentPadding:
               const EdgeInsets.symmetric(vertical: 12.0, horizontal: 12.0),
@@ -438,12 +437,16 @@ class SelfStockRequestSearchPageState extends State<SelfStockRequestSearch>
 
   Widget buildDropdownField<T>(String label, T? selectedValue,
       List<DropdownMenuItem<T>> items, ValueChanged<T?> onChanged,
-      {required int? selectedId, required ValueChanged<int?> onIdChanged}) {
+      {required int? selectedId,
+      required ValueChanged<int?> onIdChanged,
+      double labelFontSize = 14.0,
+      double textFontSize = 14.0}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: InputDecorator(
         decoration: InputDecoration(
           labelText: label,
+          labelStyle: TextStyle(fontSize: labelFontSize),
           border: const OutlineInputBorder(),
           errorText: _submitted && selectedValue == null && label == 'Series'
               ? 'Please select a $label'
@@ -452,6 +455,7 @@ class SelfStockRequestSearchPageState extends State<SelfStockRequestSearch>
         child: DropdownButtonHideUnderline(
           child: DropdownButton<T>(
             isDense: true,
+            style: TextStyle(fontSize: textFontSize),
             value: selectedValue,
             items: items,
             onChanged: (value) {
@@ -488,14 +492,12 @@ class ServerErrorScreen extends StatelessWidget {
         children: [
           const Icon(Icons.error_outline, size: 80, color: Colors.grey),
           const SizedBox(height: 20),
-          const Text(
-            'Server Error',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-          ),
+          const CustomText('Server Error',
+              fontSize: 16, fontWeight: FontWeight.bold),
           const SizedBox(height: 20),
           ElevatedButton(
             onPressed: onRefresh,
-            child: const Text('Retry'),
+            child: const CustomText('Retry'),
           ),
         ],
       ),

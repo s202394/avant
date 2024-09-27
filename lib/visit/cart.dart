@@ -14,6 +14,7 @@ import '../model/login_model.dart';
 import '../model/self_stock_request_response.dart';
 import '../service/location_service.dart';
 import '../views/book_list_item.dart';
+import '../views/custom_text.dart';
 import '../views/rich_text.dart';
 
 class Cart extends StatefulWidget {
@@ -173,7 +174,7 @@ class CartState extends State<Cart> with TickerProviderStateMixin {
       child: Scaffold(
         appBar: AppBar(
           backgroundColor: Colors.amber[100],
-          title: Text(widget.title),
+          title: CustomText(widget.title),
         ),
         body: _isLoading
             ? const Center(child: CircularProgressIndicator())
@@ -956,14 +957,6 @@ class CartState extends State<Cart> with TickerProviderStateMixin {
   void submitSamplingRequest() {
     if (selectedShipmentMode == null) {
       toastMessage.showToastMessage('Please select Shipment Mode');
-      return;
-    }
-    if (_shippingInstructionsController.text.isEmpty) {
-      toastMessage.showToastMessage('Please enter Shipping Instructions');
-      return;
-    }
-    if (_remarksController.text.isEmpty) {
-      toastMessage.showToastMessage('Please enter remarks');
       return;
     }
     setState(() {

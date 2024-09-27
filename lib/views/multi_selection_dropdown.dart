@@ -1,3 +1,4 @@
+import 'package:avant/views/custom_text.dart';
 import 'package:flutter/material.dart';
 
 class MultiSelectDropdown<T> extends StatefulWidget {
@@ -30,6 +31,7 @@ class MultiSelectDropdownState<T> extends State<MultiSelectDropdown<T>> {
   @override
   void initState() {
     super.initState();
+    // Initialize selected items with default values
     _selectedItems = List.from(widget.selectedItems);
   }
 
@@ -68,9 +70,10 @@ class MultiSelectDropdownState<T> extends State<MultiSelectDropdown<T>> {
                     },
                   ),
                   Expanded(
-                    child: Text(
+                    child: CustomText(
                       widget.itemLabelBuilder(item),
-                      style: const TextStyle(color: Colors.black),
+                      color: Colors.black,
+                      fontSize: 14,
                     ),
                   ),
                 ],
@@ -84,23 +87,25 @@ class MultiSelectDropdownState<T> extends State<MultiSelectDropdown<T>> {
             decoration: InputDecoration(
               labelText: widget.label,
               border: const OutlineInputBorder(),
+              labelStyle: const TextStyle(fontSize: 14),
               errorText: widget.isMandatory &&
                       _selectedItems.isEmpty &&
                       widget.isSubmitted
-                  ? 'Please select a ${widget.label}'
+                  ? 'Please select ${widget.label}'
                   : null,
             ),
             child: DropdownButtonHideUnderline(
               child: Row(
                 children: [
                   Expanded(
-                    child: Text(
+                    child: CustomText(
                       _selectedItems.isNotEmpty
                           ? _selectedItems
                               .map(widget.itemLabelBuilder)
                               .join(', ')
-                          : '',
-                      style: const TextStyle(color: Colors.black),
+                          : 'Select',
+                      fontSize: 14,
+                      color: Colors.black,
                     ),
                   ),
                   const Icon(Icons.arrow_drop_down),

@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../api/api_service.dart';
 import '../model/login_model.dart';
 import '../model/search_customer_result_response.dart';
+import '../views/custom_text.dart';
 import '../views/rich_text.dart';
 import 'dsr_entry.dart';
 
@@ -89,7 +90,7 @@ class CustomerSearchListPageState extends State<CustomerSearchList> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: const Color(0xFFFFF8E1),
-        title: Text(widget.title),
+        title: CustomText(widget.title),
       ),
       body: FutureBuilder<SearchCustomerResultResponse>(
         future: _customerData,
@@ -102,16 +103,16 @@ class CustomerSearchListPageState extends State<CustomerSearchList> {
           // Handle error state
           else if (snapshot.hasError) {
             return Center(
-              child: Text(
+              child: CustomText(
                 snapshot.error.toString(),
-                style: const TextStyle(color: Colors.red),
+                color: Colors.red,
               ),
             );
           }
 
           // Handle empty data state
           else if (!snapshot.hasData || snapshot.data!.result.isEmpty) {
-            return const Center(child: Text('No Data Available'));
+            return const Center(child: CustomText('No Data Available'));
           }
 
           // Build the list once data is available
@@ -122,7 +123,7 @@ class CustomerSearchListPageState extends State<CustomerSearchList> {
               return Column(
                 children: [
                   ListTile(
-                    title: Text(customer.customerName),
+                    title: CustomText(customer.customerName),
                     subtitle: RichTextWidget(
                       label: customer.address,
                     ),
