@@ -10,10 +10,10 @@ class CustomText extends StatelessWidget {
   const CustomText(
     this.text, {
     super.key,
-    this.fontSize = 16.0, // Default font size
-    this.fontWeight = FontWeight.normal, // Default font weight
-    this.color = Colors.black, // Default text color
-    this.textAlign = TextAlign.start, // Default alignment
+    this.fontSize = 16.0,
+    this.fontWeight = FontWeight.normal,
+    this.color = Colors.black,
+    this.textAlign = TextAlign.start,
   });
 
   @override
@@ -21,11 +21,8 @@ class CustomText extends StatelessWidget {
     return Text(
       text,
       textAlign: textAlign,
-      style: TextStyle(
-        fontSize: fontSize,
-        fontWeight: fontWeight,
-        color: color,
-      ),
+      style:
+          TextStyle(fontSize: fontSize, fontWeight: fontWeight, color: color),
     );
   }
 }
@@ -61,10 +58,8 @@ class CustomEditTextField extends StatelessWidget {
           labelText: label,
           labelStyle: TextStyle(fontSize: labelFontSize),
           border: const OutlineInputBorder(),
-          contentPadding: const EdgeInsets.symmetric(
-            vertical: 12.0,
-            horizontal: 12.0,
-          ),
+          contentPadding:
+              const EdgeInsets.symmetric(vertical: 12.0, horizontal: 12.0),
           alignLabelWithHint: true,
         ),
       ),

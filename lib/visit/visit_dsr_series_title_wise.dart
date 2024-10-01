@@ -12,6 +12,7 @@ import '../model/login_model.dart';
 import '../model/sampling_details_response.dart';
 import '../model/series_and_class_level_list_response.dart';
 import '../views/book_list_item.dart';
+import '../views/common_app_bar.dart';
 import '../views/custom_text.dart';
 import '../views/rich_text.dart';
 import 'cart.dart';
@@ -37,6 +38,7 @@ class VisitDsrSeriesTitleWise extends StatefulWidget {
   final int personMetId;
   final bool samplingDone;
   final bool followUpAction;
+  final String fileName;
 
   const VisitDsrSeriesTitleWise({
     super.key,
@@ -59,6 +61,7 @@ class VisitDsrSeriesTitleWise extends StatefulWidget {
     required this.personMetId,
     required this.samplingDone,
     required this.followUpAction,
+    required this.fileName,
   });
 
   @override
@@ -271,10 +274,7 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
     return DefaultTabController(
       length: 2,
       child: Scaffold(
-        appBar: AppBar(
-          backgroundColor: Colors.amber[100],
-          title: const CustomText('DSR Entry'),
-        ),
+        appBar: const CommonAppBar(title: 'DSR Entry'),
         body: isLoading
             ? const Center(child: CircularProgressIndicator())
             : errorMessage != null
@@ -292,7 +292,6 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
                               CustomText(widget.customerName,
                                   fontWeight: FontWeight.bold, fontSize: 16),
                               RichTextWidget(label: widget.address),
-                              const SizedBox(height: 8),
                               LabeledText(
                                   label: 'Visit Date', value: widget.visitDate),
                             ],
@@ -314,6 +313,7 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
                           ),
                         ),
                         Container(
+                          height: 40,
                           color: Colors.orange,
                           child: TabBar(
                             controller: _tabController,
@@ -355,27 +355,36 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
     final samplingTypeItems = samplingTypes.map((type) {
       return DropdownMenuItem<String>(
         value: type.samplingTypeValue,
-        child: CustomText(type.samplingType, fontSize: 14),
+        child: Padding(
+          padding: const EdgeInsets.all(0),
+          child: CustomText(type.samplingType, fontSize: 12),
+        ),
       );
     }).toList();
 
     final sampleGivenItems = sampleGivens.map((given) {
       return DropdownMenuItem<String>(
         value: given.sampleGivenValue,
-        child: CustomText(given.sampleGiven, fontSize: 14),
+        child: Padding(
+          padding: const EdgeInsets.all(0),
+          child: CustomText(given.sampleGiven, fontSize: 12),
+        ),
       );
     }).toList();
 
     final sampleToItems = sampleTos.map((value) {
       return DropdownMenuItem<String>(
         value: value.customerName,
-        child: CustomText(value.customerName, fontSize: 14),
+        child: Padding(
+          padding: const EdgeInsets.all(0),
+          child: CustomText(value.customerName, fontSize: 12),
+        ),
       );
     }).toList();
 
     return Scaffold(
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(10.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -390,12 +399,14 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
               children: [
                 Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.only(right: 8.0),
+                    padding: const EdgeInsets.only(right: 4.0),
                     child: DropdownButtonFormField<String>(
                       isExpanded: true,
-                      style: const TextStyle(fontSize: 14),
+                      style: const TextStyle(fontSize: 12),
                       decoration: InputDecoration(
-                        labelStyle: const TextStyle(fontSize: 14),
+                        contentPadding: const EdgeInsets.symmetric(
+                            vertical: 0, horizontal: 10),
+                        labelStyle: const TextStyle(fontSize: 12),
                         labelText: 'Sample To',
                         border: const OutlineInputBorder(),
                         errorText: _submitted && selectedSampleTo == null
@@ -409,13 +420,15 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
                 ),
                 Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.only(left: 8.0),
+                    padding: const EdgeInsets.only(left: 4.0),
                     child: DropdownButtonFormField<String>(
                       isExpanded: true,
-                      style: const TextStyle(fontSize: 14),
+                      style: const TextStyle(fontSize: 12),
                       decoration: InputDecoration(
+                        contentPadding: const EdgeInsets.symmetric(
+                            vertical: 0, horizontal: 10),
                         labelText: 'Sampling Type',
-                        labelStyle: const TextStyle(fontSize: 14),
+                        labelStyle: const TextStyle(fontSize: 12),
                         border: const OutlineInputBorder(),
                         errorText: _submitted && selectedSamplingType == null
                             ? 'Please select Sampling Type'
@@ -432,18 +445,20 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 10),
             Row(
               children: [
                 Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.only(right: 8.0),
+                    padding: const EdgeInsets.only(right: 4.0),
                     child: DropdownButtonFormField<String>(
                       isExpanded: true,
-                      style: const TextStyle(fontSize: 14),
+                      style: const TextStyle(fontSize: 12),
                       decoration: InputDecoration(
+                        contentPadding: const EdgeInsets.symmetric(
+                            vertical: 0, horizontal: 10),
                         labelText: 'Sample Given',
-                        labelStyle: const TextStyle(fontSize: 14),
+                        labelStyle: const TextStyle(fontSize: 12),
                         border: const OutlineInputBorder(),
                         errorText: _submitted && selectedSampleGiven == null
                             ? 'Please select Sample Given'
@@ -464,13 +479,15 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
                 ),
                 Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.only(left: 8.0),
+                    padding: const EdgeInsets.only(left: 4.0),
                     child: DropdownButtonFormField<String>(
                       isExpanded: true,
-                      style: const TextStyle(fontSize: 14),
+                      style: const TextStyle(fontSize: 12),
                       decoration: InputDecoration(
+                        contentPadding: const EdgeInsets.symmetric(
+                            vertical: 0, horizontal: 10),
                         labelText: 'Ship To',
-                        labelStyle: const TextStyle(fontSize: 14),
+                        labelStyle: const TextStyle(fontSize: 12),
                         border: const OutlineInputBorder(),
                         errorText: _submitted && selectedShipTo == null
                             ? 'Please select Ship To'
@@ -484,7 +501,7 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
                                 shipTo,
                                 overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(
-                                    fontSize: 14, color: Colors.black),
+                                    fontSize: 12, color: Colors.black),
                               ),
                             ),
                           )
@@ -558,9 +575,9 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.blue,
               foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
             ),
-            child: const CustomText('Next'),
+            child: const CustomText('Next', color: Colors.white, fontSize: 14),
           ),
         ),
         const SizedBox(width: 8), // Spacing between the buttons
@@ -572,9 +589,10 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.green,
               foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
             ),
-            child: const CustomText('Go to Cart'),
+            child: const CustomText('Go to Cart',
+                fontSize: 14, color: Colors.white),
           ),
         ),
       ],
@@ -596,9 +614,9 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
       style: ElevatedButton.styleFrom(
         backgroundColor: Colors.blue,
         foregroundColor: Colors.white,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
       ),
-      child: const CustomText('Next'),
+      child: const CustomText('Next', color: Colors.white),
     );
   }
 
@@ -669,7 +687,7 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
     }
 
     if (selectedBookCount == 0) {
-      toastMessage.showToastMessage('PLease add some books to continue');
+      toastMessage.showToastMessage('Please add some books to continue');
       return;
     }
 
@@ -693,6 +711,7 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
             personMetId: widget.personMetId,
             samplingDone: widget.samplingDone,
             followUpAction: widget.followUpAction,
+            fileName: widget.fileName,
           ),
         ),
       );
@@ -748,6 +767,7 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
           personMetId: widget.personMetId,
           samplingDone: widget.samplingDone,
           followUpAction: widget.followUpAction,
+          fileName: widget.fileName,
         ),
       ),
     );

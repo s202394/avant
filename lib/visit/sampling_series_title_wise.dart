@@ -5,11 +5,13 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../api/api_service.dart';
+import '../common/toast.dart';
 import '../model/fetch_titles_model.dart';
 import '../model/login_model.dart';
 import '../model/sampling_details_response.dart';
 import '../model/series_and_class_level_list_response.dart';
 import '../views/book_list_item.dart';
+import '../views/common_app_bar.dart';
 import '../views/custom_text.dart';
 import '../views/rich_text.dart';
 import 'cart.dart';
@@ -77,6 +79,10 @@ class SamplingSeriesTitleWiseState extends State<SamplingSeriesTitleWise>
   late int? executiveId;
   late int? profileId;
 
+  int _cartBooksCount = 0;
+
+  ToastMessage toastMessage = ToastMessage();
+
   @override
   void initState() {
     super.initState();
@@ -89,8 +95,15 @@ class SamplingSeriesTitleWiseState extends State<SamplingSeriesTitleWise>
         _handleTabChange(_tabController.index);
       }
     });
-
+    _fetchBooksCount();
     _fetchData();
+  }
+
+  Future<void> _fetchBooksCount() async {
+    int count = await databaseHelper.getItemCount();
+    setState(() {
+      _cartBooksCount = count;
+    });
   }
 
   @override
@@ -234,10 +247,7 @@ class SamplingSeriesTitleWiseState extends State<SamplingSeriesTitleWise>
     return DefaultTabController(
       length: 2,
       child: Scaffold(
-        appBar: AppBar(
-          backgroundColor: Colors.amber[100],
-          title: CustomText(widget.title),
-        ),
+        appBar: CommonAppBar(title: widget.title),
         body: isLoading
             ? const Center(child: CircularProgressIndicator())
             : errorMessage != null
@@ -262,6 +272,7 @@ class SamplingSeriesTitleWiseState extends State<SamplingSeriesTitleWise>
                           ),
                         ),
                         Container(
+                          height: 40,
                           color: Colors.orange,
                           child: TabBar(
                             controller: _tabController,
@@ -303,20 +314,26 @@ class SamplingSeriesTitleWiseState extends State<SamplingSeriesTitleWise>
     final samplingTypeItems = samplingTypes.map((type) {
       return DropdownMenuItem<String>(
         value: type.samplingTypeValue,
-        child: CustomText(type.samplingType, fontSize: 14),
+        child: Padding(
+          padding: const EdgeInsets.all(0),
+          child: CustomText(type.samplingType, fontSize: 12),
+        ),
       );
     }).toList();
 
     final sampleToItems = sampleTos.map((value) {
       return DropdownMenuItem<String>(
         value: value.customerName,
-        child: CustomText(value.customerName, fontSize: 14),
+        child: Padding(
+          padding: const EdgeInsets.all(0),
+          child: CustomText(value.customerName, fontSize: 12),
+        ),
       );
     }).toList();
 
     return Scaffold(
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(10.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -331,38 +348,42 @@ class SamplingSeriesTitleWiseState extends State<SamplingSeriesTitleWise>
               children: [
                 Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.only(right: 8.0),
+                    padding: const EdgeInsets.only(right: 4.0),
                     child: DropdownButtonFormField<String>(
                       isExpanded: true,
                       decoration: InputDecoration(
                         labelText: 'Sample To',
-                        labelStyle: const TextStyle(fontSize: 14.0),
+                        contentPadding: const EdgeInsets.symmetric(
+                            vertical: 0, horizontal: 10),
+                        labelStyle: const TextStyle(fontSize: 12),
                         border: const OutlineInputBorder(),
                         errorText: _submitted && selectedSampleTo == null
                             ? 'Please select Sample To'
                             : null,
                       ),
                       items: sampleToItems,
-                      style: const TextStyle(fontSize: 14),
+                      style: const TextStyle(fontSize: 12),
                       onChanged: _onSampleToChanged,
                     ),
                   ),
                 ),
                 Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.only(left: 8.0),
+                    padding: const EdgeInsets.only(left: 4.0),
                     child: DropdownButtonFormField<String>(
                       isExpanded: true,
                       decoration: InputDecoration(
                         labelText: 'Sampling Type',
-                        labelStyle: const TextStyle(fontSize: 14.0),
+                        contentPadding: const EdgeInsets.symmetric(
+                            vertical: 0, horizontal: 10),
+                        labelStyle: const TextStyle(fontSize: 12),
                         border: const OutlineInputBorder(),
                         errorText: _submitted && selectedSamplingType == null
                             ? 'Please select Sampling Type'
                             : null,
                       ),
                       items: samplingTypeItems,
-                      style: const TextStyle(fontSize: 14),
+                      style: const TextStyle(fontSize: 12),
                       onChanged: (value) {
                         setState(() {
                           selectedSamplingType = value;
@@ -378,32 +399,31 @@ class SamplingSeriesTitleWiseState extends State<SamplingSeriesTitleWise>
               children: [
                 Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.only(right: 8.0),
+                    padding: const EdgeInsets.only(right: 4.0),
                     child: DropdownButtonFormField<String>(
                       isExpanded: true,
                       decoration: InputDecoration(
                         labelText: 'Ship To',
-                        labelStyle: const TextStyle(fontSize: 14.0),
+                        contentPadding: const EdgeInsets.symmetric(
+                            vertical: 0, horizontal: 10),
+                        labelStyle: const TextStyle(fontSize: 12),
                         border: const OutlineInputBorder(),
                         errorText: _submitted && selectedShipTo == null
                             ? 'Please select Ship To'
                             : null,
                       ),
-                      style: const TextStyle(fontSize: 14),
-                      items: [
-                        const DropdownMenuItem<String>(
-                          value: null,
-                          child: CustomText('Select'),
-                        ),
-                        ...shipToOptions.map(
-                          (shipTo) => DropdownMenuItem<String>(
-                            value: shipTo,
-                            child: Text(shipTo,
+                      style: const TextStyle(fontSize: 12, color: Colors.black),
+                      items: shipToOptions
+                          .map(
+                            (address) => DropdownMenuItem<String>(
+                              value: address,
+                              child: Text(
+                                address,
                                 overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(fontSize: 14)),
-                          ),
-                        ),
-                      ],
+                              ),
+                            ),
+                          )
+                          .toList(),
                       onChanged: (value) {
                         setState(() {
                           selectedShipTo = value;
@@ -419,7 +439,7 @@ class SamplingSeriesTitleWiseState extends State<SamplingSeriesTitleWise>
                   ),
                 ),
                 const Expanded(
-                  child: Padding(padding: EdgeInsets.only(left: 8.0)),
+                  child: Padding(padding: EdgeInsets.only(left: 4.0)),
                 ),
               ],
             ),
@@ -444,31 +464,72 @@ class SamplingSeriesTitleWiseState extends State<SamplingSeriesTitleWise>
       ),
       bottomNavigationBar: Padding(
         padding: const EdgeInsets.all(8.0),
-        child: ElevatedButton(
-          onPressed: () {
-            setState(() {
-              _submitted = true;
-            });
-            if (_formKey.currentState?.validate() == true &&
-                _areDropdownsSelected()) {
-              _submitForm();
-            }
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.blue,
-            foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          ),
-          child: const Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.shopping_cart),
-              SizedBox(width: 8),
-              CustomText('Next'),
-            ],
+        child: _cartBooksCount > 0 ? _buildTwoOptions() : _buildSingleOption(),
+      ),
+    );
+  }
+
+  // Widget to display when book count is greater than 0
+  Widget _buildTwoOptions() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Expanded(
+          child: ElevatedButton(
+            onPressed: () {
+              setState(() {
+                _submitted = true;
+              });
+              if (_formKey.currentState?.validate() == true &&
+                  _areDropdownsSelected()) {
+                _submitForm();
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.blue,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            ),
+            child: const CustomText('Next', color: Colors.white, fontSize: 14),
           ),
         ),
+        const SizedBox(width: 8), // Spacing between the buttons
+        Expanded(
+          child: ElevatedButton(
+            onPressed: () {
+              goToCart();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            ),
+            child: const CustomText('Go to Cart',
+                fontSize: 14, color: Colors.white),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // Widget to display when book count is 0
+  Widget _buildSingleOption() {
+    return ElevatedButton(
+      onPressed: () {
+        setState(() {
+          _submitted = true;
+        });
+        if (_formKey.currentState?.validate() == true &&
+            _areDropdownsSelected()) {
+          _submitForm();
+        }
+      },
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.blue,
+        foregroundColor: Colors.white,
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
       ),
+      child: const CustomText('Next', color: Colors.white),
     );
   }
 
@@ -523,33 +584,26 @@ class SamplingSeriesTitleWiseState extends State<SamplingSeriesTitleWise>
     await databaseHelper.deleteCartItem(books[index].bookId);
   }
 
+  int getSelectedBookCount() {
+    return books.where((book) => book.quantity > 0).length;
+  }
+
   void _submitForm() {
     if (kDebugMode) {
       print('Form submitted!');
     }
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => Cart(
-          type: widget.type,
-          title: widget.title,
-          customerId: widget.customerId,
-          customerName: widget.customerName,
-          customerCode: widget.customerCode,
-          customerType: widget.customerType,
-          address: widget.address,
-          city: '',
-          state: '',
-          visitFeedback: '',
-          visitDate: '',
-          visitPurposeId: 0,
-          jointVisitWithIds: '',
-          personMetId: 0,
-          samplingDone: true,
-          followUpAction: false,
-        ),
-      ),
-    );
+    // Get the selected book count
+    int selectedBookCount = getSelectedBookCount();
+
+    if (kDebugMode) {
+      print('Selected Book Count: $selectedBookCount');
+    }
+
+    if (selectedBookCount == 0) {
+      toastMessage.showToastMessage('Please add some books to continue');
+      return;
+    }
+    goToCart();
   }
 
   bool _areDropdownsSelected() {
@@ -570,5 +624,32 @@ class SamplingSeriesTitleWiseState extends State<SamplingSeriesTitleWise>
 
       _fetchShipToData();
     });
+  }
+
+  void goToCart() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => Cart(
+          type: widget.type,
+          title: widget.title,
+          customerId: widget.customerId,
+          customerName: widget.customerName,
+          customerCode: widget.customerCode,
+          customerType: widget.customerType,
+          address: widget.address,
+          city: '',
+          state: '',
+          visitFeedback: '',
+          visitDate: '',
+          visitPurposeId: 0,
+          jointVisitWithIds: '',
+          personMetId: 0,
+          samplingDone: true,
+          followUpAction: false,
+          fileName: '',
+        ),
+      ),
+    );
   }
 }

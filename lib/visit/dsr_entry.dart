@@ -1,5 +1,5 @@
 import 'dart:io';
-
+import 'dart:convert';
 import 'package:avant/api/api_service.dart';
 import 'package:avant/common/common.dart';
 import 'package:avant/common/toast.dart';
@@ -17,7 +17,8 @@ import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
+import 'package:path/path.dart' as path;
+import '../views/common_app_bar.dart';
 import '../views/custom_text.dart';
 
 class DsrEntry extends StatefulWidget {
@@ -87,13 +88,20 @@ class DsrEntryPageState extends State<DsrEntry> {
 
   final ImagePicker _picker = ImagePicker();
   XFile? _imageFile;
+  late String _base64Image;
 
   Future<void> _takePhoto() async {
     try {
       final XFile? photo = await _picker.pickImage(source: ImageSource.camera);
-      setState(() {
-        _imageFile = photo;
-      });
+      if (photo != null) {
+        final bytes = await photo.readAsBytes();
+        final base64String = base64Encode(bytes);
+
+        setState(() {
+          _imageFile = photo;
+          _base64Image = base64String;
+        });
+      }
     } catch (e) {
       // Handle error
       if (kDebugMode) {
@@ -133,10 +141,7 @@ class DsrEntryPageState extends State<DsrEntry> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const CustomText('DSR Entry'),
-        backgroundColor: const Color(0xFFFFF8E1),
-      ),
+      appBar: const CommonAppBar(title: 'DSR Entry'),
       body: FutureBuilder<GetVisitDsrResponse>(
         future: _visitDsrData,
         builder: (context, snapshot) {
@@ -241,11 +246,8 @@ class DsrEntryPageState extends State<DsrEntry> {
                                 followUpAction = value;
                               });
                             }),
-                            const CustomText(
-                              'Capture Image',
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14,
-                            ),
+                            const CustomText('Capture Image',
+                                fontWeight: FontWeight.bold, fontSize: 14),
                             buildCaptureImage(),
                             _buildTextField(
                                 'Visit Feedback',
@@ -321,171 +323,10 @@ class DsrEntryPageState extends State<DsrEntry> {
       toastMessage.showToastMessage('Please select Sampling Done.');
     } else if (followUpAction == null) {
       toastMessage.showToastMessage('Please select Follow Up Action.');
-    }
-    /*else if (_imageFile == null) {
-    toastMessage.showToastMessage('Please capture image first.');
-  }*/
-    else if (followUpAction == false && samplingDone == false) {
-      try {
-        FocusScope.of(context).unfocus();
-
-        if (!await _checkInternetConnection()) return;
-
-        setState(() {
-          _isLoading = true;
-        });
-
-        if (address.isEmpty) {
-          address = await locationService.getAddress(
-              position.latitude, position.longitude);
-        }
-
-        // Print the result
-        if (kDebugMode) {
-          print('Selected IDs: $commaSeparatedIds');
-        }
-
-        if (address.isNotEmpty) {
-          try {
-            if (kDebugMode) {
-              print("_submitForm clicked");
-            }
-            final responseData = await VisitEntryService().visitEntry(
-                executiveId ?? 0,
-                widget.customerType,
-                widget.customerId,
-                executiveId ?? 0,
-                address,
-                profileCode ?? '',
-                position.latitude,
-                position.longitude,
-                1,
-                _visitFeedbackController.text,
-                _dateController.text,
-                selectedVisitPurposeId ?? 0,
-                selectedPersonMetId ?? 0,
-                commaSeparatedIds,
-                "",
-                "",
-                "",
-                "",
-                "",
-                0,
-                0,
-                userId ?? 0,
-                "",
-                "",
-                'No',
-                "",
-                "",
-                false,
-                "",
-                "",
-                token ?? "");
-
-            if (responseData.status == 'Success') {
-              String s = responseData.s;
-              if (kDebugMode) {
-                print(s);
-              }
-              if (s.isNotEmpty) {
-                if (kDebugMode) {
-                  print('Add Visit DSR Error s not empty');
-                }
-                toastMessage.showInfoToastMessage(s);
-                if (mounted) {
-                  Navigator.pushAndRemoveUntil(
-                    context,
-                    MaterialPageRoute(builder: (context) => const HomePage()),
-                    (Route<dynamic> route) => false,
-                  );
-                }
-              } else if (responseData.e.isNotEmpty) {
-                if (kDebugMode) {
-                  print('Add Visit DSR Error e not empty');
-                }
-                toastMessage.showToastMessage(responseData.e);
-              } else {
-                if (kDebugMode) {
-                  print('Add Visit DSR Error s & e empty');
-                }
-                toastMessage
-                    .showToastMessage("An error occurred while adding visit.");
-              }
-            } else {
-              if (kDebugMode) {
-                print('Add Visit DSR Error ${responseData.status}');
-              }
-              toastMessage
-                  .showToastMessage("An error occurred while adding visit.");
-            }
-          } catch (e) {
-            if (kDebugMode) {
-              print("Error fetching location: $e");
-            }
-          }
-        } else {
-          if (kDebugMode) {
-            print('Address empty');
-          }
-          toastMessage.showToastMessage("Unable to fetch address.");
-        }
-      } catch (e) {
-        if (kDebugMode) {
-          print('Add Visit DSR Error $e');
-        }
-        toastMessage.showToastMessage("An error occurred while adding visit.");
-      } finally {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    } else if (samplingDone == true) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => VisitSeriesSearch(
-            visitDsrData: visitDsrData,
-            customerId: widget.customerId,
-            customerName: widget.customerName,
-            customerCode: widget.customerCode,
-            customerType: widget.customerType,
-            address: fetchedAddress,
-            city: widget.city,
-            state: widget.state,
-            visitFeedback: _visitFeedbackController.text,
-            visitDate: _dateController.text,
-            visitPurposeId: selectedVisitPurposeId ?? 0,
-            jointVisitWithIds: commaSeparatedIds,
-            personMetId: selectedPersonMetId ?? 0,
-            samplingDone: samplingDone ?? false,
-            followUpAction: followUpAction ?? false,
-          ),
-        ),
-      );
+    } else if (_imageFile == null) {
+      toastMessage.showToastMessage('Please capture image first.');
     } else {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => FollowUpAction(
-            visitDsrData: visitDsrData,
-            customerId: widget.customerId,
-            customerName: widget.customerName,
-            customerCode: widget.customerCode,
-            customerType: widget.customerType,
-            address: fetchedAddress,
-            city: widget.city,
-            state: widget.state,
-            visitFeedback: _visitFeedbackController.text,
-            visitDate: _dateController.text,
-            visitPurposeId: selectedVisitPurposeId ?? 0,
-            jointVisitWithIds: commaSeparatedIds,
-            personMetId: selectedPersonMetId ?? 0,
-            samplingDone: samplingDone ?? false,
-            followUpAction: followUpAction ?? false,
-          ),
-        ),
-      );
+      saveFile(visitDsrData, commaSeparatedIds);
     }
   }
 
@@ -743,6 +584,246 @@ class DsrEntryPageState extends State<DsrEntry> {
     address = await locationService.getAddressFromLocation();
     if (kDebugMode) {
       print("address: $address");
+    }
+  }
+
+  void saveFile(
+      GetVisitDsrResponse visitDsrData, String commaSeparatedIds) async {
+    try {
+      FocusScope.of(context).unfocus();
+
+      if (!await _checkInternetConnection()) return;
+
+      setState(() {
+        _isLoading = true;
+      });
+
+      int currentMilliseconds = DateTime.now().millisecondsSinceEpoch;
+      String extension =
+          path.extension(_imageFile?.name ?? '').replaceAll('.', '');
+      final responseData = await SaveFileService().saveFile(
+          _imageFile?.name ?? '$currentMilliseconds',
+          extension,
+          'visit',
+          _base64Image,
+          token ?? "");
+
+      if (responseData.status == 'Success') {
+        String fileName = responseData.returnDetails.fileName;
+        if (kDebugMode) {
+          print(fileName);
+        }
+        if (fileName.isNotEmpty) {
+          if (kDebugMode) {
+            print('Captured image save successfully.');
+          }
+          if (mounted) {
+            if (followUpAction == false && samplingDone == false) {
+              submit(commaSeparatedIds, fileName);
+            } else if (samplingDone == true) {
+              goToSamplingPage(visitDsrData, commaSeparatedIds, fileName);
+            } else {
+              goToFollowUpActionPage(visitDsrData, commaSeparatedIds, fileName);
+            }
+          }
+        } else {
+          if (kDebugMode) {
+            print('Captured image save error');
+          }
+          toastMessage.showToastMessage(
+              "An error occurred while saving captured image.");
+        }
+      } else {
+        if (kDebugMode) {
+          print('Captured image save Error ${responseData.message}');
+        }
+        toastMessage
+            .showToastMessage("An error occurred while saving captured image.");
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print("Error Captured image save: $e");
+      }
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  void goToSamplingPage(GetVisitDsrResponse visitDsrData,
+      String commaSeparatedIds, String fileName) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => VisitSeriesSearch(
+          visitDsrData: visitDsrData,
+          customerId: widget.customerId,
+          customerName: widget.customerName,
+          customerCode: widget.customerCode,
+          customerType: widget.customerType,
+          address: fetchedAddress,
+          city: widget.city,
+          state: widget.state,
+          visitFeedback: _visitFeedbackController.text,
+          visitDate: _dateController.text,
+          visitPurposeId: selectedVisitPurposeId ?? 0,
+          jointVisitWithIds: commaSeparatedIds,
+          personMetId: selectedPersonMetId ?? 0,
+          samplingDone: samplingDone ?? false,
+          followUpAction: followUpAction ?? false,
+          fileName: fileName,
+        ),
+      ),
+    );
+  }
+
+  void goToFollowUpActionPage(GetVisitDsrResponse visitDsrData,
+      String commaSeparatedIds, String fileName) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => FollowUpAction(
+          visitDsrData: visitDsrData,
+          customerId: widget.customerId,
+          customerName: widget.customerName,
+          customerCode: widget.customerCode,
+          customerType: widget.customerType,
+          address: fetchedAddress,
+          city: widget.city,
+          state: widget.state,
+          visitFeedback: _visitFeedbackController.text,
+          visitDate: _dateController.text,
+          visitPurposeId: selectedVisitPurposeId ?? 0,
+          jointVisitWithIds: commaSeparatedIds,
+          personMetId: selectedPersonMetId ?? 0,
+          samplingDone: samplingDone ?? false,
+          followUpAction: followUpAction ?? false,
+          fileName: fileName,
+        ),
+      ),
+    );
+  }
+
+  void submit(String commaSeparatedIds, String fileName) async {
+    if (followUpAction == false && samplingDone == false) {
+      try {
+        FocusScope.of(context).unfocus();
+
+        if (!await _checkInternetConnection()) return;
+
+        setState(() {
+          _isLoading = true;
+        });
+
+        if (address.isEmpty) {
+          address = await locationService.getAddress(
+              position.latitude, position.longitude);
+        }
+
+        // Print the result
+        if (kDebugMode) {
+          print('Selected IDs: $commaSeparatedIds');
+        }
+
+        String uploadedDocumentXML =
+            "<DocumentElement><UploadedDocument><DocumentName>$fileName</DocumentName><FileName>$fileName</FileName><FileSize>89135</FileSize></UploadedDocument></DocumentElement>";
+
+        if (address.isNotEmpty) {
+          try {
+            if (kDebugMode) {
+              print("_submitForm clicked");
+            }
+            final responseData = await VisitEntryService().visitEntry(
+                executiveId ?? 0,
+                widget.customerType,
+                widget.customerId,
+                executiveId ?? 0,
+                address,
+                profileCode ?? '',
+                position.latitude,
+                position.longitude,
+                1,
+                _visitFeedbackController.text,
+                _dateController.text,
+                selectedVisitPurposeId ?? 0,
+                selectedPersonMetId ?? 0,
+                commaSeparatedIds,
+                uploadedDocumentXML,
+                "",
+                "",
+                "",
+                "",
+                0,
+                0,
+                userId ?? 0,
+                "",
+                "",
+                'No',
+                "",
+                "",
+                false,
+                "",
+                "",
+                token ?? "");
+
+            if (responseData.status == 'Success') {
+              String s = responseData.s;
+              if (kDebugMode) {
+                print(s);
+              }
+              if (s.isNotEmpty) {
+                if (kDebugMode) {
+                  print('Add Visit DSR Error s not empty');
+                }
+                toastMessage.showInfoToastMessage(s);
+                if (mounted) {
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(builder: (context) => const HomePage()),
+                    (Route<dynamic> route) => false,
+                  );
+                }
+              } else if (responseData.e.isNotEmpty) {
+                if (kDebugMode) {
+                  print('Add Visit DSR Error e not empty');
+                }
+                toastMessage.showToastMessage(responseData.e);
+              } else {
+                if (kDebugMode) {
+                  print('Add Visit DSR Error s & e empty');
+                }
+                toastMessage
+                    .showToastMessage("An error occurred while adding visit.");
+              }
+            } else {
+              if (kDebugMode) {
+                print('Add Visit DSR Error ${responseData.status}');
+              }
+              toastMessage
+                  .showToastMessage("An error occurred while adding visit.");
+            }
+          } catch (e) {
+            if (kDebugMode) {
+              print("Error fetching location: $e");
+            }
+          }
+        } else {
+          if (kDebugMode) {
+            print('Address empty');
+          }
+          toastMessage.showToastMessage("Unable to fetch address.");
+        }
+      } catch (e) {
+        if (kDebugMode) {
+          print('Add Visit DSR Error $e');
+        }
+        toastMessage.showToastMessage("An error occurred while adding visit.");
+      } finally {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 }

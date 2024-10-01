@@ -11,6 +11,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../model/geography_model.dart';
 import '../model/search_bookseller_response.dart';
+import '../views/common_app_bar.dart';
 import '../views/custom_text.dart';
 
 class NewCustomerSchoolForm2 extends StatefulWidget {
@@ -261,10 +262,7 @@ class NewCustomerSchoolForm2State extends State<NewCustomerSchoolForm2> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: CustomText('New Customer - ${widget.type}'),
-        backgroundColor: const Color(0xFFFFF8E1),
-      ),
+      appBar: CommonAppBar(title: 'New Customer - ${widget.type}'),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : FutureBuilder<CustomerEntryMasterResponse>(

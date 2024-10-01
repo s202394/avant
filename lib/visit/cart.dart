@@ -1,4 +1,5 @@
 import 'package:avant/db/db_helper.dart';
+import 'package:avant/views/custom_text.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
@@ -14,7 +15,7 @@ import '../model/login_model.dart';
 import '../model/self_stock_request_response.dart';
 import '../service/location_service.dart';
 import '../views/book_list_item.dart';
-import '../views/custom_text.dart';
+import '../views/common_app_bar.dart';
 import '../views/rich_text.dart';
 
 class Cart extends StatefulWidget {
@@ -34,6 +35,7 @@ class Cart extends StatefulWidget {
   final int personMetId;
   final bool samplingDone;
   final bool followUpAction;
+  final String fileName;
 
   const Cart({
     super.key,
@@ -53,6 +55,7 @@ class Cart extends StatefulWidget {
     required this.personMetId,
     required this.samplingDone,
     required this.followUpAction,
+    required this.fileName,
   });
 
   @override
@@ -73,7 +76,7 @@ class CartState extends State<Cart> with TickerProviderStateMixin {
 
   int? userId;
 
-  bool _isLoading = true;
+  bool _isLoading = false;
 
   late Position position;
   late String address;
@@ -93,8 +96,6 @@ class CartState extends State<Cart> with TickerProviderStateMixin {
   String? selectedShipmentMode;
   int? selectedShipmentModeId;
 
-  bool _submitted = false;
-
   @override
   void initState() {
     super.initState();
@@ -103,7 +104,6 @@ class CartState extends State<Cart> with TickerProviderStateMixin {
 
     getAddressData();
 
-    _fetchCartDetails();
     _fetchCartData();
 
     _selfStockRequestData = _fetchSelfStockData();
@@ -129,6 +129,8 @@ class CartState extends State<Cart> with TickerProviderStateMixin {
       _seriesItems = seriesItems;
       _titleItems = titleItems;
 
+      tabCount = 0; // Reset tabCount to avoid old values.
+
       if (widget.samplingDone && _seriesItems.isNotEmpty) {
         tabCount++;
       }
@@ -139,12 +141,12 @@ class CartState extends State<Cart> with TickerProviderStateMixin {
         tabCount++;
       }
 
+      // Dispose the old controller only if it exists to avoid disposing uninitialized controllers.
       _tabController.dispose();
-      if (tabCount > 0) {
-        _tabController = TabController(length: tabCount, vsync: this);
-      } else {
-        _tabController = TabController(length: 1, vsync: this);
-      }
+
+      // Initialize a new TabController based on the new tab count.
+      _tabController =
+          TabController(length: tabCount > 0 ? tabCount : 1, vsync: this);
     });
   }
 
@@ -154,28 +156,12 @@ class CartState extends State<Cart> with TickerProviderStateMixin {
     super.dispose();
   }
 
-  Future<void> _fetchCartDetails() async {
-    try {
-      _isLoading = false;
-    } catch (e) {
-      if (kDebugMode) {
-        print('Error fetching data: $e');
-      }
-      setState(() {
-        _isLoading = false;
-      });
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
       length: tabCount,
       child: Scaffold(
-        appBar: AppBar(
-          backgroundColor: Colors.amber[100],
-          title: CustomText(widget.title),
-        ),
+        appBar: CommonAppBar(title: widget.title),
         body: _isLoading
             ? const Center(child: CircularProgressIndicator())
             : (_tabController == null)
@@ -191,7 +177,7 @@ class CartState extends State<Cart> with TickerProviderStateMixin {
                             Text(
                               widget.customerName,
                               style: const TextStyle(
-                                  fontWeight: FontWeight.bold, fontSize: 18),
+                                  fontWeight: FontWeight.bold, fontSize: 16),
                             ),
                             RichTextWidget(label: widget.address),
                             Visibility(
@@ -211,15 +197,17 @@ class CartState extends State<Cart> with TickerProviderStateMixin {
                                   ),
                                 ],
                               ),
-                            )
+                            ),
                           ],
                         ),
                       ),
                       Container(
+                        height: 40,
                         color: Colors.orange,
                         child: TabBar(
                             controller: _tabController,
                             labelColor: Colors.white,
+                            unselectedLabelColor: Colors.white,
                             indicatorColor: Colors.blue,
                             tabs: _tabs()),
                       ),
@@ -245,14 +233,12 @@ class CartState extends State<Cart> with TickerProviderStateMixin {
                                 child: const Padding(
                                   padding: EdgeInsets.symmetric(
                                       vertical: 8.0, horizontal: 16),
-                                  child: Text(
+                                  child: CustomText(
                                     'Submit',
                                     textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 18,
-                                    ),
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
                                   ),
                                 ),
                               ),
@@ -501,6 +487,9 @@ class CartState extends State<Cart> with TickerProviderStateMixin {
         int totalRequestedQty = await databaseHelper.getTotalRequestedQty();
         double totalPrice = await databaseHelper.getTotalPrice();
 
+        String uploadedDocumentXML =
+            "<DocumentElement><UploadedDocument><DocumentName>${widget.fileName}</DocumentName><FileName>${widget.fileName}</FileName><FileSize>89135</FileSize></UploadedDocument></DocumentElement>";
+
         final responseData = await VisitEntryService().visitEntry(
             executiveId ?? 0,
             widget.customerType,
@@ -516,7 +505,7 @@ class CartState extends State<Cart> with TickerProviderStateMixin {
             widget.visitPurposeId,
             widget.personMetId,
             widget.jointVisitWithIds,
-            "",
+            uploadedDocumentXML,
             "",
             "",
             "",
@@ -723,7 +712,8 @@ class CartState extends State<Cart> with TickerProviderStateMixin {
           if (kDebugMode) {
             print(msgType);
           }
-          if (msgType == 's') {
+          if (msgType == 's' ||
+              (msgType == 'e' && msgText.toLowerCase().contains('submitted successfully'))) {
             if (kDebugMode) {
               print(
                   'Submit sampling request msgType : $msgType, msgText : $msgText');
@@ -893,15 +883,19 @@ class CartState extends State<Cart> with TickerProviderStateMixin {
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: DropdownButtonFormField<String>(
         isExpanded: true,
+        style: const TextStyle(fontSize: 14),
         decoration: InputDecoration(
           labelText: label,
+          contentPadding:
+              const EdgeInsets.symmetric(vertical: 0, horizontal: 10),
+          labelStyle: const TextStyle(fontSize: 14),
           border: const OutlineInputBorder(),
         ),
         value: selectedValue,
         items: items.keys.map((key) {
           return DropdownMenuItem<String>(
             value: key,
-            child: Text(key),
+            child: CustomText(key),
           );
         }).toList(),
         onChanged: onChanged,
@@ -915,30 +909,29 @@ class CartState extends State<Cart> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildTextField(String label, TextEditingController controller,
-      {int maxLines = 1, bool enabled = true}) {
+  Widget _buildTextField(
+    String label,
+    TextEditingController controller, {
+    int maxLines = 1,
+    bool enabled = true,
+    double labelFontSize = 14.0,
+    double textFontSize = 14.0,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: TextFormField(
         controller: controller,
+        style: TextStyle(fontSize: textFontSize),
         maxLines: maxLines,
         enabled: enabled,
         decoration: InputDecoration(
           labelText: label,
           border: const OutlineInputBorder(),
-          errorText: _submitted && controller.text.isEmpty
-              ? 'Please enter $label'
-              : null,
           alignLabelWithHint: true,
+          labelStyle: TextStyle(fontSize: labelFontSize),
           contentPadding:
-              const EdgeInsets.symmetric(vertical: 12.0, horizontal: 12.0),
+              const EdgeInsets.symmetric(vertical: 8.0, horizontal: 12.0),
         ),
-        validator: (value) {
-          if (value == null || value.isEmpty) {
-            return 'Please enter $label';
-          }
-          return null;
-        },
       ),
     );
   }
@@ -965,7 +958,6 @@ class CartState extends State<Cart> with TickerProviderStateMixin {
     if (mounted) {
       setState(() {
         _isLoading = false;
-        _submitted = true;
       });
       Navigator.of(context).pop();
 

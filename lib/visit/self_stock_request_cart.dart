@@ -12,6 +12,7 @@ import '../model/fetch_titles_model.dart';
 import '../model/login_model.dart';
 import '../service/location_service.dart';
 import '../views/book_list_item.dart';
+import '../views/common_app_bar.dart';
 import '../views/custom_text.dart';
 import '../views/rich_text.dart';
 
@@ -124,10 +125,7 @@ class SelfStockRequestCartState extends State<SelfStockRequestCart>
     return DefaultTabController(
       length: 1,
       child: Scaffold(
-        appBar: AppBar(
-          backgroundColor: Colors.amber[100],
-          title: CustomText(widget.title),
-        ),
+        appBar: CommonAppBar(title: widget.title),
         body: _isLoading
             ? const Center(child: CircularProgressIndicator())
             : Column(
@@ -145,10 +143,12 @@ class SelfStockRequestCartState extends State<SelfStockRequestCart>
                     ),
                   ),
                   Container(
+                    height: 40,
                     color: Colors.orange,
                     child: TabBar(
                       controller: _tabController,
                       labelColor: Colors.white,
+                      unselectedLabelColor: Colors.white,
                       indicatorColor: Colors.blue,
                       tabs: const [
                         Tab(text: "Sampling Titles"),
@@ -266,7 +266,8 @@ class SelfStockRequestCartState extends State<SelfStockRequestCart>
           if (kDebugMode) {
             print(msgType);
           }
-          if (msgType == 's') {
+          if (msgType == 's' ||
+              (msgType == 'e' && msgText.toLowerCase().contains('submitted successfully'))) {
             if (kDebugMode) {
               print(
                   'Submit self stock request msgType : $msgType, msgText : $msgText');

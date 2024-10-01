@@ -39,6 +39,7 @@ class HomePage extends StatefulWidget {
 class HomePageState extends State<HomePage> with WidgetsBindingObserver {
   late SharedPreferences prefs;
   final ToastMessage _toastMessage = ToastMessage();
+  DatabaseHelper databaseHelper = DatabaseHelper();
 
   Future<List<MenuData>> futureMenuData = Future.value([]);
   Future<PlanResponse> futurePlanResponse = Future.value(
@@ -475,45 +476,18 @@ class HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                   if (childMenu.menuName == 'Customer') {
                                     if (childMenu.childMenuName ==
                                         'School List') {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) =>
-                                              const NewCustomerSchoolForm1(
-                                                  type: 'School'),
-                                        ),
-                                      );
+                                      gotoNewCustomerSchool('School');
                                     } else if (childMenu.childMenuName ==
                                         'Institute List') {
                                     } else if (childMenu.childMenuName ==
                                         'Trade List') {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) =>
-                                              const NewCustomerTradeLibraryForm1(
-                                                  type: 'Trade'),
-                                        ),
-                                      );
+                                      gotoNewCustomerTradeLibrary('Trade');
                                     } else if (childMenu.childMenuName ==
                                         'Library List') {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) =>
-                                              const NewCustomerTradeLibraryForm1(
-                                                  type: 'Library'),
-                                        ),
-                                      );
+                                      gotoNewCustomerTradeLibrary('Library');
                                     }
                                   } else {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => WebViewScreen(
-                                            url: childMenu.linkURL),
-                                      ),
-                                    );
+                                    gotoWebView(childMenu.linkURL);
                                   }
                                 },
                               ),
@@ -522,21 +496,10 @@ class HomePageState extends State<HomePage> with WidgetsBindingObserver {
                         );
                       }),
                       ListTile(
-                        title: const CustomText(
-                          'Visit DSR',
-                          fontSize: 14,
-                        ),
+                        title: const CustomText('Visit DSR', fontSize: 14),
                         onTap: () {
                           Navigator.pop(context);
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const CustomerSearch(
-                                type: 'Visit',
-                                title: 'DSR Entry',
-                              ),
-                            ),
-                          );
+                          goToCustomerSearchVisit();
                         },
                       ),
                       ListTile(
@@ -544,14 +507,7 @@ class HomePageState extends State<HomePage> with WidgetsBindingObserver {
                             fontSize: 14),
                         onTap: () {
                           Navigator.pop(context);
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const CustomerSearch(
-                                  type: 'Sampling',
-                                  title: 'Customer Sample Request'),
-                            ),
-                          );
+                          goToCustomerSearchSampling();
                         },
                       ),
                       ListTile(
@@ -559,12 +515,7 @@ class HomePageState extends State<HomePage> with WidgetsBindingObserver {
                             fontSize: 14),
                         onTap: () {
                           Navigator.pop(context);
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const SelfStockEntry(),
-                            ),
-                          );
+                          goToSelfStockEntry();
                         },
                       ),
                       ListTile(
@@ -572,12 +523,7 @@ class HomePageState extends State<HomePage> with WidgetsBindingObserver {
                             fontSize: 14),
                         onTap: () {
                           Navigator.pop(context);
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => const ApprovalListForm(
-                                    type: customerSampleApproval)),
-                          );
+                          gotoCustomerSampleApproval();
                         },
                       ),
                       ListTile(
@@ -585,12 +531,7 @@ class HomePageState extends State<HomePage> with WidgetsBindingObserver {
                             fontSize: 14),
                         onTap: () {
                           Navigator.pop(context);
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => const ApprovalListForm(
-                                    type: 'Self Stock Request Approval')),
-                          );
+                          gotoSelfStockRequestApproval();
                         },
                       ),
                       ListTile(
@@ -704,6 +645,90 @@ class HomePageState extends State<HomePage> with WidgetsBindingObserver {
         );
       },
     );
+  }
+
+  void gotoNewCustomerTradeLibrary(String type) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => NewCustomerTradeLibraryForm1(type: type),
+      ),
+    );
+  }
+
+  void gotoNewCustomerSchool(String type) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => NewCustomerSchoolForm1(type: type),
+      ),
+    );
+  }
+
+  void gotoWebView(String linkURL) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => WebViewScreen(url: linkURL),
+      ),
+    );
+  }
+
+  void goToCustomerSearchVisit() {
+    deleteAllCartItems();
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const CustomerSearch(
+          type: 'Visit',
+          title: 'DSR Entry',
+        ),
+      ),
+    );
+  }
+
+  void goToCustomerSearchSampling() {
+    deleteAllCartItems();
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const CustomerSearch(
+            type: 'Sampling', title: 'Customer Sample Request'),
+      ),
+    );
+  }
+
+  void goToSelfStockEntry() {
+    deleteAllCartItems();
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const SelfStockEntry(),
+      ),
+    );
+  }
+
+  void gotoCustomerSampleApproval() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+          builder: (context) =>
+              const ApprovalListForm(type: customerSampleApproval)),
+    );
+  }
+
+  void gotoSelfStockRequestApproval() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+          builder: (context) =>
+              const ApprovalListForm(type: 'Self Stock Request Approval')),
+    );
+  }
+
+  void deleteAllCartItems() {
+    databaseHelper.deleteAllCartItems();
+    databaseHelper.deleteAllFollowUpActionCarts();
   }
 }
 

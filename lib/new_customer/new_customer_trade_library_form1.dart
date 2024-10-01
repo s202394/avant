@@ -11,6 +11,7 @@ import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../views/common_app_bar.dart';
 import '../views/custom_text.dart';
 
 class NewCustomerTradeLibraryForm1 extends StatefulWidget {
@@ -239,10 +240,7 @@ class NewCustomerTradeLibraryForm1State
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: CustomText('New Customer - ${widget.type}'),
-        backgroundColor: const Color(0xFFFFF8E1),
-      ),
+      appBar: CommonAppBar(title: 'New Customer - ${widget.type}'),
       body: FutureBuilder<CustomerEntryMasterResponse>(
         future: futureData,
         builder: (context, snapshot) {

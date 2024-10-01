@@ -11,6 +11,7 @@ import '../model/fetch_titles_model.dart';
 import '../model/get_visit_dsr_model.dart';
 import '../model/login_model.dart';
 import '../model/series_and_class_level_list_response.dart';
+import '../views/common_app_bar.dart';
 import '../views/custom_text.dart';
 
 class VisitSeriesSearch extends StatefulWidget {
@@ -29,6 +30,7 @@ class VisitSeriesSearch extends StatefulWidget {
   final int personMetId;
   final bool samplingDone;
   final bool followUpAction;
+  final String fileName;
 
   const VisitSeriesSearch({
     super.key,
@@ -47,6 +49,7 @@ class VisitSeriesSearch extends StatefulWidget {
     required this.personMetId,
     required this.samplingDone,
     required this.followUpAction,
+    required this.fileName,
   });
 
   @override
@@ -224,10 +227,7 @@ class VisitSeriesSearchPageState extends State<VisitSeriesSearch>
     return DefaultTabController(
       length: 2,
       child: Scaffold(
-        appBar: AppBar(
-          backgroundColor: Colors.amber[100],
-          title: const CustomText('DSR Entry'),
-        ),
+        appBar: const CommonAppBar(title: 'DSR Entry'),
         body: _isLoading
             ? const Center(child: CircularProgressIndicator())
             : Form(
@@ -257,10 +257,12 @@ class VisitSeriesSearchPageState extends State<VisitSeriesSearch>
                       ),
                     ),
                     Container(
+                      height: 40,
                       color: Colors.orange,
                       child: TabBar(
                         controller: _tabController,
                         labelColor: Colors.white,
+                        unselectedLabelColor: Colors.white,
                         indicatorColor: Colors.blue,
                         tabs: const [
                           Tab(text: 'Series/ Title'),
@@ -295,7 +297,7 @@ class VisitSeriesSearchPageState extends State<VisitSeriesSearch>
                               child: const Padding(
                                 padding: EdgeInsets.symmetric(
                                     vertical: 8.0, horizontal: 16),
-                                child: CustomText('Search Customer',
+                                child: CustomText('Next',
                                     textAlign: TextAlign.center,
                                     color: Colors.white,
                                     fontWeight: FontWeight.bold,
@@ -347,6 +349,7 @@ class VisitSeriesSearchPageState extends State<VisitSeriesSearch>
             personMetId: widget.personMetId,
             samplingDone: widget.samplingDone,
             followUpAction: widget.followUpAction,
+            fileName: widget.fileName,
           ),
         ),
       );

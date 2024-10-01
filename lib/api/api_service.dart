@@ -28,6 +28,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../model/city_list_for_search_customer_response.dart';
 import '../model/sampling_details_response.dart';
+import '../model/save_file_model.dart';
 import '../model/search_customer_result_response.dart';
 import '../model/self_stock_request_trade_response.dart';
 import '../model/series_and_class_level_list_response.dart';
@@ -2812,6 +2813,67 @@ class SelfStockSamplingService {
             shipmentModeId,
             enteredBy,
             newToken);
+      } else {
+        throw Exception('Failed to retrieve new token');
+      }
+    } else {
+      throw Exception(
+          'Username or password is not stored in SharedPreferences');
+    }
+  }
+}
+
+class SaveFileService {
+  Future<SaveFileResponse> saveFile(String fileName, String fileExtension,
+      String module, String base64String, String token) async {
+    String body = jsonEncode(<String, dynamic>{
+      'FileName': fileName,
+      'FileExtension': fileExtension,
+      'Module': module,
+      'Base64String': base64String,
+    });
+    if (kDebugMode) {
+      print('Request Body:$body');
+      print('Request URL:$saveFileUrl');
+    }
+    if (kDebugMode) {}
+    final response = await http.post(
+      Uri.parse(saveFileUrl),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+        'Authorization': 'Bearer $token',
+      },
+      body: body,
+    );
+    if (kDebugMode) {
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}');
+    }
+    if (response.statusCode == 200) {
+      final jsonResponse = json.decode(response.body);
+      return SaveFileResponse.fromJson(jsonResponse);
+    } else if (response.statusCode == 401) {
+      // Token is invalid or expired, refresh the token and retry
+      return await refreshAndRetry(
+          fileName, fileExtension, module, base64String);
+    } else {
+      throw Exception('Failed to save file');
+    }
+  }
+
+  Future<SaveFileResponse> refreshAndRetry(String fileName,
+      String fileExtension, String module, String base64String) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String username = prefs.getString('token_username') ?? '';
+    String password = prefs.getString('password') ?? '';
+
+    if (username.isNotEmpty && password.isNotEmpty) {
+      await TokenService().token(username, password);
+      String? newToken = prefs.getString('token');
+
+      if (newToken != null && newToken.isNotEmpty) {
+        return await saveFile(
+            fileName, fileExtension, module, base64String, newToken);
       } else {
         throw Exception('Failed to retrieve new token');
       }

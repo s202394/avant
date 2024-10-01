@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../api/api_service.dart';
 import '../model/login_model.dart';
 import '../model/search_customer_result_response.dart';
+import '../views/common_app_bar.dart';
 import '../views/custom_text.dart';
 import '../views/rich_text.dart';
 import 'dsr_entry.dart';
@@ -88,10 +89,7 @@ class CustomerSearchListPageState extends State<CustomerSearchList> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: const Color(0xFFFFF8E1),
-        title: CustomText(widget.title),
-      ),
+      appBar: CommonAppBar(title: widget.title),
       body: FutureBuilder<SearchCustomerResultResponse>(
         future: _customerData,
         builder: (context, snapshot) {
@@ -103,10 +101,7 @@ class CustomerSearchListPageState extends State<CustomerSearchList> {
           // Handle error state
           else if (snapshot.hasError) {
             return Center(
-              child: CustomText(
-                snapshot.error.toString(),
-                color: Colors.red,
-              ),
+              child: CustomText(snapshot.error.toString(), color: Colors.red),
             );
           }
 
@@ -124,9 +119,7 @@ class CustomerSearchListPageState extends State<CustomerSearchList> {
                 children: [
                   ListTile(
                     title: CustomText(customer.customerName),
-                    subtitle: RichTextWidget(
-                      label: customer.address,
-                    ),
+                    subtitle: RichTextWidget(label: customer.address),
                     trailing: InkWell(
                       onTap: () {
                         if (widget.type == 'Visit') {
@@ -174,10 +167,9 @@ class CustomerSearchListPageState extends State<CustomerSearchList> {
                           context,
                           MaterialPageRoute(
                             builder: (context) => VisitDetailsPage(
-                              customerId: customer.customerId,
-                              visitId: 0,
-                              isTodayPlan: true,
-                            ),
+                                customerId: customer.customerId,
+                                visitId: 0,
+                                isTodayPlan: true),
                           ),
                         );
                       }

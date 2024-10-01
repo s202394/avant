@@ -14,8 +14,16 @@ void main() {
   WidgetsFlutterBinding.ensureInitialized();
   Workmanager().initialize(callbackDispatcher, isInDebugMode: true);
 
-  Workmanager().registerPeriodicTask("DART CRM", "DART CRM",
-      frequency: const Duration(minutes: 1));
+  Workmanager().registerPeriodicTask(
+    "DART CRM",
+    "DART CRM",
+    frequency: const Duration(minutes: 1),
+    constraints: Constraints(
+      networkType: NetworkType.connected,
+      requiresBatteryNotLow: false,
+      requiresCharging: false,
+    ),
+  );
 
   runApp(
     MaterialApp(

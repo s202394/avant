@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../model/city_list_for_search_customer_response.dart';
+import '../views/common_app_bar.dart';
 import '../views/custom_text.dart';
 import 'customer_search_list.dart';
 
@@ -100,10 +101,7 @@ class CustomerSearchPageState extends State<CustomerSearch> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: CustomText(widget.title),
-        backgroundColor: const Color(0xFFFFF8E1),
-      ),
+      appBar: CommonAppBar(title: widget.title),
       body: _isLoading // Show progress bar while loading
           ? const Center(child: CircularProgressIndicator())
           : Form(
@@ -247,6 +245,8 @@ class CustomerSearchPageState extends State<CustomerSearch> {
         },
         decoration: InputDecoration(
           labelText: label,
+          contentPadding: const EdgeInsets.symmetric(
+              vertical: 0, horizontal: 10),
           labelStyle: TextStyle(fontSize: labelFontSize),
           border: const OutlineInputBorder(),
         ),

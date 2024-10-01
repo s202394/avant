@@ -104,3 +104,5 @@ const String expenseApprovalDetailsUrl = '${baseUrl}ExpenseApprovalDetails';
 const String expenseApprovalSubmitUrl = '${baseUrl}SubmitExpenseApproval';
 const String expenseBulkApprovalSubmitUrl =
     '${baseUrl}SubmitExpenseBulkApproval';
+
+const String saveFileUrl = '${baseUrl}savefile';

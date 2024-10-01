@@ -15,6 +15,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../model/submit_approval_model.dart';
+import '../views/common_app_bar.dart';
 
 class ApprovalListForm extends StatefulWidget {
   final String type;
@@ -124,10 +125,7 @@ class ApprovalListFormState extends State<ApprovalListForm> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: CustomText(widget.type),
-        backgroundColor: const Color(0xFFFFF8E1),
-      ),
+      appBar: CommonAppBar(title: widget.type),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : isConnected
@@ -211,7 +209,7 @@ class ApprovalListFormState extends State<ApprovalListForm> {
       bottomNavigationBar: Visibility(
         visible: hasData,
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
+          padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 8.0),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
@@ -220,27 +218,27 @@ class ApprovalListFormState extends State<ApprovalListForm> {
                   onPressed: () => _handleRequest(context, "Approve"),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.green,
-                    padding: const EdgeInsets.symmetric(vertical: 16.0),
+                    padding: const EdgeInsets.symmetric(vertical: 8.0),
                   ),
                   child: const CustomText('Approve',
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
-                      fontSize: 16),
+                      fontSize: 14),
                 ),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 8),
               Expanded(
                 child: ElevatedButton(
                   onPressed: () => _handleRequest(context, "Reject"),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.red,
-                    padding: const EdgeInsets.symmetric(vertical: 16.0),
+                    padding: const EdgeInsets.symmetric(vertical: 8.0),
                   ),
                   child: const CustomText(
                     'Reject',
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
-                    fontSize: 16,
+                    fontSize: 14,
                   ),
                 ),
               ),

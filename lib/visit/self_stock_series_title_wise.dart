@@ -1,3 +1,4 @@
+import 'package:avant/common/toast.dart';
 import 'package:avant/db/db_helper.dart';
 import 'package:avant/views/label_text.dart';
 import 'package:avant/visit/self_stock_request_cart.dart';
@@ -10,6 +11,7 @@ import '../model/fetch_titles_model.dart';
 import '../model/login_model.dart';
 import '../model/series_and_class_level_list_response.dart';
 import '../views/book_list_item.dart';
+import '../views/common_app_bar.dart';
 import '../views/custom_text.dart';
 import '../views/rich_text.dart';
 
@@ -56,6 +58,7 @@ class SelfStockSeriesTitleWiseState extends State<SelfStockSeriesTitleWise>
 
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   DatabaseHelper databaseHelper = DatabaseHelper();
+  ToastMessage toastMessage = ToastMessage();
 
   List<TitleList> books = [];
 
@@ -66,6 +69,8 @@ class SelfStockSeriesTitleWiseState extends State<SelfStockSeriesTitleWise>
   late String token;
   late int? executiveId;
   late int? profileId;
+
+  int _cartBooksCount = 0;
 
   @override
   void initState() {
@@ -79,7 +84,7 @@ class SelfStockSeriesTitleWiseState extends State<SelfStockSeriesTitleWise>
         _handleTabChange(_tabController.index);
       }
     });
-
+    _fetchBooksCount();
     _fetchData();
   }
 
@@ -146,10 +151,7 @@ class SelfStockSeriesTitleWiseState extends State<SelfStockSeriesTitleWise>
     return DefaultTabController(
       length: 2,
       child: Scaffold(
-        appBar: AppBar(
-          backgroundColor: Colors.amber[100],
-          title: CustomText(widget.title),
-        ),
+        appBar: CommonAppBar(title: widget.title),
         body: isLoading
             ? const Center(child: CircularProgressIndicator())
             : errorMessage != null
@@ -171,6 +173,7 @@ class SelfStockSeriesTitleWiseState extends State<SelfStockSeriesTitleWise>
                           ),
                         ),
                         Container(
+                          height: 40,
                           color: Colors.orange,
                           child: TabBar(
                             controller: _tabController,
@@ -245,27 +248,71 @@ class SelfStockSeriesTitleWiseState extends State<SelfStockSeriesTitleWise>
       ),
       bottomNavigationBar: Padding(
         padding: const EdgeInsets.all(8.0),
-        child: ElevatedButton(
-          onPressed: () {
-            if (_formKey.currentState?.validate() == true) {
-              _submitForm();
-            }
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.blue,
-            foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          ),
-          child: const Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.shopping_cart),
-              SizedBox(width: 8),
-              CustomText('Next'),
-            ],
+        child: _cartBooksCount > 0 ? _buildTwoOptions() : _buildSingleOption(),
+      ),
+    );
+  }
+
+  // Widget to display when book count is greater than 0
+  Widget _buildTwoOptions() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Expanded(
+          child: ElevatedButton(
+            onPressed: () {
+              if (_formKey.currentState?.validate() == true) {
+                _submitForm();
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.blue,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            ),
+            child: const CustomText('Next', color: Colors.white, fontSize: 14),
           ),
         ),
+        const SizedBox(width: 8), // Spacing between the buttons
+        Expanded(
+          child: ElevatedButton(
+            onPressed: () {
+              gotoCart();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            ),
+            child: const CustomText('Go to Cart',
+                fontSize: 14, color: Colors.white),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _fetchBooksCount() async {
+    int count = await databaseHelper.getItemCount();
+    setState(() {
+      _cartBooksCount = count;
+    });
+  }
+
+  // Widget to display when book count is 0
+  Widget _buildSingleOption() {
+    return ElevatedButton(
+      onPressed: () {
+        if (_formKey.currentState?.validate() == true) {
+          _submitForm();
+        }
+      },
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.blue,
+        foregroundColor: Colors.white,
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
       ),
+      child: const CustomText('Next', color: Colors.white),
     );
   }
 
@@ -320,10 +367,30 @@ class SelfStockSeriesTitleWiseState extends State<SelfStockSeriesTitleWise>
     await databaseHelper.deleteCartItem(books[index].bookId);
   }
 
+  int getSelectedBookCount() {
+    return books.where((book) => book.quantity > 0).length;
+  }
+
   void _submitForm() {
     if (kDebugMode) {
       print('Form submitted!');
     }
+
+    // Get the selected book count
+    int selectedBookCount = getSelectedBookCount();
+
+    if (kDebugMode) {
+      print('Selected Book Count: $selectedBookCount');
+    }
+
+    if (selectedBookCount == 0) {
+      toastMessage.showToastMessage('Please add some books to continue');
+      return;
+    }
+    gotoCart();
+  }
+
+  void gotoCart() {
     Navigator.push(
       context,
       MaterialPageRoute(

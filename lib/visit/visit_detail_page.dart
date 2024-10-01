@@ -5,6 +5,7 @@ import 'package:avant/visit/dsr_entry.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../views/common_app_bar.dart';
 import '../views/custom_text.dart';
 
 class VisitDetailsPage extends StatefulWidget {
@@ -44,9 +45,7 @@ class VisitDetailsPageState extends State<VisitDetailsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const CustomText('Last Visit Details'),
-      ),
+      appBar: const CommonAppBar(title: 'Last Visit Details'),
       body: FutureBuilder<VisitDetailsResponse>(
         future: futureVisitDetails,
         builder: (context, snapshot) {

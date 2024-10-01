@@ -16,6 +16,7 @@ import 'package:avant/common/constants.dart';
 
 import '../common/common.dart';
 import '../model/submit_approval_model.dart';
+import '../views/common_app_bar.dart';
 import 'approval_list_form.dart';
 
 class ApprovalDetailForm extends StatefulWidget {
@@ -252,10 +253,7 @@ class ApprovalDetailFormState extends State<ApprovalDetailForm> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: CustomText(widget.type),
-        backgroundColor: const Color(0xFFFFF8E1),
-      ),
+      appBar: CommonAppBar(title: widget.type),
       body: Center(
         child: isLoading
             ? const CircularProgressIndicator()
@@ -497,6 +495,7 @@ class ApprovalDetailFormState extends State<ApprovalDetailForm> {
                                     'New Query',
                                     color: Colors.white,
                                     fontWeight: FontWeight.bold,
+                                    fontSize: 14,
                                   ),
                                 ),
                               ],
@@ -555,7 +554,7 @@ class ApprovalDetailFormState extends State<ApprovalDetailForm> {
                                   ],
                                 )),
                             Padding(
-                              padding: const EdgeInsets.all(8.0),
+                              padding: const EdgeInsets.only(top: 8.0),
                               child: TextField(
                                 style: const TextStyle(fontSize: 14),
                                 key: _remarksFieldKey,
@@ -592,31 +591,44 @@ class ApprovalDetailFormState extends State<ApprovalDetailForm> {
       ),
       bottomNavigationBar: Visibility(
         visible: hasData,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            ElevatedButton(
-              onPressed: () =>
-                  _handleRequest(context, "Approve", _titleDetails),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green,
-                textStyle: const TextStyle(
-                    color: Colors.white, fontWeight: FontWeight.bold),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 8.0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () =>
+                      _handleRequest(context, "Approve", _titleDetails),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                  ),
+                  child: const CustomText('Approve',
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14),
+                ),
               ),
-              child: const CustomText('Approve',
-                  color: Colors.white, fontWeight: FontWeight.bold),
-            ),
-            ElevatedButton(
-              onPressed: () => _handleRequest(context, "Reject", _titleDetails),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-                textStyle: const TextStyle(
-                    color: Colors.white, fontWeight: FontWeight.bold),
+              const SizedBox(width: 8),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () =>
+                      _handleRequest(context, "Reject", _titleDetails),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                  ),
+                  child: const CustomText(
+                    'Reject',
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                ),
               ),
-              child: const CustomText('Reject',
-                  color: Colors.white, fontWeight: FontWeight.bold),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

@@ -9,6 +9,7 @@ import '../common/toast.dart';
 import '../model/fetch_titles_model.dart';
 import '../model/login_model.dart';
 import '../model/series_and_class_level_list_response.dart';
+import '../views/common_app_bar.dart';
 import '../views/custom_text.dart';
 
 class SamplingSeriesSearch extends StatefulWidget {
@@ -207,10 +208,7 @@ class SamplingSeriesSearchPageState extends State<SamplingSeriesSearch>
     return DefaultTabController(
       length: 2,
       child: Scaffold(
-        appBar: AppBar(
-          backgroundColor: Colors.amber[100],
-          title: CustomText(widget.title),
-        ),
+        appBar: CommonAppBar(title: widget.title),
         body: _isLoading
             ? const Center(child: CircularProgressIndicator())
             : Form(
@@ -230,10 +228,12 @@ class SamplingSeriesSearchPageState extends State<SamplingSeriesSearch>
                       ),
                     ),
                     Container(
+                      height: 40,
                       color: Colors.orange,
                       child: TabBar(
                         controller: _tabController,
                         labelColor: Colors.white,
+                        unselectedLabelColor: Colors.white,
                         indicatorColor: Colors.blue,
                         tabs: const [
                           Tab(text: 'Series/ Title'),

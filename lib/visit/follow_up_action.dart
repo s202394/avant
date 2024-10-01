@@ -32,6 +32,7 @@ class FollowUpAction extends StatefulWidget {
   final int personMetId;
   final bool samplingDone;
   final bool followUpAction;
+  final String fileName;
 
   const FollowUpAction({
     super.key,
@@ -50,6 +51,7 @@ class FollowUpAction extends StatefulWidget {
     required this.personMetId,
     required this.samplingDone,
     required this.followUpAction,
+    required this.fileName,
   });
 
   @override
@@ -77,7 +79,6 @@ class FollowUpActionState extends State<FollowUpAction> {
   List<Executive> executivesList = [];
 
   bool _submitted = false;
-  bool _isLoading = false;
   bool isFetchingExecutive = false;
   String? errorMessage;
 
@@ -117,155 +118,131 @@ class FollowUpActionState extends State<FollowUpAction> {
         title: const CustomText('DSR Entry'),
         backgroundColor: const Color(0xFFFFF8E1),
       ),
-      body: Stack(
-        children: [
-          Form(
-            key: _formKey,
-            child: Column(
-              children: [
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: ListView(
-                      children: [
-                        CustomText(
-                          widget.customerName,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                        RichTextWidget(
-                          label: widget.address,
-                          fontSize: 14,
-                        ),
-                        const SizedBox(height: 16),
-                        buildDropdownField(
-                          'Department',
-                          selectedDepartment,
-                          {
-                            for (var item in widget.visitDsrData.departmentList)
-                              item.executiveDepartmentName: item.id
-                          },
-                          (value) async {
-                            setState(() {
-                              selectedDepartment = value;
-                              selectedDepartmentId = value != null
-                                  ? {
-                                      for (var item
-                                          in widget.visitDsrData.departmentList)
-                                        item.executiveDepartmentName: item.id
-                                    }[value]
-                                  : null;
-                            });
+      body: Form(
+        key: _formKey,
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            children: [
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      CustomText(
+                        widget.customerName,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                      RichTextWidget(
+                        label: widget.address,
+                        fontSize: 14,
+                      ),
+                      const SizedBox(height: 16),
+                      buildDropdownField(
+                        'Department',
+                        selectedDepartment,
+                        {
+                          for (var item in widget.visitDsrData.departmentList)
+                            item.executiveDepartmentName: item.id
+                        },
+                        (value) async {
+                          setState(() {
+                            selectedDepartment = value;
+                            selectedDepartmentId = value != null
+                                ? {
+                                    for (var item
+                                        in widget.visitDsrData.departmentList)
+                                      item.executiveDepartmentName: item.id
+                                  }[value]
+                                : null;
+                          });
 
-                            if (selectedDepartmentId != null) {
-                              selectedExecutive = value;
-                              selectedExecutiveId = null;
-                              executivesList.clear();
-                              _fetchExecutivesData();
-                            }
-                          },
-                        ),
-                        const SizedBox(height: 16),
-                        buildDropdownField(
-                          'Executive',
-                          selectedExecutive,
-                          {
-                            for (var item in executivesList)
-                              item.executiveName: item.executiveId
-                          },
-                          (value) {
-                            setState(() {
-                              selectedExecutive = value;
-                              selectedExecutiveId = value != null
-                                  ? {
-                                      for (var item in executivesList)
-                                        item.executiveName: item.executiveId
-                                    }[value]
-                                  : null;
-                            });
-                          },
-                        ),
-                        const SizedBox(height: 8),
-                        _buildTextField(
-                            'Action Date', _dateController, _dateFieldKey),
-                        _buildTextField(
-                            'Follow Up Action',
-                            _visitFollowUpActionController,
-                            _visitFeedbackFieldKey,
-                            maxLines: 3),
-                        const SizedBox(height: 16),
-                      ],
-                    ),
+                          if (selectedDepartmentId != null) {
+                            selectedExecutive = value;
+                            selectedExecutiveId = null;
+                            executivesList.clear();
+                            _fetchExecutivesData();
+                          }
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      buildDropdownField(
+                        'Executive',
+                        selectedExecutive,
+                        {
+                          for (var item in executivesList)
+                            item.executiveName: item.executiveId
+                        },
+                        (value) {
+                          setState(() {
+                            selectedExecutive = value;
+                            selectedExecutiveId = value != null
+                                ? {
+                                    for (var item in executivesList)
+                                      item.executiveName: item.executiveId
+                                  }[value]
+                                : null;
+                          });
+                        },
+                      ),
+                      const SizedBox(height: 8),
+                      _buildTextField(
+                          'Action Date', _dateController, _dateFieldKey),
+                      _buildTextField(
+                          'Follow Up Action',
+                          _visitFollowUpActionController,
+                          _visitFeedbackFieldKey,
+                          maxLines: 3),
+                      const SizedBox(height: 16),
+                    ],
                   ),
                 ),
-                Row(
-                  children: [
-                    // First item
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            _submitted = true;
-                          });
-                          if (_formKey.currentState!.validate()) {
-                            _updateCartItem();
-                          }
-                        },
-                        child: Container(
-                          width: double.infinity,
-                          color: Colors.blue,
-                          child: const Padding(
-                            padding: EdgeInsets.symmetric(
-                                vertical: 8.0, horizontal: 16),
-                            child: CustomText('Add More',
-                                textAlign: TextAlign.center,
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 18),
-                          ),
-                        ),
+              ),
+              Row(
+                children: [
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          _submitted = true;
+                        });
+                        if (_formKey.currentState!.validate()) {
+                          _updateCartItem();
+                        }
+                      },
+                      child: Container(
+                        color: Colors.blue,
+                        padding: const EdgeInsets.symmetric(vertical: 16.0),
+                        child: const Center(
+                            child: CustomText('Add More', color: Colors.white)),
                       ),
                     ),
-                    const SizedBox(width: 10),
-                    // Optional: add space between the two items
-                    // Second item
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            _submitted = true;
-                          });
-                          if (_formKey.currentState!.validate()) {
-                            _updateCartItem();
-
-                            goToCart();
-                          }
-                        },
-                        child: Container(
-                          width: double.infinity,
-                          color: Colors.red,
-                          child: const Padding(
-                            padding: EdgeInsets.symmetric(
-                                vertical: 8.0, horizontal: 16),
-                            child: CustomText('Add',
-                                textAlign: TextAlign.center,
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 18),
-                          ),
-                        ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          _submitted = true;
+                        });
+                        if (_formKey.currentState!.validate()) {
+                          _updateCartItem();
+                          goToCart();
+                        }
+                      },
+                      child: Container(
+                        color: Colors.red,
+                        padding: const EdgeInsets.symmetric(vertical: 16.0),
+                        child: const Center(
+                            child: CustomText('Add', color: Colors.white)),
                       ),
                     ),
-                  ],
-                ),
-              ],
-            ),
+                  ),
+                ],
+              ),
+            ],
           ),
-          if (_isLoading)
-            const Center(
-              child: CircularProgressIndicator(),
-            ),
-        ],
+        ),
       ),
     );
   }
@@ -326,18 +303,17 @@ class FollowUpActionState extends State<FollowUpAction> {
   ) {
     return DropdownButtonFormField<String>(
       value: selectedValue,
-      items: [
-        const DropdownMenuItem<String>(
-          value: null,
-          child: CustomText('Select'),
-        ),
-        ...items.keys.map(
-          (key) => DropdownMenuItem<String>(
-            value: key,
-            child: CustomText(key, fontSize: 14),
-          ),
-        ),
-      ],
+      items: items.keys
+          .map(
+            (key) => DropdownMenuItem<String>(
+              value: key,
+              child: CustomText(
+                key,
+                color: Colors.black,
+              ),
+            ),
+          )
+          .toList(),
       onChanged: onChanged,
       style: const TextStyle(fontSize: 14),
       decoration: InputDecoration(
@@ -456,6 +432,7 @@ class FollowUpActionState extends State<FollowUpAction> {
           personMetId: widget.personMetId,
           samplingDone: widget.samplingDone,
           followUpAction: widget.followUpAction,
+          fileName: widget.fileName,
         ),
       ),
     );

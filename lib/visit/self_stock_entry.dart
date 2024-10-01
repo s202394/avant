@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../model/login_model.dart';
 import '../model/self_stock_request_response.dart';
 import '../model/self_stock_request_trade_response.dart';
+import '../views/common_app_bar.dart';
 import '../views/custom_text.dart';
 
 class SelfStockEntry extends StatefulWidget {
@@ -64,10 +65,7 @@ class SelfStockEntryPageState extends State<SelfStockEntry> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const CustomText('Self Stock Sample Request'),
-        backgroundColor: const Color(0xFFFFF8E1),
-      ),
+      appBar: const CommonAppBar(title: 'Self Stock Sample Request'),
       body: FutureBuilder<SelfStockRequestResponse>(
         future: _selfStockRequestData,
         builder: (context, snapshot) {
@@ -155,7 +153,7 @@ class SelfStockEntryPageState extends State<SelfStockEntry> {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: TextFormField(
-        style: TextStyle(fontSize: textFontSize),
+        style: TextStyle(fontSize: textFontSize, color: Colors.black),
         controller: controller,
         maxLines: maxLines,
         enabled: enabled,
@@ -189,7 +187,7 @@ class SelfStockEntryPageState extends State<SelfStockEntry> {
         items: items.keys.map((key) {
           return DropdownMenuItem<String>(
             value: key,
-            child: Text(key),
+            child: CustomText(key),
           );
         }).toList(),
         onChanged: onChanged,
@@ -206,36 +204,39 @@ class SelfStockEntryPageState extends State<SelfStockEntry> {
   // Builds the 'Ship To' dropdown with validation
   Widget _buildShipToDropdown(List<DropdownMenuItem<String>> shipToItems,
       {double labelFontSize = 14.0, double textFontSize = 14.0}) {
-    return DropdownButtonFormField<String>(
-      isExpanded: true,
-      style: TextStyle(fontSize: textFontSize),
-      decoration: InputDecoration(
-        labelText: 'Ship To',
-        labelStyle: TextStyle(fontSize: labelFontSize),
-        border: const OutlineInputBorder(),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: DropdownButtonFormField<String>(
+        isExpanded: true,
+        style: TextStyle(fontSize: textFontSize, color: Colors.black),
+        decoration: InputDecoration(
+          labelText: 'Ship To',
+          labelStyle: TextStyle(fontSize: labelFontSize),
+          border: const OutlineInputBorder(),
+        ),
+        value: selectedShipTo,
+        items: shipToItems,
+        onChanged: (value) {
+          setState(() {
+            if (value != null && value.isNotEmpty) {
+              _formKey.currentState!.validate();
+            }
+            selectedShipTo = value;
+            selectedDeliveryTrade = null;
+            shipmentResponse = null;
+            address = null;
+            if (selectedShipTo != 'Transport Office') {
+              getShipmentData(selectedShipTo!);
+            }
+          });
+        },
+        validator: (value) {
+          if (value == null || value.isEmpty) {
+            return 'Please select Ship To';
+          }
+          return null;
+        },
       ),
-      value: selectedShipTo,
-      items: shipToItems,
-      onChanged: (value) {
-        setState(() {
-          if (value != null && value.isNotEmpty) {
-            _formKey.currentState!.validate();
-          }
-          selectedShipTo = value;
-          selectedDeliveryTrade = null;
-          shipmentResponse = null;
-          address = null;
-          if (selectedShipTo != 'Transport Office') {
-            getShipmentData(selectedShipTo!);
-          }
-        });
-      },
-      validator: (value) {
-        if (value == null || value.isEmpty) {
-          return 'Please select Ship To';
-        }
-        return null;
-      },
     );
   }
 
@@ -273,7 +274,7 @@ class SelfStockEntryPageState extends State<SelfStockEntry> {
               .map((trade) {
             return DropdownMenuItem<String>(
               value: trade.customerName,
-              child: Text(trade.customerName),
+              child: CustomText(trade.customerName),
             );
           }).toList(),
           onChanged: (value) {
@@ -346,11 +347,9 @@ class SelfStockEntryPageState extends State<SelfStockEntry> {
           child: GestureDetector(
             onTap: () {
               setState(() {
-                _submitted =
-                    true; // Set submitted to true to trigger validation
+                _submitted = true;
               });
               if (_formKey.currentState!.validate()) {
-                // Only proceed if the form is valid and required fields are filled
                 Navigator.push(
                   context,
                   MaterialPageRoute(
