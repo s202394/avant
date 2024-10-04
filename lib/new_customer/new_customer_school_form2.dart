@@ -465,7 +465,7 @@ class NewCustomerSchoolForm2State extends State<NewCustomerSchoolForm2> {
           enabled: enabled,
           maxLines: maxLines,
           validator: (value) {
-            if (label == 'GST Number' || label == 'GST Number') {
+            if (label == 'PAN Number' || label == 'GST Number') {
               if (value == null || value.isEmpty) {
                 return null;
               }

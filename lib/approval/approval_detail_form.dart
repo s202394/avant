@@ -349,29 +349,26 @@ class ApprovalDetailFormState extends State<ApprovalDetailForm> {
                                         children: [
                                           Center(
                                             child: CustomText(
-                                              textAlign: TextAlign.center,
-                                              'Req Qty',
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 14,
-                                            ),
+                                                textAlign: TextAlign.center,
+                                                'Req Qty',
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 14),
                                           ),
                                           SizedBox(width: 8.0),
                                           Center(
                                             child: CustomText(
-                                              textAlign: TextAlign.center,
-                                              'Appr Qty',
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 14,
-                                            ),
+                                                textAlign: TextAlign.center,
+                                                'Appr Qty',
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 14),
                                           ),
                                           SizedBox(width: 5.0),
                                           Center(
                                             child: CustomText(
-                                              textAlign: TextAlign.center,
-                                              'Reject',
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 14,
-                                            ),
+                                                textAlign: TextAlign.center,
+                                                'Reject',
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 14),
                                           ),
                                         ],
                                       ),
@@ -412,8 +409,7 @@ class ApprovalDetailFormState extends State<ApprovalDetailForm> {
                                     children: [
                                       TableRow(
                                         decoration: BoxDecoration(
-                                          color: Colors.grey[200],
-                                        ),
+                                            color: Colors.grey[200]),
                                         children: const [
                                           Padding(
                                             padding: EdgeInsets.only(
@@ -421,10 +417,9 @@ class ApprovalDetailFormState extends State<ApprovalDetailForm> {
                                                 bottom: 8,
                                                 left: 5,
                                                 right: 5),
-                                            child: CustomText(
-                                              'SNo.',
-                                              fontWeight: FontWeight.bold,
-                                            ),
+                                            child: CustomText('SNo.',
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 14),
                                           ),
                                           Padding(
                                             padding: EdgeInsets.only(
@@ -433,9 +428,9 @@ class ApprovalDetailFormState extends State<ApprovalDetailForm> {
                                                 left: 5,
                                                 right: 5),
                                             child: CustomText(
-                                              'Entry/Approval By',
-                                              fontWeight: FontWeight.bold,
-                                            ),
+                                                'Entry/Approval By',
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 14),
                                           ),
                                           Padding(
                                             padding: EdgeInsets.only(
@@ -443,10 +438,9 @@ class ApprovalDetailFormState extends State<ApprovalDetailForm> {
                                                 bottom: 8,
                                                 left: 5,
                                                 right: 5),
-                                            child: CustomText(
-                                              'Entry Type',
-                                              fontWeight: FontWeight.bold,
-                                            ),
+                                            child: CustomText('Entry Type',
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 14),
                                           ),
                                           Padding(
                                             padding: EdgeInsets.only(
@@ -454,10 +448,9 @@ class ApprovalDetailFormState extends State<ApprovalDetailForm> {
                                                 bottom: 8,
                                                 left: 5,
                                                 right: 5),
-                                            child: CustomText(
-                                              'Remarks',
-                                              fontWeight: FontWeight.bold,
-                                            ),
+                                            child: CustomText('Remarks',
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 14),
                                           ),
                                         ],
                                       ),
@@ -491,12 +484,10 @@ class ApprovalDetailFormState extends State<ApprovalDetailForm> {
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: Colors.lightBlueAccent,
                                   ),
-                                  child: const CustomText(
-                                    'New Query',
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 14,
-                                  ),
+                                  child: const CustomText('New Query',
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14),
                                 ),
                               ],
                             ),
@@ -533,11 +524,22 @@ class ApprovalDetailFormState extends State<ApprovalDetailForm> {
                                           return Column(
                                             children: [
                                               ListTile(
-                                                title: CustomText(clarification
-                                                    .clarificationQuery),
-                                                subtitle: CustomText(
-                                                    clarification
-                                                        .clarificationResponse),
+                                                contentPadding:
+                                                    const EdgeInsets.symmetric(
+                                                        horizontal: 12.0,
+                                                        vertical: 0.0),
+                                                title:
+                                                    _detailText.buildDetailText(
+                                                        'Query By: ',
+                                                        clarification
+                                                            .clarificationQuery,
+                                                        labelFontSize: 14,
+                                                        valueFontSize: 14),
+                                                subtitle:
+                                                    _detailText.buildDetailText(
+                                                        'Response By: ',
+                                                        clarification
+                                                            .clarificationResponse),
                                               ),
                                               if (index !=
                                                   response.clarificationList!
@@ -619,12 +621,10 @@ class ApprovalDetailFormState extends State<ApprovalDetailForm> {
                     backgroundColor: Colors.red,
                     padding: const EdgeInsets.symmetric(vertical: 8.0),
                   ),
-                  child: const CustomText(
-                    'Reject',
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                  ),
+                  child: const CustomText('Reject',
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14),
                 ),
               ),
             ],
@@ -678,6 +678,8 @@ class ApprovalDetailFormState extends State<ApprovalDetailForm> {
         children: [
           Expanded(
             child: ListTile(
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 12.0, vertical: 0.0),
               leading:
                   CustomText('${position + 1}', fontWeight: FontWeight.bold),
               title:
@@ -686,13 +688,13 @@ class ApprovalDetailFormState extends State<ApprovalDetailForm> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   CustomText(titleDetails.author,
-                      fontWeight: FontWeight.bold, fontSize: 14),
+                      fontWeight: FontWeight.bold, fontSize: 12),
                   CustomText(titleDetails.isbn,
-                      fontWeight: FontWeight.bold, fontSize: 14),
+                      fontWeight: FontWeight.bold, fontSize: 12),
                   CustomText(titleDetails.bookTypeName,
-                      fontWeight: FontWeight.bold, fontSize: 14),
+                      fontWeight: FontWeight.bold, fontSize: 12),
                   CustomText(titleDetails.seriesName,
-                      fontWeight: FontWeight.bold, fontSize: 14),
+                      fontWeight: FontWeight.bold, fontSize: 12),
                 ],
               ),
             ),
@@ -781,27 +783,23 @@ class ApprovalDetailFormState extends State<ApprovalDetailForm> {
               textAlign: TextAlign.center,
               '${approvalMatrix.sequenceNo}',
               fontWeight: FontWeight.bold,
-              fontSize: 14),
+              fontSize: 12),
         ),
         Padding(
           padding: const EdgeInsets.all(8.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              CustomText(
-                approvalMatrix.executiveName,
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
-              ),
-              CustomText(approvalMatrix.entryDate, fontSize: 14),
-              CustomText(approvalMatrix.profileCode, fontSize: 14),
+              CustomText(approvalMatrix.executiveName,
+                  fontWeight: FontWeight.bold, fontSize: 12),
+              CustomText(approvalMatrix.entryDate, fontSize: 12),
+              CustomText(approvalMatrix.profileCode, fontSize: 12),
             ],
           ),
         ),
         Padding(
           padding: const EdgeInsets.all(8.0),
-          child: CustomText(approvalMatrix.approvalLevel,
-              fontWeight: FontWeight.bold, fontSize: 14),
+          child: CustomText(approvalMatrix.approvalLevel, fontSize: 12),
         ),
         Padding(
           padding: const EdgeInsets.all(8.0),
@@ -817,11 +815,8 @@ class ApprovalDetailFormState extends State<ApprovalDetailForm> {
       padding: const EdgeInsets.all(8.0),
       child: Row(
         children: [
-          CustomText(
-            '${approvalMatrix.sequenceNo}',
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-          ),
+          CustomText('${approvalMatrix.sequenceNo}',
+              fontSize: 14, fontWeight: FontWeight.bold),
           const SizedBox(width: 32),
           Expanded(
             child: Column(
@@ -865,11 +860,8 @@ class ApprovalDetailFormState extends State<ApprovalDetailForm> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const CustomText(
-                        'Send back for Clarification',
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16.0,
-                      ),
+                      const CustomText('Send back for Clarification',
+                          fontWeight: FontWeight.bold, fontSize: 16.0),
                       GestureDetector(
                         onTap: () {
                           Navigator.of(context).pop();
@@ -900,9 +892,8 @@ class ApprovalDetailFormState extends State<ApprovalDetailForm> {
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 32.0, vertical: 12.0),
                               textStyle: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                              ),
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold),
                             ),
                             child: const CustomText('Send Query',
                                 color: Colors.white,

@@ -1354,7 +1354,7 @@ class SubmitRequestApprovalService {
             'ExecutiveProfile': executiveProfile,
             'LoggedInExecutiveId': loggedInExecutiveId,
             'EnteredBy': enteredBy,
-            'RequestIds': requestId,
+            'RequestId': requestId,
             'ApprovedBooksAndQtyXML': approvedBooksAndQtyXML,
             'ApporvalRemarks': approvalRemarks,
           });

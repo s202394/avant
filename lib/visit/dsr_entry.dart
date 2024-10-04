@@ -1,5 +1,6 @@
-import 'dart:io';
 import 'dart:convert';
+import 'dart:io';
+
 import 'package:avant/api/api_service.dart';
 import 'package:avant/common/common.dart';
 import 'package:avant/common/toast.dart';
@@ -14,10 +15,13 @@ import 'package:avant/visit/visit_series_search.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:image/image.dart' as img; // Image package for compression
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path/path.dart' as path;
+import 'package:path_provider/path_provider.dart'; // For temporary file storage
+import 'package:shared_preferences/shared_preferences.dart';
+
 import '../views/common_app_bar.dart';
 import '../views/custom_text.dart';
 
@@ -71,6 +75,7 @@ class DsrEntryPageState extends State<DsrEntry> {
 
   bool _submitted = false;
   bool _isLoading = false;
+  bool _isFileUploaded = false;
 
   late Position position;
   late String address;
@@ -89,23 +94,78 @@ class DsrEntryPageState extends State<DsrEntry> {
   final ImagePicker _picker = ImagePicker();
   XFile? _imageFile;
   late String _base64Image;
+  late String fileNameResponse;
+  late GetVisitDsrResponse visitDsrData;
 
   Future<void> _takePhoto() async {
     try {
       final XFile? photo = await _picker.pickImage(source: ImageSource.camera);
       if (photo != null) {
-        final bytes = await photo.readAsBytes();
-        final base64String = base64Encode(bytes);
+        // Get the file size
+        final file = File(photo.path);
+        final int fileSizeInBytes = await file.length();
+        final double fileSizeInMB = fileSizeInBytes / (1024 * 1024);
 
-        setState(() {
-          _imageFile = photo;
-          _base64Image = base64String;
-        });
+        Uint8List imageBytes = await file.readAsBytes();
+
+        if (kDebugMode) {
+          print('Original file size: ${fileSizeInMB.toStringAsFixed(2)} MB.');
+        }
+
+        // If the file size is more than 2 MB, compress it
+        if (fileSizeInMB > 2) {
+          if (kDebugMode) {
+            print('Compressing...');
+          }
+
+          // Decode the image using the image package
+          img.Image? decodedImage = img.decodeImage(imageBytes);
+
+          // Compress the image by resizing or adjusting JPEG quality
+          if (decodedImage != null) {
+            // Resize the image (optional), here it's being resized to 80% of the original
+            img.Image resizedImage = img.copyResize(decodedImage,
+                width: (decodedImage.width * 0.8).toInt());
+
+            // Encode the resized image to JPEG with lower quality (adjust quality as needed)
+            List<int> compressedImageBytes =
+                img.encodeJpg(resizedImage, quality: 80);
+
+            // Get the temporary directory to store the compressed image
+            Directory tempDir = await getTemporaryDirectory();
+            String tempPath = tempDir.path;
+            File compressedFile = File('$tempPath/compressed_image.jpg');
+
+            // Write the compressed bytes to the new file
+            await compressedFile.writeAsBytes(compressedImageBytes);
+
+            // Set the compressed file as the new image file
+            setState(() {
+              //Update the image file reference
+              _imageFile = XFile(compressedFile.path);
+              // Update base64 string
+              _base64Image = base64Encode(compressedImageBytes);
+            });
+
+            if (kDebugMode) {
+              print(
+                  'Compressed file size: ${(compressedFile.lengthSync() / (1024 * 1024)).toStringAsFixed(2)} MB');
+            }
+            saveFile(visitDsrData);
+          }
+        } else {
+          setState(() {
+            // Set the original base64 string
+            _imageFile = photo;
+            _base64Image = base64Encode(imageBytes);
+          });
+          saveFile(visitDsrData);
+        }
       }
     } catch (e) {
       // Handle error
       if (kDebugMode) {
-        print('Error picking image: $e');
+        print('Error picking or compressing image: $e');
       }
     }
   }
@@ -153,7 +213,7 @@ class DsrEntryPageState extends State<DsrEntry> {
             return const Center(child: CustomText('No data available'));
           }
 
-          final visitDsrData = snapshot.data!;
+          visitDsrData = snapshot.data!;
 
           // Set the fetched address here
           fetchedAddress = visitDsrData.customerSummery.address;
@@ -170,13 +230,11 @@ class DsrEntryPageState extends State<DsrEntry> {
                         child: ListView(
                           children: [
                             CustomText(
-                              visitDsrData.customerSummery.customerName,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
+                                visitDsrData.customerSummery.customerName,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16),
                             RichTextWidget(
-                              label: visitDsrData.customerSummery.address,
-                            ),
+                                label: visitDsrData.customerSummery.address),
                             const SizedBox(height: 16),
                             _buildTextField(
                                 'Visit Date', _dateController, _dateFieldKey),
@@ -263,27 +321,27 @@ class DsrEntryPageState extends State<DsrEntry> {
                       children: [
                         Expanded(
                           child: GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                _submitted = true;
-                              });
-                              if (_formKey.currentState!.validate()) {
-                                _submitForm(visitDsrData);
-                              }
-                            },
+                            onTap: _isLoading
+                                ? null
+                                : () {
+                                    setState(() {
+                                      _submitted = true;
+                                    });
+                                    if (_formKey.currentState!.validate()) {
+                                      _submitForm(visitDsrData);
+                                    }
+                                  },
                             child: Container(
                               width: double.infinity,
-                              color: Colors.blue,
+                              color: _isLoading ? Colors.grey : Colors.blue,
                               child: const Padding(
                                 padding: EdgeInsets.symmetric(
                                     vertical: 8.0, horizontal: 16),
-                                child: CustomText(
-                                  'Submit',
-                                  textAlign: TextAlign.center,
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 18,
-                                ),
+                                child: CustomText('Submit',
+                                    textAlign: TextAlign.center,
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 18),
                               ),
                             ),
                           ),
@@ -311,14 +369,11 @@ class DsrEntryPageState extends State<DsrEntry> {
   }
 
   void _submitForm(GetVisitDsrResponse visitDsrData) async {
-    List<int> selectedIds =
-        _selectedJointVisitWithItems.map((e) => e.executiveId).toList();
-
-    // Convert list of IDs to comma-separated string
-    String commaSeparatedIds = selectedIds.join(', ');
-
     if (_dateController.text.isEmpty) {
       toastMessage.showToastMessage('Please select Visit Date.');
+    }
+    if (selectedPersonMet == null) {
+      toastMessage.showToastMessage('Please select Person Met.');
     } else if (samplingDone == null) {
       toastMessage.showToastMessage('Please select Sampling Done.');
     } else if (followUpAction == null) {
@@ -326,7 +381,7 @@ class DsrEntryPageState extends State<DsrEntry> {
     } else if (_imageFile == null) {
       toastMessage.showToastMessage('Please capture image first.');
     } else {
-      saveFile(visitDsrData, commaSeparatedIds);
+      nextAction(visitDsrData);
     }
   }
 
@@ -339,14 +394,12 @@ class DsrEntryPageState extends State<DsrEntry> {
     return true;
   }
 
-  Widget buildTextField(
-    String label, {
-    String initialValue = '',
-    bool enabled = true,
-    int maxLines = 1,
-    double labelFontSize = 14.0,
-    double textFontSize = 14.0,
-  }) {
+  Widget buildTextField(String label,
+      {String initialValue = '',
+      bool enabled = true,
+      int maxLines = 1,
+      double labelFontSize = 14.0,
+      double textFontSize = 14.0}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: TextFormField(
@@ -587,15 +640,16 @@ class DsrEntryPageState extends State<DsrEntry> {
     }
   }
 
-  void saveFile(
-      GetVisitDsrResponse visitDsrData, String commaSeparatedIds) async {
+  void saveFile(GetVisitDsrResponse visitDsrData) async {
     try {
+      fileNameResponse = '';
       FocusScope.of(context).unfocus();
 
       if (!await _checkInternetConnection()) return;
 
       setState(() {
         _isLoading = true;
+        _isFileUploaded = false;
       });
 
       int currentMilliseconds = DateTime.now().millisecondsSinceEpoch;
@@ -609,24 +663,21 @@ class DsrEntryPageState extends State<DsrEntry> {
           token ?? "");
 
       if (responseData.status == 'Success') {
-        String fileName = responseData.returnDetails.fileName;
+        fileNameResponse = responseData.returnDetails.fileName;
+        setState(() {
+          _isFileUploaded = true;
+        });
         if (kDebugMode) {
-          print(fileName);
+          print(fileNameResponse);
         }
-        if (fileName.isNotEmpty) {
+        if (fileNameResponse.isNotEmpty) {
           if (kDebugMode) {
             print('Captured image save successfully.');
           }
-          if (mounted) {
-            if (followUpAction == false && samplingDone == false) {
-              submit(commaSeparatedIds, fileName);
-            } else if (samplingDone == true) {
-              goToSamplingPage(visitDsrData, commaSeparatedIds, fileName);
-            } else {
-              goToFollowUpActionPage(visitDsrData, commaSeparatedIds, fileName);
-            }
-          }
         } else {
+          setState(() {
+            _isFileUploaded = false;
+          });
           if (kDebugMode) {
             print('Captured image save error');
           }
@@ -634,6 +685,9 @@ class DsrEntryPageState extends State<DsrEntry> {
               "An error occurred while saving captured image.");
         }
       } else {
+        setState(() {
+          _isFileUploaded = false;
+        });
         if (kDebugMode) {
           print('Captured image save Error ${responseData.message}');
         }
@@ -641,12 +695,16 @@ class DsrEntryPageState extends State<DsrEntry> {
             .showToastMessage("An error occurred while saving captured image.");
       }
     } catch (e) {
+      setState(() {
+        _isFileUploaded = false;
+      });
       if (kDebugMode) {
         print("Error Captured image save: $e");
       }
     } finally {
       setState(() {
         _isLoading = false;
+        _isFileUploaded = false;
       });
     }
   }
@@ -824,6 +882,21 @@ class DsrEntryPageState extends State<DsrEntry> {
           _isLoading = false;
         });
       }
+    }
+  }
+
+  void nextAction(GetVisitDsrResponse visitDsrData) {
+    List<int> selectedIds =
+        _selectedJointVisitWithItems.map((e) => e.executiveId).toList();
+
+    // Convert list of IDs to comma-separated string
+    String commaSeparatedIds = selectedIds.join(', ');
+    if (followUpAction == false && samplingDone == false) {
+      submit(commaSeparatedIds, fileNameResponse);
+    } else if (samplingDone == true) {
+      goToSamplingPage(visitDsrData, commaSeparatedIds, fileNameResponse);
+    } else {
+      goToFollowUpActionPage(visitDsrData, commaSeparatedIds, fileNameResponse);
     }
   }
 }

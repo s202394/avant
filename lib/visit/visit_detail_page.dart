@@ -1,8 +1,15 @@
+import 'dart:io' show Platform;
+import 'dart:io';
+
 import 'package:avant/api/api_service.dart';
-import 'package:avant/views/label_text.dart';
 import 'package:avant/model/visit_details_model.dart';
+import 'package:avant/views/label_text.dart';
 import 'package:avant/visit/dsr_entry.dart';
+import 'package:device_info_plus/device_info_plus.dart';
+import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../views/common_app_bar.dart';
@@ -106,7 +113,7 @@ class VisitDetailsPageState extends State<VisitDetailsPage> {
             ),
           ),
           const Divider(),
-          const SizedBox(height: 16.0),
+          const SizedBox(height: 12.0),
           LabeledText(label: 'Visit Date', value: data.visitDetails?.visitDate),
           LabeledText(
               label: 'Visit By', value: data.visitDetails?.executiveName),
@@ -115,55 +122,132 @@ class VisitDetailsPageState extends State<VisitDetailsPage> {
           LabeledText(
               label: 'Joint Visit', value: data.visitDetails?.jointVisitWith),
           LabeledText(label: 'Person Met', value: data.visitDetails?.personMet),
-          const SizedBox(height: 16.0),
           Visibility(
             visible: data.promotionalDetails != null &&
                 data.promotionalDetails!.isNotEmpty,
             child: Column(
               children: [
+                const SizedBox(height: 16.0),
                 const CustomText('Sampling Done:',
                     fontWeight: FontWeight.bold, fontSize: 14),
                 for (var sample in data.promotionalDetails ?? [])
                   CustomText(
                       '${sample.title} - ${sample.samplingType} (${sample.isbn}) Qty: ${sample.requestedQty}',
                       fontSize: 14),
-                const SizedBox(height: 16.0),
               ],
             ),
           ),
           Visibility(
             visible: (data.uploadedDocuments?.length ?? 0) > 0,
-            child: ListView.builder(
-              itemCount: data.uploadedDocuments?.length,
-              itemBuilder: (context, index) {
-                final uploadedDocument = data.uploadedDocuments?[index];
-                return Container(
-                  margin: const EdgeInsets.symmetric(vertical: 4),
-                  // For spacing between items
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey, width: 1.0),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: ListTile(
-                    title: Text('${uploadedDocument?.sNo}'),
-                    subtitle: Column(
-                      children: [
-                        CustomText("${uploadedDocument?.documentName}",
-                            fontSize: 14),
-                        CustomText("${uploadedDocument?.uploadedFile}",
-                            fontSize: 14),
-                      ],
-                    ),
-                  ),
-                );
-              },
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 16.0),
+                const CustomText('Uploaded Documents',
+                    fontWeight: FontWeight.bold, fontSize: 16),
+                ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: data.uploadedDocuments?.length,
+                  itemBuilder: (context, index) {
+                    final uploadedDocument = data.uploadedDocuments?[index];
+                    return Container(
+                      margin: const EdgeInsets.symmetric(vertical: 4),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey, width: 1.0),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: ListTile(
+                        leading: Text('${uploadedDocument?.sNo}'),
+                        title: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            CustomText("${uploadedDocument?.documentName}",
+                                fontSize: 14),
+                          ],
+                        ),
+                        trailing: IconButton(
+                          icon: const Icon(Icons.save_alt, color: Colors.blue),
+                          onPressed: () {
+                            if (uploadedDocument?.uploadedFile != null) {
+                              String imageUrl = uploadedDocument!.action;
+                              //saveImageToGallery(imageUrl, context);
+                            }
+                          },
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ],
             ),
           ),
+          const SizedBox(height: 12.0),
           const CustomText('Visit Feedback:',
               fontWeight: FontWeight.bold, fontSize: 14),
           CustomText(data.visitDetails?.visitFeedback ?? '', fontSize: 12),
         ],
       ),
     );
+  }
+
+  Future<void> saveImageToGallery(String url, BuildContext context) async {
+    // Create an instance of the DeviceInfoPlugin to check SDK version
+    final deviceInfoPlugin = DeviceInfoPlugin();
+    AndroidDeviceInfo androidInfo = await deviceInfoPlugin.androidInfo;
+
+    PermissionStatus status;
+
+    // Check if the device is Android 13 or above
+    if (Platform.isAndroid && androidInfo.version.sdkInt >= 33) {
+      status = await Permission.photos
+          .request(); // Placeholder (may require update later)
+    } else {
+      // Request storage permission for devices below Android 13
+      status = await Permission.storage.request();
+    }
+
+    if (status.isGranted) {
+      try {
+        // Fetch the image from the given URL
+        var response = await Dio()
+            .get(url, options: Options(responseType: ResponseType.bytes));
+        /*final result = await ImageGallerySaver.saveImage(
+            Uint8List.fromList(response.data),
+            quality: 60,
+            name: "downloaded_image");
+
+        if (result['isSuccess']) {
+          if (kDebugMode) {
+            print('Image saved to gallery');
+          }
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Image saved successfully to gallery!')),
+          );
+        } else {
+          throw Exception('Failed to save image to gallery.');
+        }*/
+      } catch (e) {
+        if (kDebugMode) {
+          print('Error saving image: $e');
+        }
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error saving image: $e')),
+        );
+      }
+    } else if (status.isPermanentlyDenied) {
+      // If the permission is permanently denied, guide the user to the app settings
+      openAppSettings();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text('Please enable storage permission in settings.')),
+      );
+    } else {
+      // Handle permission denied
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Storage permission denied.')),
+      );
+    }
   }
 }

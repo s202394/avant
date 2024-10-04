@@ -1,5 +1,10 @@
 import 'dart:async';
-
+import 'package:permission_handler/permission_handler.dart';
+import 'package:flutter/material.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:flutter_foreground_task/flutter_foreground_task.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'dart:io';
 import 'package:avant/api/api_service.dart';
 import 'package:avant/approval/approval_list_form.dart';
 import 'package:avant/checked_in.dart';
@@ -68,7 +73,7 @@ class HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
     _loadPunchState();
 
-    _initForegroundTask();
+    _requestLocationPermission();
   }
 
   Future<void> _initForegroundTask() async {
@@ -91,6 +96,102 @@ class HomePageState extends State<HomePage> with WidgetsBindingObserver {
       iosNotificationOptions: const IOSNotificationOptions(),
       foregroundTaskOptions: const ForegroundTaskOptions(),
     );
+  }
+
+  Future<void> _requestLocationPermission() async {
+    // Check if location permission is already granted
+    if (await Permission.location.isGranted) {
+      if (kDebugMode) {
+        print("Location permission already granted");
+      }
+      _initForegroundTask();
+    } else {
+      // Request location permission
+      var status = await Permission.location.request();
+
+      if (status.isGranted) {
+        if (kDebugMode) {
+          print("Location permission granted");
+        }
+        _initForegroundTask();
+      } else if (status.isDenied) {
+        if (kDebugMode) {
+          print("Location permission denied");
+        }
+        // Optionally: Prompt user to open app settings to grant permission
+      } else if (status.isPermanentlyDenied) {
+        if (kDebugMode) {
+          print(
+              "Location permission permanently denied. Open settings to change permission.");
+        }
+        await openAppSettings(); // Open app settings
+      }
+    }
+  }
+
+  Future<void> _requestBackgroundLocationPermission() async {
+    var status = await Permission.locationAlways.request();
+
+    if (status.isGranted) {
+      if (kDebugMode) {
+        print("Background location permission granted");
+        _initForegroundTask();
+      }
+    } else if (status.isDenied) {
+      if (kDebugMode) {
+        print("Background location permission denied");
+      }
+    } else if (status.isPermanentlyDenied) {
+      if (kDebugMode) {
+        print(
+            "Background location permission permanently denied. Open settings to change permission.");
+      }
+      await openAppSettings();
+    }
+  }
+
+  void handleLocationPermission() async {
+    if (Platform.isAndroid) {
+      if (await Permission.location.isGranted) {
+        if (kDebugMode) {
+          print("Location permission already granted.");
+        }
+        _initForegroundTask();
+      } else {
+        var status = await Permission.location.request();
+
+        if (status.isGranted) {
+          // Extract the major Android version number and convert it to an integer
+          int androidVersion =
+              int.tryParse(Platform.version.split('.')[0]) ?? 0;
+
+          // API level 29 (Android 10) and higher requires background location permission
+          if (androidVersion >= 29) {
+            await _requestBackgroundLocationPermission();
+          }
+        } else {
+          if (kDebugMode) {
+            print("Location permission denied.");
+          }
+        }
+      }
+    }
+  }
+
+  void requestLocationPermission() async {
+    if (Platform.isAndroid) {
+      // Extract major Android version (first part of the string)
+      int androidVersion = int.tryParse(Platform.version.split('.')[0]) ?? 0;
+
+      // Compare Android version
+      if (androidVersion >= 29) {
+        await Permission.locationAlways
+            .request(); // Request background location permission for Android 10+
+      } else {
+        await Permission.location
+            .request(); // Request regular location permission for older versions
+      }
+    }
   }
 
   @override

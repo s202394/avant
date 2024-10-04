@@ -209,7 +209,11 @@ class VisitSeriesSearchPageState extends State<VisitSeriesSearch>
       );
 
       setState(() {
-        titleSuggestions = response.titleList ?? [];
+        if (_autocompleteController.text.isEmpty) {
+          titleSuggestions = [];
+        } else {
+          titleSuggestions = response.titleList ?? [];
+        }
         _isFetchingTitles = false;
       });
     } catch (e) {

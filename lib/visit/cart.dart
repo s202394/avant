@@ -185,8 +185,9 @@ class CartState extends State<Cart> with TickerProviderStateMixin {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
+                                  const SizedBox(height: 8),
                                   const Divider(height: 1),
-                                  const SizedBox(height: 16),
+                                  const SizedBox(height: 8),
                                   _detailText.buildDetailText(
                                     'Sampling Done: ',
                                     widget.samplingDone ? 'Yes' : 'No',

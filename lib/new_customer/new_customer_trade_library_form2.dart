@@ -133,6 +133,7 @@ class NewCustomerTradeLibraryForm2State
 
   void _fetchCityAccess() async {
     executiveId = await getExecutiveId();
+    userId = await getUserId();
 
     prefs = await SharedPreferences.getInstance();
     setState(() {
@@ -514,6 +515,12 @@ class NewCustomerTradeLibraryForm2State
   }) {
     bool isDateField = label == "Date of Birth" || label == "Anniversary";
 
+    DateTime maxDate = label == "Date of Birth"
+        ? DateTime.now().subtract(const Duration(days: 365 * 18))
+        : DateTime.now();
+
+    DateTime initialDate = label == "Date of Birth" ? maxDate : DateTime.now();
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: InkWell(
@@ -521,9 +528,9 @@ class NewCustomerTradeLibraryForm2State
             ? () async {
                 final DateTime? picked = await showDatePicker(
                   context: context,
-                  initialDate: DateTime.now(),
-                  firstDate: DateTime(2000),
-                  lastDate: DateTime(2100),
+                  initialDate: initialDate,
+                  firstDate: DateTime(1970, 1, 1),
+                  lastDate: maxDate,
                   builder: (BuildContext context, Widget? child) {
                     return Theme(
                       data: ThemeData.light(),

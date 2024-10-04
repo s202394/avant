@@ -187,7 +187,11 @@ class SamplingSeriesSearchPageState extends State<SamplingSeriesSearch>
 
       setState(() {
         if (mounted) {
-          titleSuggestions = response.titleList ?? [];
+          if (_autocompleteController.text.isEmpty) {
+            titleSuggestions = [];
+          } else {
+            titleSuggestions = response.titleList ?? [];
+          }
           _isFetchingTitles = false;
         }
       });
@@ -268,13 +272,11 @@ class SamplingSeriesSearchPageState extends State<SamplingSeriesSearch>
                               child: const Padding(
                                 padding: EdgeInsets.symmetric(
                                     vertical: 8.0, horizontal: 16),
-                                child: CustomText(
-                                  'Search Customer',
-                                  textAlign: TextAlign.center,
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                ),
+                                child: CustomText('Next',
+                                    textAlign: TextAlign.center,
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16),
                               ),
                             ),
                           ),

@@ -1,11 +1,9 @@
 import 'package:avant/api/api_service.dart';
-import 'package:avant/common/common.dart';
 import 'package:avant/common/toast.dart';
 import 'package:avant/db/db_helper.dart';
 import 'package:avant/model/get_visit_dsr_model.dart';
 import 'package:avant/model/login_model.dart';
 import 'package:avant/views/rich_text.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart';
@@ -97,7 +95,6 @@ class FollowUpActionState extends State<FollowUpAction> {
   void initState() {
     super.initState();
     initData();
-    getAddressData();
   }
 
   void initData() async {
@@ -122,126 +119,106 @@ class FollowUpActionState extends State<FollowUpAction> {
         key: _formKey,
         child: Padding(
           padding: const EdgeInsets.all(16.0),
-          child: Column(
-            children: [
-              Expanded(
-                child: SingleChildScrollView(
-                  child: Column(
-                    children: [
-                      CustomText(
-                        widget.customerName,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                      RichTextWidget(
-                        label: widget.address,
-                        fontSize: 14,
-                      ),
-                      const SizedBox(height: 16),
-                      buildDropdownField(
-                        'Department',
-                        selectedDepartment,
-                        {
-                          for (var item in widget.visitDsrData.departmentList)
-                            item.executiveDepartmentName: item.id
-                        },
-                        (value) async {
-                          setState(() {
-                            selectedDepartment = value;
-                            selectedDepartmentId = value != null
-                                ? {
-                                    for (var item
-                                        in widget.visitDsrData.departmentList)
-                                      item.executiveDepartmentName: item.id
-                                  }[value]
-                                : null;
-                          });
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                CustomText(widget.customerName,
+                    fontWeight: FontWeight.bold, fontSize: 16),
+                RichTextWidget(label: widget.address, fontSize: 14),
+                const SizedBox(height: 16),
+                buildDropdownField(
+                  'Department',
+                  selectedDepartment,
+                  {
+                    for (var item in widget.visitDsrData.departmentList)
+                      item.executiveDepartmentName: item.id
+                  },
+                      (value) async {
+                    setState(() {
+                      selectedDepartment = value;
+                      selectedDepartmentId = value != null
+                          ? {
+                        for (var item
+                        in widget.visitDsrData.departmentList)
+                          item.executiveDepartmentName: item.id
+                      }[value]
+                          : null;
+                    });
 
-                          if (selectedDepartmentId != null) {
-                            selectedExecutive = value;
-                            selectedExecutiveId = null;
-                            executivesList.clear();
-                            _fetchExecutivesData();
-                          }
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                      buildDropdownField(
-                        'Executive',
-                        selectedExecutive,
-                        {
-                          for (var item in executivesList)
-                            item.executiveName: item.executiveId
-                        },
-                        (value) {
-                          setState(() {
-                            selectedExecutive = value;
-                            selectedExecutiveId = value != null
-                                ? {
-                                    for (var item in executivesList)
-                                      item.executiveName: item.executiveId
-                                  }[value]
-                                : null;
-                          });
-                        },
-                      ),
-                      const SizedBox(height: 8),
-                      _buildTextField(
-                          'Action Date', _dateController, _dateFieldKey),
-                      _buildTextField(
-                          'Follow Up Action',
-                          _visitFollowUpActionController,
-                          _visitFeedbackFieldKey,
-                          maxLines: 3),
-                      const SizedBox(height: 16),
-                    ],
-                  ),
+                    if (selectedDepartmentId != null) {
+                      selectedExecutive = value;
+                      selectedExecutiveId = null;
+                      executivesList.clear();
+                      _fetchExecutivesData();
+                    }
+                  },
                 ),
-              ),
-              Row(
-                children: [
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          _submitted = true;
-                        });
-                        if (_formKey.currentState!.validate()) {
-                          _updateCartItem();
-                        }
-                      },
-                      child: Container(
-                        color: Colors.blue,
-                        padding: const EdgeInsets.symmetric(vertical: 16.0),
-                        child: const Center(
-                            child: CustomText('Add More', color: Colors.white)),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          _submitted = true;
-                        });
-                        if (_formKey.currentState!.validate()) {
-                          _updateCartItem();
-                          goToCart();
-                        }
-                      },
-                      child: Container(
-                        color: Colors.red,
-                        padding: const EdgeInsets.symmetric(vertical: 16.0),
-                        child: const Center(
-                            child: CustomText('Add', color: Colors.white)),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
+                const SizedBox(height: 16),
+                buildDropdownField(
+                  'Executive',
+                  selectedExecutive,
+                  {
+                    for (var item in executivesList)
+                      item.executiveName: item.executiveId
+                  },
+                      (value) {
+                    setState(() {
+                      selectedExecutive = value;
+                      selectedExecutiveId = value != null
+                          ? {
+                        for (var item in executivesList)
+                          item.executiveName: item.executiveId
+                      }[value]
+                          : null;
+                    });
+                  },
+                ),
+                const SizedBox(height: 8),
+                _buildTextField(
+                    'Action Date', _dateController, _dateFieldKey),
+                _buildTextField('Follow Up Action',
+                    _visitFollowUpActionController, _visitFeedbackFieldKey,
+                    maxLines: 3),
+                const SizedBox(height: 16),
+              ],
+            ),
           ),
+        ),
+      ),
+      bottomNavigationBar: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 8.0),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            Expanded(
+              child: ElevatedButton(
+                onPressed: () => addMoreFollowUp(),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue,
+                  padding: const EdgeInsets.symmetric(vertical: 8.0),
+                ),
+                child: const CustomText('Add More',
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: ElevatedButton(
+                onPressed: () => addFollowUp(),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
+                  padding: const EdgeInsets.symmetric(vertical: 8.0),
+                ),
+                child: const CustomText('Add',
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -280,18 +257,6 @@ class FollowUpActionState extends State<FollowUpAction> {
       setState(() {
         isFetchingExecutive = false;
       });
-    }
-  }
-
-  void getAddressData() async {
-    position = await locationService.getCurrentLocation();
-    if (kDebugMode) {
-      print("Latitude: ${position.latitude}, Longitude: ${position.longitude}");
-    }
-
-    address = await locationService.getAddressFromLocation();
-    if (kDebugMode) {
-      print("address: $address");
     }
   }
 
@@ -391,15 +356,6 @@ class FollowUpActionState extends State<FollowUpAction> {
     );
   }
 
-  Future<bool> _checkInternetConnection() async {
-    if (!await checkInternetConnection()) {
-      toastMessage.showToastMessage(
-          "No internet connection. Please check your connection and try again.");
-      return false;
-    }
-    return true;
-  }
-
   Future<void> _updateCartItem() async {
     await databaseHelper.insertFollowUpActionCart({
       'FollowUpAction': _visitFollowUpActionController.text,
@@ -436,5 +392,37 @@ class FollowUpActionState extends State<FollowUpAction> {
         ),
       ),
     );
+  }
+
+  addMoreFollowUp() {
+    setState(() {
+      _submitted = true;
+    });
+    if (_formKey.currentState!.validate()) {
+      _updateCartItem();
+      toastMessage.showInfoToastMessage('Followup Action Added');
+
+      setState(() {
+        _dateController.clear();
+        _visitFollowUpActionController.clear();
+
+        selectedDepartment = null;
+        selectedDepartmentId = null;
+        selectedExecutive = null;
+        selectedExecutiveId = null;
+
+        _submitted = false;
+      });
+    }
+  }
+
+  addFollowUp() {
+    setState(() {
+      _submitted = true;
+    });
+    if (_formKey.currentState!.validate()) {
+      _updateCartItem();
+      goToCart();
+    }
   }
 }
