@@ -555,21 +555,24 @@ class GetVisitDsrService {
       String upHierarchy,
       String downHierarchy,
       String token) async {
+    final body = jsonEncode(<String, dynamic>{
+      'downhierarchy': downHierarchy,
+      'CustomerType': customerType,
+      'Uphierarchy': upHierarchy,
+      'Executiveid': executiveId,
+      'Customerid': customerId,
+    });
     final response = await http.post(
       Uri.parse(getDsrEntryUrl),
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
         'Authorization': 'Bearer $token',
       },
-      body: jsonEncode(<String, dynamic>{
-        'downhierarchy': downHierarchy,
-        'CustomerType': customerType,
-        'Uphierarchy': upHierarchy,
-        'Executiveid': executiveId,
-        'Customerid': customerId,
-      }),
+      body: body,
     );
     if (kDebugMode) {
+      print('Request URL: ${response.request?.url}');
+      print('Request body: $body');
       print('Response status: ${response.statusCode}');
       print('Response body: ${response.body}');
     }

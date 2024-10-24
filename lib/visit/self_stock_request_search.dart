@@ -439,18 +439,20 @@ class SelfStockRequestSearchPageState extends State<SelfStockRequestSearch>
     );
   }
 
-  Widget buildDropdownField<T>(String label, T? selectedValue,
-      List<DropdownMenuItem<T>> items, ValueChanged<T?> onChanged,
-      {required int? selectedId,
-      required ValueChanged<int?> onIdChanged,
-      double labelFontSize = 14.0,
-      double textFontSize = 14.0}) {
+  Widget buildDropdownField<T>(
+      String label,
+      T? selectedValue,
+      List<DropdownMenuItem<T>> items,
+      ValueChanged<T?> onChanged, {
+        required int? selectedId,
+        required ValueChanged<int?> onIdChanged,
+      }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: InputDecorator(
         decoration: InputDecoration(
           labelText: label,
-          labelStyle: TextStyle(fontSize: labelFontSize),
+          labelStyle: const TextStyle(fontSize: 14),
           border: const OutlineInputBorder(),
           errorText: _submitted && selectedValue == null && label == 'Series'
               ? 'Please select $label'
@@ -459,16 +461,24 @@ class SelfStockRequestSearchPageState extends State<SelfStockRequestSearch>
         child: DropdownButtonHideUnderline(
           child: DropdownButton<T>(
             isDense: true,
-            style: TextStyle(fontSize: textFontSize),
+            style: const TextStyle(fontSize: 14),
             value: selectedValue,
-            items: items,
+            items: [
+              DropdownMenuItem<T>(
+                value: null,
+                child: const CustomText('Select', fontSize: 14),
+              ),
+              ...items,
+            ],
             onChanged: (value) {
-              if (value == null) return;
-
               onChanged(value);
-              final selectedItem =
-                  items.firstWhere((item) => item.value == value);
-              onIdChanged((selectedItem.key as ValueKey).value as int);
+              if (value != null) {
+                final selectedItem =
+                items.firstWhere((item) => item.value == value);
+                onIdChanged((selectedItem.key as ValueKey).value as int);
+              } else {
+                onIdChanged(null);
+              }
 
               setState(() {
                 if (_submitted) {

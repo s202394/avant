@@ -1,10 +1,6 @@
 import 'dart:async';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:flutter/material.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:flutter_foreground_task/flutter_foreground_task.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'dart:io';
+
 import 'package:avant/api/api_service.dart';
 import 'package:avant/approval/approval_list_form.dart';
 import 'package:avant/checked_in.dart';
@@ -29,6 +25,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:workmanager/workmanager.dart';
 
@@ -78,7 +75,7 @@ class HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
   Future<void> _initForegroundTask() async {
     if (kDebugMode) {
-      print('Location FlutterForegroundTask init');
+      print('Initializing Location Foreground Task');
     }
     FlutterForegroundTask.init(
       androidNotificationOptions: AndroidNotificationOptions(
@@ -94,7 +91,12 @@ class HomePageState extends State<HomePage> with WidgetsBindingObserver {
         ),
       ),
       iosNotificationOptions: const IOSNotificationOptions(),
-      foregroundTaskOptions: const ForegroundTaskOptions(),
+      foregroundTaskOptions: const ForegroundTaskOptions(
+        interval: 5000, // Task run interval in milliseconds
+        autoRunOnBoot: true, // Optionally auto-start task on boot
+        allowWakeLock: true, // Optional
+        allowWifiLock: true, // Optional
+      ),
     );
   }
 
@@ -319,6 +321,9 @@ class HomePageState extends State<HomePage> with WidgetsBindingObserver {
       futurePlanResponse = Future.value(
           PlanResponse(status: "Success", todayPlan: [], tomorrowPlan: []));
     }
+
+    await SetupValuesService().setupValues(token ?? '');
+
     setState(() {});
   }
 

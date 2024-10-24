@@ -487,7 +487,7 @@ class ApprovalDetailFormState extends State<ApprovalDetailForm> {
                                   child: const CustomText('New Query',
                                       color: Colors.white,
                                       fontWeight: FontWeight.bold,
-                                      fontSize: 14),
+                                      fontSize: 12),
                                 ),
                               ],
                             ),
@@ -528,18 +528,104 @@ class ApprovalDetailFormState extends State<ApprovalDetailForm> {
                                                     const EdgeInsets.symmetric(
                                                         horizontal: 12.0,
                                                         vertical: 0.0),
-                                                title:
+                                                title: Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
                                                     _detailText.buildDetailText(
                                                         'Query By: ',
+                                                        clarification.queryBy,
+                                                        labelFontSize: 14,
+                                                        valueFontSize: 12,
+                                                        labelColor:
+                                                            Colors.indigo,
+                                                        valueColor: Colors
+                                                            .indigoAccent),
+                                                    _detailText.buildDetailText(
+                                                        'Query To: ',
+                                                        clarification
+                                                            .clarificationQueryTo,
+                                                        labelFontSize: 14,
+                                                        valueFontSize: 12,
+                                                        labelColor:
+                                                            Colors.indigo,
+                                                        valueColor: Colors
+                                                            .indigoAccent),
+                                                    _detailText.buildDetailText(
+                                                        'Date: ',
+                                                        clarification
+                                                            .clarificationQueryDate,
+                                                        labelFontSize: 14,
+                                                        valueFontSize: 12,
+                                                        labelColor:
+                                                            Colors.indigo,
+                                                        valueColor: Colors
+                                                            .indigoAccent),
+                                                    _detailText.buildDetailText(
+                                                        'Query: ',
                                                         clarification
                                                             .clarificationQuery,
                                                         labelFontSize: 14,
-                                                        valueFontSize: 14),
-                                                subtitle:
+                                                        valueFontSize: 12,
+                                                        labelColor:
+                                                            Colors.indigo,
+                                                        valueColor: Colors
+                                                            .indigoAccent),
+                                                    const Divider(),
+                                                  ],
+                                                ),
+                                                subtitle: Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
                                                     _detailText.buildDetailText(
                                                         'Response By: ',
                                                         clarification
-                                                            .clarificationResponse),
+                                                            .responseBy,
+                                                        labelFontSize: 14,
+                                                        valueFontSize: 12,
+                                                        labelColor:
+                                                            Colors.deepOrange,
+                                                        valueColor: Colors
+                                                            .deepOrangeAccent),
+                                                    _detailText.buildDetailText(
+                                                        'Date: ',
+                                                        clarification
+                                                            .clarificationResponseDate,
+                                                        labelFontSize: 14,
+                                                        valueFontSize: 12,
+                                                        labelColor:
+                                                            Colors.deepOrange,
+                                                        valueColor: Colors
+                                                            .deepOrangeAccent),
+                                                    _detailText.buildDetailText(
+                                                        'Response: ',
+                                                        clarification
+                                                            .clarificationResponse,
+                                                        labelFontSize: 14,
+                                                        valueFontSize: 12,
+                                                        labelColor:
+                                                            Colors.deepOrange,
+                                                        valueColor: Colors
+                                                            .deepOrangeAccent)
+                                                  ],
+                                                ),
+                                                trailing: Visibility(
+                                                  visible: clarification
+                                                      .clarificationResponseFileUpload
+                                                      .isNotEmpty,
+                                                  child: IconButton(
+                                                    icon: const Icon(
+                                                        Icons.save_alt,
+                                                        color: Colors.blue),
+                                                    onPressed: () {
+                                                      if (kDebugMode) {
+                                                        print(
+                                                            'Download Image URL : ${clarification.clarificationResponseFileUpload}');
+                                                      }
+                                                    },
+                                                  ),
+                                                ),
                                               ),
                                               if (index !=
                                                   response.clarificationList!
@@ -1047,8 +1133,7 @@ class ApprovalDetailFormState extends State<ApprovalDetailForm> {
             Navigator.push(
               context,
               MaterialPageRoute(
-                  builder: (context) =>
-                      const ApprovalListForm(type: customerSampleApproval)),
+                  builder: (context) => ApprovalListForm(type: widget.type)),
             );
           }
         } else {

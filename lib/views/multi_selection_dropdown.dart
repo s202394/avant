@@ -1,4 +1,5 @@
 import 'package:avant/views/custom_text.dart';
+import 'package:avant/views/label_text.dart';
 import 'package:flutter/material.dart';
 
 class MultiSelectDropdown<T> extends StatefulWidget {
@@ -27,11 +28,11 @@ class MultiSelectDropdown<T> extends StatefulWidget {
 
 class MultiSelectDropdownState<T> extends State<MultiSelectDropdown<T>> {
   late List<T> _selectedItems;
+  late List<T> _tempSelectedItems;
 
   @override
   void initState() {
     super.initState();
-    // Initialize selected items with default values
     _selectedItems = List.from(widget.selectedItems);
   }
 
@@ -39,47 +40,92 @@ class MultiSelectDropdownState<T> extends State<MultiSelectDropdown<T>> {
   Widget build(BuildContext context) {
     return ConstrainedBox(
       constraints: const BoxConstraints(maxWidth: double.infinity),
-      child: PopupMenuButton<T>(
-        onSelected: (item) {
-          setState(() {
-            if (_selectedItems.contains(item)) {
-              _selectedItems.remove(item);
-            } else {
-              _selectedItems.add(item);
-            }
-            widget.onChanged(_selectedItems);
-          });
-        },
+      child: PopupMenuButton<void>(
+        onSelected: (_) {},
         itemBuilder: (context) {
-          return widget.items.map((item) {
-            return PopupMenuItem<T>(
-              value: item,
-              child: Row(
-                children: [
-                  Checkbox(
-                    value: _selectedItems.contains(item),
-                    onChanged: (checked) {
-                      setState(() {
-                        if (checked == true) {
-                          _selectedItems.add(item);
-                        } else {
-                          _selectedItems.remove(item);
-                        }
-                        widget.onChanged(_selectedItems);
-                      });
-                    },
-                  ),
-                  Expanded(
-                    child: CustomText(
-                      widget.itemLabelBuilder(item),
-                      color: Colors.black,
-                      fontSize: 14,
+          _tempSelectedItems = List.from(_selectedItems); // Temporary selection
+          return [
+            PopupMenuItem<void>(
+              enabled: false,
+              padding: EdgeInsets.zero,
+              child: StatefulBuilder(
+                builder: (context, setState) {
+                  return Container(
+                    width:
+                        MediaQuery.of(context).size.width * 0.8, // Adjust width
+                    padding: const EdgeInsets.all(5.0), // Add padding
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Add a title (optional)
+                        CustomText(
+                          widget.label,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        const Divider(),
+                        // List of items with better styling
+                        SingleChildScrollView(
+                          child: Column(
+                            children: widget.items.map((item) {
+                              return CheckboxListTile(
+                                value: _tempSelectedItems.contains(item),
+                                title: CustomText(
+                                  widget.itemLabelBuilder(item),
+                                  fontSize: 12,
+                                  color: Colors.black,
+                                ),
+                                onChanged: (checked) {
+                                  setState(() {
+                                    if (checked == true) {
+                                      _tempSelectedItems.add(item);
+                                    } else {
+                                      _tempSelectedItems.remove(item);
+                                    }
+                                  });
+                                },
+                                contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 0.0, vertical: 0.0),
+                                controlAffinity:
+                                    ListTileControlAffinity.leading,
+                                visualDensity: VisualDensity.compact,
+                              );
+                            }).toList(),
+                          ),
+                        ),
+                        const Divider(),
+                        // Add OK and Cancel buttons
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            TextButton(
+                              onPressed: () {
+                                // Discard selection and close the popup
+                                Navigator.pop(context);
+                              },
+                              child: const Text('Cancel'),
+                            ),
+                            TextButton(
+                              onPressed: () {
+                                // Confirm selection
+                                setState(() {
+                                  _selectedItems =
+                                      List.from(_tempSelectedItems);
+                                  widget.onChanged(_selectedItems);
+                                });
+                                Navigator.pop(context);
+                              },
+                              child: const Text('OK'),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
-                  ),
-                ],
+                  );
+                },
               ),
-            );
-          }).toList();
+            ),
+          ];
         },
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 8.0),
@@ -98,14 +144,13 @@ class MultiSelectDropdownState<T> extends State<MultiSelectDropdown<T>> {
               child: Row(
                 children: [
                   Expanded(
-                    child: CustomText(
+                    child: Text(
                       _selectedItems.isNotEmpty
                           ? _selectedItems
                               .map(widget.itemLabelBuilder)
                               .join(', ')
                           : 'Select',
-                      fontSize: 14,
-                      color: Colors.black,
+                      style: const TextStyle(fontSize: 14, color: Colors.black),
                     ),
                   ),
                   const Icon(Icons.arrow_drop_down),

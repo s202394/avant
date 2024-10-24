@@ -253,7 +253,7 @@ class ApprovalListFormState extends State<ApprovalListForm> {
     // Validate inputs
     setState(() {
       if (action == 'Reject' && _commentController.text.isEmpty) {
-        _commentError = 'Please enter comment before $action.';
+        _commentError = 'Please enter Rejection remarks.';
       } else {
         _commentError = null;
       }

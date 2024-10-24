@@ -377,7 +377,7 @@ class DsrEntryPageState extends State<DsrEntry> {
     } else if (samplingDone == null) {
       toastMessage.showToastMessage('Please select Sampling Done.');
     } else if (followUpAction == null) {
-      toastMessage.showToastMessage('Please select Follow Up Action.');
+      toastMessage.showToastMessage('Please enter Follow Up Action.');
     } else if (_imageFile == null) {
       toastMessage.showToastMessage('Please capture image first.');
     } else {
