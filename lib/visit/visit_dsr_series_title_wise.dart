@@ -352,35 +352,52 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
   }
 
   Widget _buildSeriesTitleTab() {
-    final samplingTypeItems = samplingTypes.map((type) {
-      return DropdownMenuItem<String>(
-        value: type.samplingTypeValue,
-        child: Padding(
-          padding: const EdgeInsets.all(0),
-          child: CustomText(type.samplingType, fontSize: 12),
-        ),
-      );
-    }).toList();
+    final samplingTypeItems = [
+      const DropdownMenuItem<String>(
+        value: null,
+        child: CustomText('Select', fontSize: 12),
+      ),
+      ...samplingTypes.map((value) {
+        return DropdownMenuItem<String>(
+          value: value.samplingTypeValue,
+          child: Padding(
+            padding: const EdgeInsets.all(0),
+            child: CustomText(value.samplingTypeValue, fontSize: 12),
+          ),
+        );
+      }),
+    ];
+    final sampleGivenItems = [
+      const DropdownMenuItem<String>(
+        value: null,
+        child: CustomText('Select', fontSize: 12),
+      ),
+      ...sampleGivens.map((value) {
+        return DropdownMenuItem<String>(
+          value: value.sampleGiven,
+          child: Padding(
+            padding: const EdgeInsets.all(0),
+            child: CustomText(value.sampleGiven, fontSize: 12),
+          ),
+        );
+      }),
+    ];
 
-    final sampleGivenItems = sampleGivens.map((given) {
-      return DropdownMenuItem<String>(
-        value: given.sampleGivenValue,
-        child: Padding(
-          padding: const EdgeInsets.all(0),
-          child: CustomText(given.sampleGiven, fontSize: 12),
-        ),
-      );
-    }).toList();
-
-    final sampleToItems = sampleTos.map((value) {
-      return DropdownMenuItem<String>(
-        value: value.customerName,
-        child: Padding(
-          padding: const EdgeInsets.all(0),
-          child: CustomText(value.customerName, fontSize: 12),
-        ),
-      );
-    }).toList();
+    final sampleToItems = [
+      const DropdownMenuItem<String>(
+        value: null,
+        child: CustomText('Select', fontSize: 12),
+      ),
+      ...sampleTos.map((value) {
+        return DropdownMenuItem<String>(
+          value: value.customerName,
+          child: Padding(
+            padding: const EdgeInsets.all(0),
+            child: CustomText(value.customerName, fontSize: 12),
+          ),
+        );
+      }),
+    ];
 
     return Scaffold(
       body: Padding(
@@ -493,19 +510,23 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
                             ? 'Please select Ship To'
                             : null,
                       ),
-                      items: shipToOptions
-                          .map(
-                            (shipTo) => DropdownMenuItem<String>(
-                              value: shipTo,
-                              child: Text(
-                                shipTo,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                    fontSize: 12, color: Colors.black),
-                              ),
+                      items: [
+                        const DropdownMenuItem<String>(
+                          value: null,
+                          child: CustomText('Select', fontSize: 12),
+                        ),
+                        ...shipToOptions.map(
+                          (shipTo) => DropdownMenuItem<String>(
+                            value: shipTo,
+                            child: Text(
+                              shipTo,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                  fontSize: 12, color: Colors.black),
                             ),
-                          )
-                          .toList(),
+                          ),
+                        ),
+                      ],
                       onChanged: (value) {
                         setState(() {
                           selectedShipTo = value;

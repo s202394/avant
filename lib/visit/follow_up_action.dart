@@ -134,15 +134,15 @@ class FollowUpActionState extends State<FollowUpAction> {
                     for (var item in widget.visitDsrData.departmentList)
                       item.executiveDepartmentName: item.id
                   },
-                      (value) async {
+                  (value) async {
                     setState(() {
                       selectedDepartment = value;
                       selectedDepartmentId = value != null
                           ? {
-                        for (var item
-                        in widget.visitDsrData.departmentList)
-                          item.executiveDepartmentName: item.id
-                      }[value]
+                              for (var item
+                                  in widget.visitDsrData.departmentList)
+                                item.executiveDepartmentName: item.id
+                            }[value]
                           : null;
                     });
 
@@ -162,21 +162,20 @@ class FollowUpActionState extends State<FollowUpAction> {
                     for (var item in executivesList)
                       item.executiveName: item.executiveId
                   },
-                      (value) {
+                  (value) {
                     setState(() {
                       selectedExecutive = value;
                       selectedExecutiveId = value != null
                           ? {
-                        for (var item in executivesList)
-                          item.executiveName: item.executiveId
-                      }[value]
+                              for (var item in executivesList)
+                                item.executiveName: item.executiveId
+                            }[value]
                           : null;
                     });
                   },
                 ),
                 const SizedBox(height: 8),
-                _buildTextField(
-                    'Action Date', _dateController, _dateFieldKey),
+                _buildTextField('Action Date', _dateController, _dateFieldKey),
                 _buildTextField('Follow Up Action',
                     _visitFollowUpActionController, _visitFeedbackFieldKey,
                     maxLines: 3),
@@ -264,29 +263,36 @@ class FollowUpActionState extends State<FollowUpAction> {
     String label,
     String? selectedValue,
     Map<String, int> items,
-    ValueChanged<String?>? onChanged,
-  ) {
+    ValueChanged<String?>? onChanged, {
+    double labelFontSize = 14.0,
+    double textFontSize = 14.0,
+  }) {
+    // Validate that the selected value exists in the items map
+    final effectiveSelectedValue =
+        items.containsKey(selectedValue) ? selectedValue : null;
+
     return DropdownButtonFormField<String>(
-      value: selectedValue,
-      items: items.keys
-          .map(
-            (key) => DropdownMenuItem<String>(
-              value: key,
-              child: CustomText(
-                key,
-                color: Colors.black,
-              ),
-            ),
-          )
-          .toList(),
+      value: effectiveSelectedValue,
+      items: [
+        DropdownMenuItem<String>(
+          value: null,
+          child: CustomText('Select', fontSize: textFontSize),
+        ),
+        ...items.keys.map(
+          (item) => DropdownMenuItem<String>(
+            value: item,
+            child: CustomText(item, fontSize: textFontSize),
+          ),
+        ),
+      ],
       onChanged: onChanged,
       style: const TextStyle(fontSize: 14),
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: const TextStyle(fontSize: 14.0),
+        labelStyle: TextStyle(fontSize: labelFontSize),
         border: const OutlineInputBorder(),
-        errorText: _submitted && selectedValue == null
-            ? 'Please select a $label'
+        errorText: _submitted && effectiveSelectedValue == null
+            ? 'Please select $label'
             : null,
       ),
     );
@@ -341,7 +347,7 @@ class FollowUpActionState extends State<FollowUpAction> {
             maxLines: maxLines,
             validator: (value) {
               if (value == null || value.isEmpty) {
-                return 'Please select $label';
+                return 'Please enter $label';
               }
               return null;
             },

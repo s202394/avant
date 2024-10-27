@@ -15,10 +15,10 @@ class SetupValues {
 
   factory SetupValues.fromJson(Map<String, dynamic> json) {
     return SetupValues(
-      id: json['Id'] ?? '',
+      id: json['Id'] ?? 0,
       keyName: json['KeyName'] ?? '',
       keyValue: json['KeyValue'] ?? '',
-      keyStatus: json['KeyStatus'] ?? '',
+      keyStatus: (json['KeyStatus'] ?? false) == true,
       keyDescription: json['KeyDescription'] ?? '',
     );
   }
@@ -28,7 +28,27 @@ class SetupValues {
       'Id': id,
       'KeyName': keyName,
       'KeyValue': keyValue,
-      'KeyStatus': keyStatus,
+      'KeyStatus': keyStatus ? 1 : 0, // Convert to int for sqflite
+      'KeyDescription': keyDescription,
+    };
+  }
+
+  static SetupValues fromDatabase(Map<String, dynamic> json) {
+    return SetupValues(
+      id: json['Id'],
+      keyName: json['KeyName'],
+      keyValue: json['KeyValue'],
+      keyStatus: json['KeyStatus'] == 1,
+      keyDescription: json['KeyDescription'],
+    );
+  }
+
+  Map<String, dynamic> toDatabaseJson() {
+    return {
+      'Id': id,
+      'KeyName': keyName,
+      'KeyValue': keyValue,
+      'KeyStatus': keyStatus ? 1 : 0,
       'KeyDescription': keyDescription,
     };
   }

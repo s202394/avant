@@ -77,6 +77,10 @@ class SelfStockRequestSearchPageState extends State<SelfStockRequestSearch>
 
     _fetchSeriesAndClassLevels();
 
+    if (kDebugMode) {
+      print('deliveryTradeId:${widget.deliveryTradeId}');
+    }
+
     _autocompleteController.addListener(() {
       if (_isSuggestionSelected) {
         if (kDebugMode) {

@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:avant/api/api_service.dart';
 import 'package:avant/common/common.dart';
 import 'package:avant/common/toast.dart';
+import 'package:avant/db/db_helper.dart';
 import 'package:avant/home.dart';
 import 'package:avant/model/get_visit_dsr_model.dart';
 import 'package:avant/model/login_model.dart';
@@ -59,6 +60,8 @@ class DsrEntryPageState extends State<DsrEntry> {
   bool? followUpAction;
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
+  final DatabaseHelper dbHelper = DatabaseHelper();
+
   List<JoinVisit> _selectedJointVisitWithItems = [];
 
   String fetchedAddress = '';
@@ -69,6 +72,9 @@ class DsrEntryPageState extends State<DsrEntry> {
   String? upHierarchy;
   String? downHierarchy;
   String? token;
+
+  String? visitFeedbackMandatory;
+  int? visitFeedbackMinChar;
 
   ToastMessage toastMessage = ToastMessage();
   LocationService locationService = LocationService();
@@ -187,6 +193,23 @@ class DsrEntryPageState extends State<DsrEntry> {
     executiveName = await getExecutiveName();
     upHierarchy = prefs.getString('UpHierarchy') ?? '';
     downHierarchy = prefs.getString('DownHierarchy') ?? '';
+
+    visitFeedbackMinChar = await dbHelper.getVisitFeedbackMinChar() ?? 0;
+
+    if (kDebugMode) {
+      print('VisitFeedbackMinChar value: $visitFeedbackMinChar');
+    }
+
+    visitFeedbackMandatory = await dbHelper.getVisitFeedbackMandatory();
+    if (visitFeedbackMandatory != null) {
+      if (kDebugMode) {
+        print('VisitFeedbackMandatory value: $visitFeedbackMandatory');
+      }
+    } else {
+      if (kDebugMode) {
+        print('VisitFeedbackMandatory key not found in the database.');
+      }
+    }
 
     return await GetVisitDsrService().getVisitDsr(
       executiveId ?? 0,
@@ -380,6 +403,13 @@ class DsrEntryPageState extends State<DsrEntry> {
       toastMessage.showToastMessage('Please enter Follow Up Action.');
     } else if (_imageFile == null) {
       toastMessage.showToastMessage('Please capture image first.');
+    } else if (visitFeedbackMandatory?.toLowerCase() == 'yes' &&
+        _visitFeedbackController.text.isEmpty) {
+      toastMessage.showToastMessage('Please enter visit feedback.');
+    } else if (visitFeedbackMandatory?.toLowerCase() == 'yes' &&
+        _visitFeedbackController.text.length < visitFeedbackMinChar!.toInt()) {
+      toastMessage.showToastMessage(
+          'Please enter minimum $visitFeedbackMinChar characters in visit feedback.');
     } else {
       nextAction(visitDsrData);
     }
@@ -602,10 +632,18 @@ class DsrEntryPageState extends State<DsrEntry> {
             textAlign: TextAlign.start,
             maxLines: maxLines,
             validator: (value) {
-              if (value == null || value.isEmpty) {
-                return (label == 'Visit Date')
-                    ? 'Please select $label'
-                    : 'Please enter $label';
+              if (label == 'Visit Date' && (value == null || value.isEmpty)) {
+                return 'Please select $label';
+              }
+              if (label == 'Visit Feedback' &&
+                  visitFeedbackMandatory?.toLowerCase() == 'yes' &&
+                  (value == null || value.isEmpty)) {
+                return 'Please enter $label';
+              }
+              if (label == 'Visit Feedback' &&
+                  visitFeedbackMandatory?.toLowerCase() == 'yes' &&
+                  (value?.length ?? 0) < (visitFeedbackMinChar?.toInt() ?? 0)) {
+                return 'Please enter minimum $visitFeedbackMinChar characters in $label.';
               }
               return null;
             },

@@ -172,7 +172,7 @@ class DatabaseHelper {
 
         //Create table for SetupValues
         await database.execute(
-          "CREATE TABLE SetupValues (Id INTEGER PRIMARY KEY, KeyName TEXT NOT NULL, KeyValue TEXT NOT NULL, KeyStatus INTEGER NOT NULL, KeyDescription TEXT)",
+          "CREATE TABLE setupValues (Id INTEGER PRIMARY KEY, KeyName TEXT NOT NULL, KeyValue TEXT NOT NULL, KeyStatus INTEGER NOT NULL, KeyDescription TEXT)",
         );
         if (kDebugMode) {
           print("SetupValues table successfully created.");
@@ -818,7 +818,7 @@ class DatabaseHelper {
   //Save SetupValues Data to the Database
   Future<void> insertSetupValueData(SetupValues data) async {
     final db = await database;
-    await db.insert('SetupValues', data.toJson(),
+    await db.insert('setupValues', data.toJson(),
         conflictAlgorithm: ConflictAlgorithm.replace);
     if (kDebugMode) {
       print("${data.keyName}:${data.keyValue} successfully inserted into db.");
@@ -828,7 +828,7 @@ class DatabaseHelper {
   //Retrieve SetupValues Data from the Database
   Future<List<SetupValues>> getSetupValuesDataFromDB() async {
     final db = await database;
-    final List<Map<String, dynamic>> maps = await db.query('SetupValues');
+    final List<Map<String, dynamic>> maps = await db.query('setupValues');
     if (kDebugMode) {
       print("Getting SetupValues data from db.");
     }
@@ -978,4 +978,35 @@ class DatabaseHelper {
     await db.delete('FollowUpActionCart');
   }
 //END FollowUpActionCart
+
+  Future<String?> getVisitFeedbackMandatory() async {
+    final db = await database;
+    final List<Map<String, dynamic>> result = await db.query(
+      'setupValues', // Your table name
+      columns: ['KeyValue'], // Only fetch the keyValue column
+      where: 'KeyName = ?',
+      whereArgs: ['VisitFeedbackMandatory'],
+      limit: 1,
+    );
+
+    if (result.isNotEmpty) {
+      return result.first['KeyValue'] as String?;
+    }
+    return null; // Return null if the key doesn't exist in the DB
+  }
+  Future<int?> getVisitFeedbackMinChar() async {
+    final db = await database;
+    final List<Map<String, dynamic>> result = await db.query(
+      'setupValues', // Your table name
+      columns: ['KeyValue'], // Only fetch the keyValue column
+      where: 'KeyName = ?',
+      whereArgs: ['VisitFeedbackMinChar'],
+      limit: 1,
+    );
+
+    if (result.isNotEmpty) {
+      return int.tryParse(result.first['KeyValue'] as String? ?? '0');
+    }
+    return null; // Return null if the key doesn't exist or cannot be parsed to an int
+  }
 }

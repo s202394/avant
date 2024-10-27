@@ -72,21 +72,26 @@ class LoginService {
       String deviceId,
       String deviceInfo,
       String token) async {
+    final body = jsonEncode(<String, String>{
+      'EmailId': email,
+      'Password': password,
+      'IPAddress': ipAddress,
+      'BrowserInformation': deviceInfo,
+      'SessionId': deviceId,
+      'Api': 'Yes',
+    });
     final response = await http.post(
       Uri.parse(loginUrl),
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
         'Authorization': 'Bearer $token',
       },
-      body: jsonEncode(<String, String>{
-        'EmailId': email,
-        'Password': password,
-        'IPAddress': ipAddress,
-        'BrowserInformation': deviceInfo,
-        'SessionId': deviceId,
-        'Api': 'Yes',
-      }),
+      body: body,
     );
+    print('login request body: $body');
+    print('login response code: ${response.statusCode}');
+    print('login response body: ${response.body}');
+    print('login request url: ${response.request?.url}');
     if (response.statusCode == 200) {
       final responseData = json.decode(response.body);
       if (kDebugMode) {
@@ -369,16 +374,20 @@ class SetupValuesService {
         print('No setup values found in DB, fetching from API.');
       }
 
-      final response = await http.get(
+      final response = await http.post(
         Uri.parse(setupValuesUrl),
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
           'Authorization': 'Bearer $token',
         },
+        body: jsonEncode(<String, dynamic>{
+          'setupKey': '',
+        }),
       );
 
       if (kDebugMode) {
-        print('Request URL: ${response.request?.url}');
+        print('Setup Values Request URL: ${token}');
+        print('Setup Values Request URL: ${response.request?.url}');
         print('Response body: ${response.body}');
         print('Response status: ${response.statusCode}');
       }
@@ -2128,6 +2137,7 @@ class CheckInCheckOutService {
         },
         body: body);
     if (kDebugMode) {
+      print('TOKEN: $token');
       print('Request URL: ${response.request?.url}');
       print('Response status: ${response.statusCode}');
       print('Response body: ${response.body}');
@@ -2174,9 +2184,7 @@ class SeriesAndClassLevelListService {
       'ProfileId': profileId,
       'ExecutiveId': executiveId,
     });
-    if (kDebugMode) {
-      print("Request body : $body");
-    }
+
     final response = await http.post(
       Uri.parse(getSeriesAndClassLevelListUrl),
       headers: <String, String>{
@@ -2186,6 +2194,7 @@ class SeriesAndClassLevelListService {
       body: body,
     );
     if (kDebugMode) {
+      print("Request body : $body");
       print('Request URL: ${response.request?.url}');
       print('Response status: ${response.statusCode}');
       print('Response body: ${response.body}');

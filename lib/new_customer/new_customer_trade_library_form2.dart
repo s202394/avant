@@ -485,12 +485,18 @@ class NewCustomerTradeLibraryForm2State
           labelStyle: TextStyle(fontSize: labelFontSize),
           border: const OutlineInputBorder(),
         ),
-        items: items.map((item) {
-          return DropdownMenuItem(
-            value: item,
-            child: CustomText(item, fontSize: 14),
-          );
-        }).toList(),
+        items: [
+          const DropdownMenuItem<String>(
+            value: null,
+            child: CustomText('Select'),
+          ),
+          ...items.map(
+                (item) => DropdownMenuItem<String>(
+              value: item,
+              child: CustomText(item, fontSize: textFontSize),
+            ),
+          ),
+        ],
         onChanged: (newValue) {
           onChanged(newValue);
           fieldKey.currentState?.validate();

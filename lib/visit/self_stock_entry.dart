@@ -86,12 +86,21 @@ class SelfStockEntryPageState extends State<SelfStockEntry> {
 
   // Builds the main form UI
   Widget _buildForm(SelfStockRequestResponse response) {
-    final shipToItems = response.shipTo.map((value) {
-      return DropdownMenuItem<String>(
-        value: value.shipTo,
-        child: Text(value.shipTo),
-      );
-    }).toList();
+    final shipToItems = [
+      const DropdownMenuItem<String>(
+        value: null,
+        child: CustomText('Select', fontSize: 14),
+      ),
+      ...response.shipTo.map((value) {
+        return DropdownMenuItem<String>(
+          value: value.shipTo,
+          child: Padding(
+            padding: const EdgeInsets.all(0),
+            child: CustomText(value.shipTo, fontSize: 14),
+          ),
+        );
+      }),
+    ];
 
     return Stack(
       children: [
@@ -184,12 +193,18 @@ class SelfStockEntryPageState extends State<SelfStockEntry> {
           border: const OutlineInputBorder(),
         ),
         value: selectedValue,
-        items: items.keys.map((key) {
-          return DropdownMenuItem<String>(
-            value: key,
-            child: CustomText(key),
-          );
-        }).toList(),
+        items: [
+          DropdownMenuItem<String>(
+            value: null,
+            child: CustomText('Select', fontSize: textFontSize),
+          ),
+          ...items.keys.map(
+            (key) => DropdownMenuItem<String>(
+              value: key,
+              child: CustomText(key),
+            ),
+          ),
+        ],
         onChanged: onChanged,
         validator: (value) {
           if (value == null || value.isEmpty) {
@@ -223,6 +238,7 @@ class SelfStockEntryPageState extends State<SelfStockEntry> {
             }
             selectedShipTo = value;
             selectedDeliveryTrade = null;
+            selectedDeliveryTradeId = null;
             shipmentResponse = null;
             address = null;
             if (selectedShipTo != 'Transport Office') {
@@ -245,7 +261,8 @@ class SelfStockEntryPageState extends State<SelfStockEntry> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (selectedShipTo == 'Trade') _buildTradeAddressDropdown(),
+        if (selectedShipTo == 'Trade')
+          _buildTradeAddressDropdown(),
         _buildAddressText(),
       ],
     );
@@ -269,16 +286,25 @@ class SelfStockEntryPageState extends State<SelfStockEntry> {
                 ? 'Please select Delivery Trade'
                 : null,
           ),
-          items: shipmentResponse?.shipmentAddress
-              .whereType<TradeShipmentAddress>()
-              .map((trade) {
-            return DropdownMenuItem<String>(
-              value: trade.customerName,
-              child: CustomText(trade.customerName),
-            );
-          }).toList(),
+          items: [
+            const DropdownMenuItem<String>(
+              value: null,
+              child: CustomText('Select'),
+            ),
+            ...?shipmentResponse?.shipmentAddress
+                .whereType<TradeShipmentAddress>()
+                .map((trade) {
+              return DropdownMenuItem<String>(
+                value: trade.customerName,
+                child: CustomText(trade.customerName),
+              );
+            }),
+          ],
           onChanged: (value) {
             setState(() {
+              if (value != null && value.isNotEmpty) {
+                _formKey.currentState!.validate();
+              }
               selectedDeliveryTrade = value;
               address = shipmentResponse?.shipmentAddress
                   .whereType<TradeShipmentAddress>()
@@ -293,7 +319,20 @@ class SelfStockEntryPageState extends State<SelfStockEntry> {
                       shippingAddress: '',
                     ),
                   );
+
+              if (address is TradeShipmentAddress) {
+                selectedDeliveryTradeId =
+                    (address as TradeShipmentAddress).customerId;
+              } else {
+                selectedDeliveryTradeId = null;
+              }
             });
+          },
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return 'Please select Delivery Trade';
+            }
+            return null;
           },
         ),
       ],
@@ -349,6 +388,7 @@ class SelfStockEntryPageState extends State<SelfStockEntry> {
               setState(() {
                 _submitted = true;
               });
+              print('deliveryTradeId:${selectedDeliveryTradeId ?? 0}');
               if (_formKey.currentState!.validate()) {
                 Navigator.push(
                   context,

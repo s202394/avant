@@ -166,6 +166,7 @@ class ApprovalListFormState extends State<ApprovalListForm> {
                                       }
                                     });
                                   },
+                                  onRefresh: _checkConnectivity,
                                 );
                               },
                             ),
@@ -392,12 +393,15 @@ class RequestCard extends StatefulWidget {
   final ApprovalList request;
   final Function(bool) onChecked;
   final String type;
+  final VoidCallback onRefresh;
 
-  const RequestCard(
-      {super.key,
-      required this.request,
-      required this.onChecked,
-      required this.type});
+  const RequestCard({
+    super.key,
+    required this.request,
+    required this.onChecked,
+    required this.type,
+    required this.onRefresh,
+  });
 
   @override
   RequestCardState createState() => RequestCardState();
@@ -506,7 +510,11 @@ class RequestCardState extends State<RequestCard> {
                 customerType: widget.request.customerType,
               ),
             ),
-          );
+          ).then((shouldRefresh) {
+            if (shouldRefresh == true) {
+              widget.onRefresh();
+            }
+          });
         },
       ),
     );

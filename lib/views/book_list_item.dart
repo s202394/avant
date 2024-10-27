@@ -111,6 +111,7 @@ class BookListItemState extends State<BookListItem> {
                                           });
                                         }
                                         widget.onQuantityChanged(_quantity);
+                                        print('Quantity changed to: $_quantity');
                                       }
                                     : null,
                                 style: ElevatedButton.styleFrom(
@@ -133,70 +134,30 @@ class BookListItemState extends State<BookListItem> {
                                 ),
                                 child: Row(
                                   children: [
-                                    // Use Flexible for dynamic space allocation
-                                    Flexible(
-                                      flex: 1,
-                                      child: GestureDetector(
-                                        onTap: () {
-                                          if (_quantity > 0) {
-                                            setState(() {
-                                              _quantity--;
-                                            });
-                                            widget.onQuantityChanged(_quantity);
-                                          }
-                                        },
-                                        child: Container(
-                                          alignment: Alignment.center,
-                                          child: const Text(
-                                            '-',
-                                            style: TextStyle(
-                                              fontSize: 17,
-                                              color: Colors.red,
-                                            ),
-                                            textAlign: TextAlign.center,
-                                          ),
-                                        ),
-                                      ),
+                                    GestureDetector(
+                                      onTap: () {
+                                        // Decrement quantity if greater than zero
+                                        if (_quantity > 0) {
+                                          setState(() {
+                                            _quantity--;
+                                          });
+                                          widget.onQuantityChanged(_quantity);
+                                        }
+                                      },
+                                      child: const Text('-', style: TextStyle(fontSize: 20)),
                                     ),
-                                    Flexible(
-                                      flex: 1,
-                                      child: Container(
-                                        alignment: Alignment.center,
-                                        color: Colors.red,
-                                        child: Text(
-                                          '$_quantity',
-                                          style: const TextStyle(
-                                            fontSize: 10,
-                                            color: Colors.white,
-                                          ),
-                                          textAlign: TextAlign.center,
-                                        ),
-                                      ),
-                                    ),
-                                    Flexible(
-                                      flex: 1,
-                                      child: GestureDetector(
-                                        onTap: () {
-                                          if (_quantity <
-                                              widget.book.physicalStock) {
-                                            setState(() {
-                                              _quantity++;
-                                            });
-                                            widget.onQuantityChanged(_quantity);
-                                          }
-                                        },
-                                        child: Container(
-                                          alignment: Alignment.center,
-                                          child: const Text(
-                                            '+',
-                                            style: TextStyle(
-                                              fontSize: 17,
-                                              color: Colors.red,
-                                            ),
-                                            textAlign: TextAlign.center,
-                                          ),
-                                        ),
-                                      ),
+                                    Text('$_quantity'),
+                                    GestureDetector(
+                                      onTap: () {
+                                        // Increment quantity
+                                        if (_quantity < widget.book.physicalStock) {
+                                          setState(() {
+                                            _quantity++;
+                                          });
+                                          widget.onQuantityChanged(_quantity);
+                                        }
+                                      },
+                                      child: const Text('+', style: TextStyle(fontSize: 20)),
                                     ),
                                   ],
                                 ),

@@ -1,9 +1,9 @@
 import 'package:avant/api/api_service.dart';
+import 'package:avant/common/common_text.dart';
+import 'package:avant/common/constants.dart';
 import 'package:avant/common/error_layout.dart';
 import 'package:avant/common/no_data_layout.dart';
 import 'package:avant/common/toast.dart';
-import 'package:avant/common/common_text.dart';
-import 'package:avant/home.dart';
 import 'package:avant/model/approval_details_model.dart';
 import 'package:avant/model/login_model.dart';
 import 'package:avant/views/custom_text.dart';
@@ -12,12 +12,10 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:avant/common/constants.dart';
 
 import '../common/common.dart';
 import '../model/submit_approval_model.dart';
 import '../views/common_app_bar.dart';
-import 'approval_list_form.dart';
 
 class ApprovalDetailForm extends StatefulWidget {
   final String type;
@@ -216,11 +214,14 @@ class ApprovalDetailFormState extends State<ApprovalDetailForm> {
         if (s.isNotEmpty) {
           _toastMessage.showInfoToastMessage(s);
           if (mounted) {
-            Navigator.pushAndRemoveUntil(
+            Navigator.pop(context, true);
+            /*Navigator.pushAndRemoveUntil(
               context,
-              MaterialPageRoute(builder: (context) => const HomePage()),
-              (Route<dynamic> route) => false,
-            );
+              MaterialPageRoute(
+                builder: (context) => ApprovalListForm(type: widget.type),
+              ),
+              (route) => false,
+            );*/
           }
         } else {
           if (kDebugMode) {
@@ -1130,11 +1131,12 @@ class ApprovalDetailFormState extends State<ApprovalDetailForm> {
               _isLoading = false;
             });
             Navigator.pop(context);
-            Navigator.push(
+            Navigator.pop(context, true);
+            /*Navigator.push(
               context,
               MaterialPageRoute(
                   builder: (context) => ApprovalListForm(type: widget.type)),
-            );
+            );*/
           }
         } else {
           _toastMessage

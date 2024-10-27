@@ -1,6 +1,6 @@
 class ShipmentResponse {
   String status;
-  List<ShipmentAddress>   shipmentAddress;
+  List<ShipmentAddress> shipmentAddress;
 
   ShipmentResponse({
     required this.status,
@@ -45,7 +45,7 @@ class Address extends ShipmentAddress {
   }
 }
 
-  class TradeShipmentAddress extends ShipmentAddress {
+class TradeShipmentAddress extends ShipmentAddress {
   int customerId;
   String customerName;
   String customerType;
