@@ -87,7 +87,9 @@ class SelfStockRequestCartState extends State<SelfStockRequestCart>
       print('itemCount:$itemCount');
     }
     setState(() {
-      _cartItems = cartItems;
+      setState(() {
+        _cartItems = List.from(cartItems.map((item) => Map<String, dynamic>.from(item))); // Make a mutable copy
+      });
 
       _tabController = TabController(length: 1, vsync: this);
     });
@@ -191,42 +193,98 @@ class SelfStockRequestCartState extends State<SelfStockRequestCart>
       ),
     );
   }
-
   Widget _buildTab() {
-    if (kDebugMode) {
-      print('_cartItems : ${_cartItems.length}');
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: _cartItems.isEmpty
+          ? _noDataLayout() // Replace with your no data layout widget
+          : ListView.builder(
+        itemCount: _cartItems.length,
+        itemBuilder: (context, index) {
+          final item = _cartItems[index]; // Get the current item
+          TitleList titleList = TitleList(
+            bookId: item['BookId'],
+            title: item['Title'],
+            isbn: item['ISBN'],
+            author: item['Author'],
+            price: item['Price'],
+            listPrice: item['ListPrice'],
+            bookNum: item['BookNum'],
+            image: item['Image'],
+            bookType: item['BookType'],
+            imageUrl: item['ImageUrl'],
+            physicalStock: item['PhysicalStock'],
+            quantity: item['RequestedQty'],
+          );
+
+          return BookListItem(
+            book: titleList,
+            onQuantityChanged: (newQuantity) {
+              _handleQuantityChange(index, newQuantity);
+            },
+            areDropdownsSelected: true,
+          );
+        },
+      ),
+    );
+  }
+  void _handleQuantityChange(int index, int newQuantity) {
+    setState(() {
+      // Create a mutable copy of the item
+      Map<String, dynamic> updatedItem = Map<String, dynamic>.from(_cartItems[index]);
+
+      updatedItem['RequestedQty'] = newQuantity; // Update the quantity
+
+      // Update the books list with the modified item
+      _cartItems[index] = updatedItem; // Assign the updated item back to the list
+    });
+
+    // Perform the database operation outside of setState
+    if (newQuantity == 0) {
+      deleteItem(index);
+    } else {
+      _updateCartItem(index, newQuantity);
     }
-    return SingleChildScrollView(
+  }
+  Future<void> _updateCartItem(int index, int newQuantity) async {
+    await databaseHelper.insertCartItem({
+      'BookId': _cartItems[index]['BookId'],
+      'SeriesId': _cartItems[index]['SeriesId'],
+      'Title': _cartItems[index]['Title'],
+      'ISBN': _cartItems[index]['ISBN'],
+      'Author': _cartItems[index]['Author'],
+      'Price': _cartItems[index]['Price'],
+      'ListPrice': _cartItems[index]['ListPrice'],
+      'BookNum': _cartItems[index]['BookNum'],
+      'Image': _cartItems[index]['Image'],
+      'BookType': _cartItems[index]['BookType'],
+      'ImageUrl': _cartItems[index]['ImageUrl'],
+      'PhysicalStock': _cartItems[index]['PhysicalStock'],
+      'RequestedQty': newQuantity,
+      'ShipTo': _cartItems[index]['ShipTo'],
+      'ShippingAddress': _cartItems[index]['ShippingAddress'],
+      'SamplingType': _cartItems[index]['SamplingType'],
+      'SampleTo': _cartItems[index]['SampleTo'],
+      'SampleGiven': _cartItems[index]['SampleGiven'],
+      'MRP': _cartItems[index]['ListPrice'],
+    });
+  }
+
+  Future<void> deleteItem(int index) async {
+    // Delete the item from the database
+    await databaseHelper.deleteCartItem(_cartItems[index]['BookId']);
+
+    // Now remove the item from the mutable list
+    setState(() {
+      _cartItems.removeAt(index); // Remove from mutable list
+    });
+  }
+  Widget _noDataLayout() {
+    return const Center(
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: _cartItems.map((item) {
-            final titleList = TitleList(
-              bookId: item['BookId'],
-              title: item['Title'],
-              isbn: item['ISBN'],
-              author: item['Author'],
-              price: item['Price'],
-              listPrice: item['ListPrice'],
-              bookNum: item['BookNum'],
-              image: item['Image'],
-              bookType: item['BookType'],
-              imageUrl: item['ImageUrl'],
-              physicalStock: item['PhysicalStock'],
-              quantity: item['RequestedQty'],
-            );
-            return BookListItem(
-              book: titleList,
-              onQuantityChanged: (quantity) {
-                setState(() {
-                  item['RequestedQty'] = quantity;
-                });
-              },
-              areDropdownsSelected: true,
-            );
-          }).toList(),
-        ),
+        padding: EdgeInsets.all(16.0),
+        child: CustomText('No data found.',
+            fontSize: 18, fontWeight: FontWeight.bold),
       ),
     );
   }
@@ -244,9 +302,7 @@ class SelfStockRequestCartState extends State<SelfStockRequestCart>
           print("_submitForm clicked");
         }
 
-        List<Map<String, dynamic>> generateCartList =
-            await databaseHelper.getAllCarts();
-        String cartXml = generateCartXml(generateCartList);
+        String cartXml = generateCartXml(_cartItems);
 
         final responseData = await SelfStockSamplingService()
             .submitSelfStockSampling(
@@ -267,7 +323,8 @@ class SelfStockRequestCartState extends State<SelfStockRequestCart>
             print(msgType);
           }
           if (msgType == 's' ||
-              (msgType == 'e' && msgText.toLowerCase().contains('submitted successfully'))) {
+              (msgType == 'e' &&
+                  msgText.toLowerCase().contains('submitted successfully'))) {
             if (kDebugMode) {
               print(
                   'Submit self stock request msgType : $msgType, msgText : $msgText');

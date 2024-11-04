@@ -126,8 +126,10 @@ class CartState extends State<Cart> with TickerProviderStateMixin {
     final titleItems = await databaseHelper.getCartItemsWithTitle();
 
     setState(() {
-      _seriesItems = seriesItems;
       _titleItems = titleItems;
+      setState(() {
+        _seriesItems = List.from(seriesItems.map((item) => Map<String, dynamic>.from(item))); // Make a mutable copy
+      });
 
       tabCount = 0; // Reset tabCount to avoid old values.
 
@@ -282,37 +284,99 @@ class CartState extends State<Cart> with TickerProviderStateMixin {
   }
 
   Widget _buildSeriesTitleTab() {
-    return SingleChildScrollView(
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: _seriesItems.isEmpty
+          ? _noDataLayout() // Replace with your no data layout widget
+          : ListView.builder(
+        itemCount: _seriesItems.length,
+        itemBuilder: (context, index) {
+          final item = _seriesItems[index]; // Get the current item
+          TitleList titleList = TitleList(
+            bookId: item['BookId'],
+            title: item['Title'],
+            isbn: item['ISBN'],
+            author: item['Author'],
+            price: item['Price'],
+            listPrice: item['ListPrice'],
+            bookNum: item['BookNum'],
+            image: item['Image'],
+            bookType: item['BookType'],
+            imageUrl: item['ImageUrl'],
+            physicalStock: item['PhysicalStock'],
+            quantity: item['RequestedQty'], // Current quantity
+          );
+
+          return BookListItem(
+            book: titleList,
+            onQuantityChanged: (newQuantity) {
+              _handleQuantityChange(index, newQuantity);
+            },
+            areDropdownsSelected: true,
+          );
+        },
+      ),
+    );
+  }
+
+  void _handleQuantityChange(int index, int newQuantity) {
+    setState(() {
+      // Create a mutable copy of the item
+      Map<String, dynamic> updatedItem = Map<String, dynamic>.from(_seriesItems[index]);
+
+      updatedItem['RequestedQty'] = newQuantity; // Update the quantity
+
+      // Update the books list with the modified item
+      _seriesItems[index] = updatedItem; // Assign the updated item back to the list
+    });
+
+    // Perform the database operation outside of setState
+    if (newQuantity == 0) {
+      deleteItem(index);
+    } else {
+      _updateCartItem(index, newQuantity);
+    }
+  }
+
+  Future<void> _updateCartItem(int index, int newQuantity) async {
+    await databaseHelper.insertCartItem({
+      'BookId': _seriesItems[index]['BookId'],
+      'SeriesId': _seriesItems[index]['SeriesId'],
+      'Title': _seriesItems[index]['Title'],
+      'ISBN': _seriesItems[index]['ISBN'],
+      'Author': _seriesItems[index]['Author'],
+      'Price': _seriesItems[index]['Price'],
+      'ListPrice': _seriesItems[index]['ListPrice'],
+      'BookNum': _seriesItems[index]['BookNum'],
+      'Image': _seriesItems[index]['Image'],
+      'BookType': _seriesItems[index]['BookType'],
+      'ImageUrl': _seriesItems[index]['ImageUrl'],
+      'PhysicalStock': _seriesItems[index]['PhysicalStock'],
+      'RequestedQty': newQuantity,
+      'ShipTo': _seriesItems[index]['ShipTo'],
+      'ShippingAddress': _seriesItems[index]['ShippingAddress'],
+      'SamplingType': _seriesItems[index]['SamplingType'],
+      'SampleTo': _seriesItems[index]['SampleTo'],
+      'SampleGiven': _seriesItems[index]['SampleGiven'],
+      'MRP': _seriesItems[index]['ListPrice'],
+    });
+  }
+
+  Future<void> deleteItem(int index) async {
+    // Delete the item from the database
+    await databaseHelper.deleteCartItem(_seriesItems[index]['BookId']);
+
+    // Now remove the item from the mutable list
+    setState(() {
+      _seriesItems.removeAt(index); // Remove from mutable list
+    });
+  }
+  Widget _noDataLayout() {
+    return const Center(
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: _seriesItems.map((item) {
-            TitleList titleList = TitleList(
-              bookId: item['BookId'],
-              title: item['Title'],
-              isbn: item['ISBN'],
-              author: item['Author'],
-              price: item['Price'],
-              listPrice: item['ListPrice'],
-              bookNum: item['BookNum'],
-              image: item['Image'],
-              bookType: item['BookType'],
-              imageUrl: item['ImageUrl'],
-              physicalStock: item['PhysicalStock'],
-              quantity: item['RequestedQty'],
-            );
-            return BookListItem(
-              book: titleList,
-              onQuantityChanged: (quantity) {
-                setState(() {
-                  item['RequestedQty'] = quantity;
-                });
-              },
-              areDropdownsSelected: true,
-            );
-          }).toList(),
-        ),
+        padding: EdgeInsets.all(16.0),
+        child: CustomText('No data found.',
+            fontSize: 18, fontWeight: FontWeight.bold),
       ),
     );
   }
@@ -684,8 +748,9 @@ class CartState extends State<Cart> with TickerProviderStateMixin {
           print("_submitSamplingForm clicked");
         }
 
-        List<Map<String, dynamic>> generateCartList =
-            await databaseHelper.getAllCarts();
+        List<Map<String, dynamic>> generateCartList = [];
+        generateCartList.addAll(_seriesItems);
+        generateCartList.addAll(_titleItems);
         String cartXML = generateCartXmlSampling(generateCartList);
 
         int itemCount = await databaseHelper.getItemCount();
@@ -714,7 +779,8 @@ class CartState extends State<Cart> with TickerProviderStateMixin {
             print(msgType);
           }
           if (msgType == 's' ||
-              (msgType == 'e' && msgText.toLowerCase().contains('submitted successfully'))) {
+              (msgType == 'e' &&
+                  msgText.toLowerCase().contains('submitted successfully'))) {
             if (kDebugMode) {
               print(
                   'Submit sampling request msgType : $msgType, msgText : $msgText');

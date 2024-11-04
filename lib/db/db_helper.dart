@@ -841,6 +841,9 @@ class DatabaseHelper {
   //Insert
   Future<void> insertCartItem(Map<String, dynamic> cartItem) async {
     final db = await database;
+    if (kDebugMode) {
+      print('cartItem:$cartItem');
+    }
     await db.insert('Cart', cartItem,
         conflictAlgorithm: ConflictAlgorithm.replace);
   }

@@ -445,19 +445,30 @@ class SamplingSeriesTitleWiseState extends State<SamplingSeriesTitleWise>
                       onChanged: (value) {
                         setState(() {
                           selectedShipTo = value;
-                          // Find the index of the selected item in shipToOptions
-                          int index = shipToOptions.indexOf(value!);
-                          // Use the index to select the corresponding shipping address
-                          selectedShippingAddress = index != -1
-                              ? shippingAddressOptions[index]
-                              : null;
+                          if (selectedShipTo != null) {
+                            // Check for null to prevent a crash
+                            int index = shipToOptions.indexOf(selectedShipTo!);
+                            selectedShippingAddress = index != -1
+                                ? shippingAddressOptions[index]
+                                : null;
+                          } else {
+                            selectedShippingAddress = null;
+                          }
                         });
                       },
                     ),
                   ),
                 ),
-                const Expanded(
-                  child: Padding(padding: EdgeInsets.only(left: 4.0)),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: 4.0),
+                    child: Text(
+                      selectedShippingAddress ?? '',
+                      style: const TextStyle(fontSize: 12),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 3,
+                    ),
+                  ),
                 ),
               ],
             ),

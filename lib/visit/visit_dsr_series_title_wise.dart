@@ -512,7 +512,7 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
                       ),
                       items: [
                         const DropdownMenuItem<String>(
-                          value: null,
+                          value: "", // Use an empty string instead of null
                           child: CustomText('Select', fontSize: 12),
                         ),
                         ...shipToOptions.map(
@@ -530,12 +530,14 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
                       onChanged: (value) {
                         setState(() {
                           selectedShipTo = value;
-                          // Find the index of the selected item in shipToOptions
-                          int index = shipToOptions.indexOf(value!);
-                          // Use the index to select the corresponding shipping address
+                          // Ensure value is not null before accessing `indexOf`
+                          int index = value != null && value.isNotEmpty
+                              ? shipToOptions.indexOf(value)
+                              : -1;
                           selectedShippingAddress = index != -1
                               ? shippingAddressOptions[index]
                               : null;
+
                           if (kDebugMode) {
                             print('selectedShipTo:$selectedShipTo');
                             print(
