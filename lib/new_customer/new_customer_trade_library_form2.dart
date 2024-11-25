@@ -104,9 +104,14 @@ class NewCustomerTradeLibraryForm2State
 
   bool _isLoading = false;
 
+  String? mandatorySetting;
+
   @override
   void initState() {
     super.initState();
+
+    _initializeMandatorySettings();
+
     futureData = Future<CustomerEntryMasterResponse>.value(
       CustomerEntryMasterResponse(
         status: 'Default',
@@ -491,7 +496,7 @@ class NewCustomerTradeLibraryForm2State
             child: CustomText('Select'),
           ),
           ...items.map(
-                (item) => DropdownMenuItem<String>(
+            (item) => DropdownMenuItem<String>(
               value: item,
               child: CustomText(item, fontSize: textFontSize),
             ),
@@ -571,16 +576,13 @@ class NewCustomerTradeLibraryForm2State
             textAlign: TextAlign.start,
             maxLines: maxLines,
             validator: (value) {
-              if (value == null || value.isEmpty) {
+              if (label == 'Phone Number') {
+                return _validatePhoneNumber(value);
+              } else if (label == 'Email Id') {
+                return _validateEmail(value);
+              } else if (value == null || value.isEmpty) {
                 return 'Please enter $label';
-              }
-              if (label == 'Mobile' && !Validator.isValidMobile(value)) {
-                return 'Please enter valid $label';
-              }
-              if (label == 'Email' && !Validator.isValidEmail(value)) {
-                return 'Please enter valid $label';
-              }
-              if (label == 'Pin Code' && value.length < 6) {
+              } else if (label == 'Pin Code' && value.length < 6) {
                 return 'Please enter valid $label';
               }
               return null;
@@ -680,5 +682,41 @@ class NewCustomerTradeLibraryForm2State
       return false;
     }
     return true;
+  }
+
+  Future<void> _initializeMandatorySettings() async {
+    mandatorySetting = await dbHelper.getTeacherMobileEmailMandatory();
+    setState(() {});
+  }
+
+  String? _validatePhoneNumber(String? value) {
+    if (mandatorySetting == 'M' || mandatorySetting == 'B') {
+      if (value == null || value.isEmpty) {
+        return 'Please enter Phone Number';
+      }
+      if (!Validator.isValidMobile(value)) {
+        return 'Please enter valid Phone Number';
+      }
+    }
+    return null;
+  }
+
+  String? _validateEmail(String? value) {
+    if (mandatorySetting == 'E' || mandatorySetting == 'B') {
+      if (value == null || value.isEmpty) {
+        return 'Please enter Email Id';
+      }
+      if (!Validator.isValidEmail(value)) {
+        return 'Please enter valid Email Id';
+      }
+    }
+    if (mandatorySetting == 'A') {
+      // Require at least one of Phone Number or Email
+      if ((value == null || value.isEmpty) &&
+          (_phoneNumberController.text.isEmpty)) {
+        return 'Please enter at least one of Phone Number or Email';
+      }
+    }
+    return null;
   }
 }

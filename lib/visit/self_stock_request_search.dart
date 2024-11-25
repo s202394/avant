@@ -276,7 +276,7 @@ class SelfStockRequestSearchPageState extends State<SelfStockRequestSearch>
                               child: const Padding(
                                 padding: EdgeInsets.symmetric(
                                     vertical: 8.0, horizontal: 16),
-                                child: CustomText('Search Customer',
+                                child: CustomText('Search',
                                     textAlign: TextAlign.center,
                                     color: Colors.white,
                                     fontWeight: FontWeight.bold,
@@ -444,13 +444,13 @@ class SelfStockRequestSearchPageState extends State<SelfStockRequestSearch>
   }
 
   Widget buildDropdownField<T>(
-      String label,
-      T? selectedValue,
-      List<DropdownMenuItem<T>> items,
-      ValueChanged<T?> onChanged, {
-        required int? selectedId,
-        required ValueChanged<int?> onIdChanged,
-      }) {
+    String label,
+    T? selectedValue,
+    List<DropdownMenuItem<T>> items,
+    ValueChanged<T?> onChanged, {
+    required int? selectedId,
+    required ValueChanged<int?> onIdChanged,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: InputDecorator(
@@ -478,7 +478,7 @@ class SelfStockRequestSearchPageState extends State<SelfStockRequestSearch>
               onChanged(value);
               if (value != null) {
                 final selectedItem =
-                items.firstWhere((item) => item.value == value);
+                    items.firstWhere((item) => item.value == value);
                 onIdChanged((selectedItem.key as ValueKey).value as int);
               } else {
                 onIdChanged(null);

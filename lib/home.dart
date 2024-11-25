@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'dart:io';
-
+import 'package:permission_handler/permission_handler.dart';
 import 'package:avant/api/api_service.dart';
 import 'package:avant/approval/approval_list_form.dart';
 import 'package:avant/checked_in.dart';
@@ -25,7 +25,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:workmanager/workmanager.dart';
 
@@ -258,15 +257,39 @@ class HomePageState extends State<HomePage> with WidgetsBindingObserver {
     }
   }
 
-  Future<void> startForegroundService() async {
-    if (kDebugMode) {
-      print('Location Foreground Service Start');
+ Future<void> startForegroundService() async {
+    try {
+      // Check and request notification permission on Android
+      if (await Permission.notification.isDenied) {
+        PermissionStatus status = await Permission.notification.request();
+
+        if (!status.isGranted) {
+          // Inform the user if permission is denied
+          if (context.mounted) {
+            showDialog(
+              context: context,
+              builder: (context) => AlertDialog(
+                title: Text("Permission Required"),
+                content: Text("Notification permission is required for this feature."),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: Text("OK"),
+                  ),
+                ],
+              ),
+            );
+          }
+          return; // Exit if permission was not granted
+        }
+      }
+
+      // Start the foreground service if permission is granted
+      await FlutterForegroundTask.startService(notificationTitle: 'DART CRM', notificationText: 'Location Tracking');
+    } catch (e) {
+      // Handle the exception by logging or displaying a user-friendly message
+      debugPrint("Error starting foreground service: $e");
     }
-    await FlutterForegroundTask.startService(
-      notificationTitle: 'Foreground Service',
-      notificationText: 'Running location fetch every minute',
-      callback: startCallback,
-    );
   }
 
   void startCallback() {
@@ -321,6 +344,8 @@ class HomePageState extends State<HomePage> with WidgetsBindingObserver {
       futurePlanResponse = Future.value(
           PlanResponse(status: "Success", todayPlan: [], tomorrowPlan: []));
     }
+
+    print('executiveId:$executiveId');
 
     await SetupValuesService().setupValues(token ?? '');
 

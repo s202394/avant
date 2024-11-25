@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:avant/api/api_service.dart';
 import 'package:avant/common/common.dart';
 import 'package:avant/common/toast.dart';
@@ -8,9 +10,11 @@ import 'package:avant/new_customer/new_customer_trade_library_form2.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:geocoding/geocoding.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
+import 'package:location/location.dart' as loc;
 import '../views/common_app_bar.dart';
 import '../views/custom_text.dart';
 
@@ -65,6 +69,10 @@ class NewCustomerTradeLibraryForm1State
   final FocusNode _panFocusNode = FocusNode();
   final FocusNode _gstFocusNode = FocusNode();
 
+  late GoogleMapController mapController;
+  LatLng? _currentPosition;
+  Marker? _currentMarker;
+
   String _cityAccess = '';
   List<Geography> _filteredCities = [];
   Geography? _selectedCity;
@@ -75,6 +83,8 @@ class NewCustomerTradeLibraryForm1State
   late SharedPreferences prefs;
   late String token;
   late int executiveId;
+
+  String? mandatorySetting;
 
   @override
   void dispose() {
@@ -93,6 +103,11 @@ class NewCustomerTradeLibraryForm1State
   @override
   void initState() {
     super.initState();
+
+    _initializeMandatorySettings();
+
+    _setInitialLocation();
+
     futureData = Future<CustomerEntryMasterResponse>.value(
       CustomerEntryMasterResponse(
         status: 'Default',
@@ -115,6 +130,215 @@ class NewCustomerTradeLibraryForm1State
       ),
     );
     _fetchCityAccess();
+  }
+
+  Future<void> _initializeMandatorySettings() async {
+    mandatorySetting = await dbHelper.getSchoolMobileEmailMandatory();
+    setState(() {});
+  }
+
+  Future<void> _setInitialLocation() async {
+    bool serviceEnabled;
+    LocationPermission permission;
+
+    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      return;
+    }
+
+    permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        return;
+      }
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      return;
+    }
+
+    Position position = await Geolocator.getCurrentPosition();
+    setState(() {
+      _currentPosition = LatLng(position.latitude, position.longitude);
+      _addressController.text = "${position.latitude}, ${position.longitude}";
+      _getUserLocation();
+    });
+  }
+
+  Future<void> _getUserLocation() async {
+    loc.Location location = loc.Location(); // Using the alias
+    bool serviceEnabled;
+    loc.PermissionStatus permissionGranted;
+
+    serviceEnabled = await location.serviceEnabled();
+    if (!serviceEnabled) {
+      serviceEnabled = await location.requestService();
+      if (!serviceEnabled) {
+        return;
+      }
+    }
+
+    permissionGranted = await location.hasPermission();
+    if (permissionGranted == loc.PermissionStatus.denied) {
+      permissionGranted = await location.requestPermission();
+      if (permissionGranted != loc.PermissionStatus.granted) {
+        return;
+      }
+    }
+
+    loc.LocationData locationData = await location.getLocation();
+    LatLng initialPosition =
+        LatLng(locationData.latitude!, locationData.longitude!);
+
+    setState(() {
+      _currentPosition = initialPosition;
+      _currentMarker = Marker(
+        markerId: const MarkerId('currentLocation'),
+        position: initialPosition,
+        draggable: true,
+        // Make the marker draggable
+        onTap: () {
+          _onMarkerTapped(
+              initialPosition); // Update address when marker is tapped
+        },
+        onDragEnd: (newPosition) {
+          _onMarkerDragEnd(
+              newPosition); // Update address when marker is dragged
+        },
+      );
+      _updateAddressFromPosition(initialPosition); // Set initial address
+    });
+  }
+
+// Update the address when the marker is tapped
+  Future<void> _onMarkerTapped(LatLng position) async {
+    _updateAddressFromPosition(position);
+  }
+
+// Update the address when the marker is dragged
+  Future<void> _onMarkerDragEnd(LatLng newPosition) async {
+    _updateAddressFromPosition(newPosition);
+  }
+
+  Future<void> _updateAddressFromPosition(LatLng position) async {
+    try {
+      // Adding timeout to the geocoding request
+      List<Placemark> placemarks = await placemarkFromCoordinates(
+        position.latitude,
+        position.longitude,
+      ).timeout(
+        const Duration(seconds: 10), // Timeout duration
+        onTimeout: () {
+          throw TimeoutException("Geocoding timed out after 10 seconds.");
+        },
+      );
+
+      if (placemarks.isNotEmpty) {
+        Placemark place = placemarks[0];
+
+        // Dynamically building the address
+        String address = '';
+
+        // Check and add each component if available
+        if (place.name != null && place.name!.isNotEmpty) {
+          address += '${place.name!}, ';
+        }
+        if (place.street != null && place.street!.isNotEmpty) {
+          address += '${place.street!}, ';
+        }
+        if (place.locality != null && place.locality!.isNotEmpty) {
+          address += '${place.locality!}, ';
+        }
+        if (place.administrativeArea != null &&
+            place.administrativeArea!.isNotEmpty) {
+          address += '${place.administrativeArea!}, ';
+        }
+        if (place.postalCode != null && place.postalCode!.isNotEmpty) {
+          address += '${place.postalCode!}, ';
+        }
+        if (place.country != null && place.country!.isNotEmpty) {
+          address += place.country!;
+        }
+
+        // Remove trailing comma if it exists
+        if (address.endsWith(', ')) {
+          address = address.substring(0, address.length - 2);
+        }
+
+        // Update the address field in the UI
+        setState(() {
+          _addressController.text = address;
+          _currentMarker = _currentMarker!.copyWith(positionParam: position);
+          if (kDebugMode) {
+            print(address);
+          }
+        });
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print("Error retrieving address: $e");
+      }
+      setState(() {
+        _addressController.text = "Unable to retrieve address";
+      });
+    }
+  }
+
+  Widget _buildMapContainer() {
+    return GestureDetector(
+      onVerticalDragUpdate: (_) {}, // Prevents scroll interference
+      child: Container(
+        height: 300.0,
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.blueAccent, width: 2.0),
+          borderRadius: BorderRadius.circular(8.0),
+        ),
+        child: _currentPosition == null
+            ? const Center(child: CircularProgressIndicator())
+            : GoogleMap(
+                initialCameraPosition: CameraPosition(
+                  target: _currentPosition!,
+                  zoom: 14.0,
+                ),
+                markers: _currentMarker != null ? {_currentMarker!} : {},
+                myLocationEnabled: true,
+                myLocationButtonEnabled: true,
+                onMapCreated: (controller) {
+                  mapController = controller;
+                },
+                onTap: (LatLng tappedPosition) {
+                  _updateMarkerAndAddress(tappedPosition);
+                },
+              ),
+      ),
+    );
+  }
+
+  Future<void> _updateMarkerAndAddress(LatLng position) async {
+    // Update the marker position
+    setState(() {
+      _currentMarker = Marker(
+        markerId: const MarkerId('currentLocation'),
+        position: position,
+        draggable: true,
+        onDragEnd: (newPosition) => _updateMarkerAndAddress(newPosition),
+      );
+    });
+
+    // Fetch and update address based on tapped position
+    List<Placemark> placemarks = await placemarkFromCoordinates(
+      position.latitude,
+      position.longitude,
+    );
+    if (placemarks.isNotEmpty) {
+      Placemark place = placemarks[0];
+      String address =
+          '${place.name}, ${place.administrativeArea}, ${place.street}, ${place.locality}, ${place.country}';
+      setState(() {
+        _addressController.text = address;
+      });
+    }
   }
 
   void _fetchCityAccess() async {
@@ -163,13 +387,6 @@ class NewCustomerTradeLibraryForm1State
         print(e);
       }
     }
-  }
-
-  late GoogleMapController mapController;
-  final LatLng _center = const LatLng(28.7041, 77.1025);
-
-  void _onMapCreated(GoogleMapController controller) {
-    mapController = controller;
   }
 
   Future<CustomerEntryMasterResponse> initializePreferencesAndData() async {
@@ -268,6 +485,9 @@ class NewCustomerTradeLibraryForm1State
           children: [
             _buildTextField('${widget.type} Name', _customerNameController,
                 _customerNameFieldKey, _customerNameFocusNode),
+            const SizedBox(height: 10),
+            _buildMapContainer(),
+            const SizedBox(height: 10),
             _buildTextField('Address', _addressController, _addressFieldKey,
                 _addressFocusNode,
                 maxLines: 5),
@@ -503,22 +723,17 @@ class NewCustomerTradeLibraryForm1State
           enabled: enabled,
           maxLines: maxLines,
           validator: (value) {
-            if (value == null || value.isEmpty) {
+            if (label == 'Phone Number') {
+              return _validatePhoneNumber(value);
+            } else if (label == 'Email Id') {
+              return _validateEmail(value);
+            } else if (value == null || value.isEmpty) {
               return 'Please enter $label';
-            }
-            if (label == 'Pin Code' && value.length < 6) {
+            } else if (label == 'Pin Code' && value.length < 6) {
               return 'Please enter valid $label';
-            }
-            if (label == 'Phone Number' && !Validator.isValidMobile(value)) {
+            } else if (label == 'PAN' && value.length < 10) {
               return 'Please enter valid $label';
-            }
-            if (label == 'Email Id' && !Validator.isValidEmail(value)) {
-              return 'Please enter valid $label';
-            }
-            if (label == 'PAN' && value.length < 10) {
-              return 'Please enter valid $label';
-            }
-            if (label == 'GST' && value.length < 15) {
+            } else if (label == 'GST' && value.length < 15) {
               return 'Please enter valid $label';
             }
             return null;
@@ -541,6 +756,37 @@ class NewCustomerTradeLibraryForm1State
         ),
       ),
     );
+  }
+
+  String? _validatePhoneNumber(String? value) {
+    if (mandatorySetting == 'M' || mandatorySetting == 'B') {
+      if (value == null || value.isEmpty) {
+        return 'Please enter Phone Number';
+      }
+      if (!Validator.isValidMobile(value)) {
+        return 'Please enter valid Phone Number';
+      }
+    }
+    return null;
+  }
+
+  String? _validateEmail(String? value) {
+    if (mandatorySetting == 'E' || mandatorySetting == 'B') {
+      if (value == null || value.isEmpty) {
+        return 'Please enter Email Id';
+      }
+      if (!Validator.isValidEmail(value)) {
+        return 'Please enter valid Email Id';
+      }
+    }
+    if (mandatorySetting == 'A') {
+      // Require at least one of Phone Number or Email
+      if ((value == null || value.isEmpty) &&
+          (_phoneNumberController.text.isEmpty)) {
+        return 'Please enter at least one of Phone Number or Email';
+      }
+    }
+    return null;
   }
 
   Widget _buildDropdownFieldCity(

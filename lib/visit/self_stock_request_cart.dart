@@ -87,9 +87,8 @@ class SelfStockRequestCartState extends State<SelfStockRequestCart>
       print('itemCount:$itemCount');
     }
     setState(() {
-      setState(() {
-        _cartItems = List.from(cartItems.map((item) => Map<String, dynamic>.from(item))); // Make a mutable copy
-      });
+      _cartItems =
+          List.from(cartItems.map((item) => Map<String, dynamic>.from(item)));
 
       _tabController = TabController(length: 1, vsync: this);
     });
@@ -193,59 +192,61 @@ class SelfStockRequestCartState extends State<SelfStockRequestCart>
       ),
     );
   }
+
   Widget _buildTab() {
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: _cartItems.isEmpty
           ? _noDataLayout() // Replace with your no data layout widget
           : ListView.builder(
-        itemCount: _cartItems.length,
-        itemBuilder: (context, index) {
-          final item = _cartItems[index]; // Get the current item
-          TitleList titleList = TitleList(
-            bookId: item['BookId'],
-            title: item['Title'],
-            isbn: item['ISBN'],
-            author: item['Author'],
-            price: item['Price'],
-            listPrice: item['ListPrice'],
-            bookNum: item['BookNum'],
-            image: item['Image'],
-            bookType: item['BookType'],
-            imageUrl: item['ImageUrl'],
-            physicalStock: item['PhysicalStock'],
-            quantity: item['RequestedQty'],
-          );
+              itemCount: _cartItems.length,
+              itemBuilder: (context, index) {
+                final item = _cartItems[index]; // Get the current item
+                TitleList titleList = TitleList(
+                  bookId: item['BookId'],
+                  title: item['Title'],
+                  isbn: item['ISBN'],
+                  author: item['Author'],
+                  price: item['Price'],
+                  listPrice: item['ListPrice'],
+                  bookNum: item['BookNum'],
+                  image: item['Image'],
+                  bookType: item['BookType'],
+                  imageUrl: item['ImageUrl'],
+                  physicalStock: item['PhysicalStock'],
+                  quantity: item['RequestedQty'],
+                );
 
-          return BookListItem(
-            book: titleList,
-            onQuantityChanged: (newQuantity) {
-              _handleQuantityChange(index, newQuantity);
-            },
-            areDropdownsSelected: true,
-          );
-        },
-      ),
+                return BookListItem(
+                  book: titleList,
+                  onQuantityChanged: (newQuantity) {
+                    _handleQuantityChange(index, newQuantity);
+                  },
+                  areDropdownsSelected: true,
+                );
+              },
+            ),
     );
   }
+
   void _handleQuantityChange(int index, int newQuantity) {
     setState(() {
       // Create a mutable copy of the item
-      Map<String, dynamic> updatedItem = Map<String, dynamic>.from(_cartItems[index]);
+      Map<String, dynamic> updatedItem =
+          Map<String, dynamic>.from(_cartItems[index]);
 
-      updatedItem['RequestedQty'] = newQuantity; // Update the quantity
+      updatedItem['RequestedQty'] = newQuantity;
 
-      // Update the books list with the modified item
-      _cartItems[index] = updatedItem; // Assign the updated item back to the list
+      _cartItems[index] = updatedItem;
     });
 
-    // Perform the database operation outside of setState
     if (newQuantity == 0) {
       deleteItem(index);
     } else {
       _updateCartItem(index, newQuantity);
     }
   }
+
   Future<void> _updateCartItem(int index, int newQuantity) async {
     await databaseHelper.insertCartItem({
       'BookId': _cartItems[index]['BookId'],
@@ -279,6 +280,7 @@ class SelfStockRequestCartState extends State<SelfStockRequestCart>
       _cartItems.removeAt(index); // Remove from mutable list
     });
   }
+
   Widget _noDataLayout() {
     return const Center(
       child: Padding(
@@ -314,6 +316,9 @@ class SelfStockRequestCartState extends State<SelfStockRequestCart>
                 widget.shipToId,
                 widget.shipmentModeId,
                 userId ?? 0,
+                widget.deliveryTradeId,
+                widget.shippingInstructions,
+                widget.remarks,
                 token);
 
         if (responseData.status == 'Success') {

@@ -43,6 +43,20 @@ class FetchLocationTask extends TaskHandler {
     throw UnimplementedError();
   }
 
+  @override
+  void onButtonPressed(String id) {
+    if (kDebugMode) {
+      print('Button pressed: $id');
+    }
+  }
+
+  @override
+  void onNotificationPressed() {
+    if (kDebugMode) {
+      print('Notification pressed');
+    }
+  }
+
   void fetchLocation() async {
     if (kDebugMode) {
       print('FetchLocationTask fetchLocation called');

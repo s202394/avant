@@ -1,3 +1,5 @@
+import 'package:flutter/cupertino.dart';
+
 class FetchTitlesResponse {
   final String status;
   final List<TitleList>? titleList;
@@ -28,7 +30,7 @@ class FetchTitlesResponse {
   }
 }
 
-class TitleList {
+class TitleList with ChangeNotifier{
   final int bookId;
   final String title;
   final String isbn;
@@ -86,8 +88,13 @@ class TitleList {
       'Image': image,
       'BookType': bookType,
       'Quantity': quantity,
-      'ImageUrl': quantity,
-      'PhysicalStock': quantity,
+      'ImageUrl': imageUrl,
+      'PhysicalStock': physicalStock,
     };
+  }
+
+  void updateItemQuantity(TitleList titleList, int quantity) {
+    titleList.quantity = quantity;
+    notifyListeners();
   }
 }

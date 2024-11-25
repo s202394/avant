@@ -11,6 +11,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../model/followup_action_model.dart';
 import '../service/location_service.dart';
+import '../views/common_app_bar.dart';
 import '../views/custom_text.dart';
 import 'cart.dart';
 
@@ -111,10 +112,7 @@ class FollowUpActionState extends State<FollowUpAction> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const CustomText('DSR Entry'),
-        backgroundColor: const Color(0xFFFFF8E1),
-      ),
+      appBar: const CommonAppBar(title: 'DSR Entry'),
       body: Form(
         key: _formKey,
         child: Padding(

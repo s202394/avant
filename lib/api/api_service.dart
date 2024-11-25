@@ -2748,6 +2748,9 @@ class SelfStockSamplingService {
       String shipTo,
       int shipmentModeId,
       int enteredBy,
+      int tradeId,
+      String shippingInstructions,
+      String remarks,
       String token) async {
     String body = jsonEncode(<String, dynamic>{
       'LoggedInExecutiveid': loggedInExecutiveId,
@@ -2758,6 +2761,10 @@ class SelfStockSamplingService {
       'ShipmentModeId': shipmentModeId,
       'EnteredBy': enteredBy,
       'SelfStockDetailsxml': selfStockDetailsXml,
+      if (tradeId > 0) 'TradeId': tradeId,
+      if (shippingInstructions.isNotEmpty)
+        'ShippingInstructions': shippingInstructions,
+      if (remarks.isNotEmpty) 'Remarks': remarks,
     });
     if (kDebugMode) {
       print(body);
@@ -2791,6 +2798,9 @@ class SelfStockSamplingService {
         shipTo,
         shipmentModeId,
         enteredBy,
+        tradeId,
+        shippingInstructions,
+        remarks,
       );
     } else {
       throw Exception('Failed to submit Self Stock Sampling');
@@ -2805,7 +2815,9 @@ class SelfStockSamplingService {
       String shippingAddress,
       String shipTo,
       int shipmentModeId,
-      int enteredBy) async {
+      int enteredBy, int tradeId,
+      String shippingInstructions,
+      String remarks,) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String username = prefs.getString('token_username') ?? '';
     String password = prefs.getString('password') ?? '';
@@ -2824,6 +2836,9 @@ class SelfStockSamplingService {
             shipTo,
             shipmentModeId,
             enteredBy,
+             tradeId,
+             shippingInstructions,
+             remarks,
             newToken);
       } else {
         throw Exception('Failed to retrieve new token');

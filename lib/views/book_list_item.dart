@@ -28,6 +28,17 @@ class BookListItemState extends State<BookListItem> {
     _quantity = widget.book.quantity;
   }
 
+  void _updateQuantity(int newQuantity) {
+    setState(() {
+      _quantity = newQuantity;
+    });
+    widget.book.updateItemQuantity(widget.book, _quantity);
+    widget.onQuantityChanged(_quantity);
+    if (kDebugMode) {
+      print('Quantity changed to: $_quantity');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     Color color = (widget.areDropdownsSelected && widget.book.physicalStock > 0)
@@ -105,16 +116,7 @@ class BookListItemState extends State<BookListItem> {
                                 onPressed: (widget.areDropdownsSelected &&
                                         widget.book.physicalStock > 0)
                                     ? () {
-                                        if (_quantity <
-                                            widget.book.physicalStock) {
-                                          setState(() {
-                                            _quantity++;
-                                          });
-                                        }
-                                        widget.onQuantityChanged(_quantity);
-                                        if (kDebugMode) {
-                                          print('Quantity changed to: $_quantity');
-                                        }
+                                        _updateQuantity(_quantity + 1);
                                       }
                                     : null,
                                 style: ElevatedButton.styleFrom(
@@ -130,82 +132,75 @@ class BookListItemState extends State<BookListItem> {
                               ),
                             )
                           : Positioned.fill(
-                        child: Container(
-                          decoration: BoxDecoration(
-                            border: Border.all(color: Colors.red),
-                            borderRadius: BorderRadius.circular(8.0),
-                          ),
-                          child: Row(
-                            children: [
-                              // Use Flexible for dynamic space allocation
-                              Flexible(
-                                flex: 1,
-                                child: GestureDetector(
-                                  onTap: () {
-                                    if (_quantity > 0) {
-                                      setState(() {
-                                        _quantity--;
-                                      });
-                                      widget.onQuantityChanged(_quantity);
-                                    }
-                                  },
-                                  child: Container(
-                                    alignment: Alignment.center,
-                                    child: const Text(
-                                      '-',
-                                      style: TextStyle(
-                                        fontSize: 17,
-                                        color: Colors.red,
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  border: Border.all(color: Colors.red),
+                                  borderRadius: BorderRadius.circular(8.0),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Flexible(
+                                      flex: 1,
+                                      child: GestureDetector(
+                                        onTap: () {
+                                          if (_quantity > 0) {
+                                            _updateQuantity(_quantity - 1);
+                                          }
+                                        },
+                                        child: Container(
+                                          alignment: Alignment.center,
+                                          child: const Text(
+                                            '-',
+                                            style: TextStyle(
+                                              fontSize: 17,
+                                              color: Colors.red,
+                                            ),
+                                            textAlign: TextAlign.center,
+                                          ),
+                                        ),
                                       ),
-                                      textAlign: TextAlign.center,
                                     ),
-                                  ),
-                                ),
-                              ),
-                              Flexible(
-                                flex: 1,
-                                child: Container(
-                                  alignment: Alignment.center,
-                                  color: Colors.red,
-                                  child: Text(
-                                    '$_quantity',
-                                    style: const TextStyle(
-                                      fontSize: 10,
-                                      color: Colors.white,
-                                    ),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                ),
-                              ),
-                              Flexible(
-                                flex: 1,
-                                child: GestureDetector(
-                                  onTap: () {
-                                    if (_quantity <
-                                        widget.book.physicalStock) {
-                                      setState(() {
-                                        _quantity++;
-                                      });
-                                      widget.onQuantityChanged(_quantity);
-                                    }
-                                  },
-                                  child: Container(
-                                    alignment: Alignment.center,
-                                    child: const Text(
-                                      '+',
-                                      style: TextStyle(
-                                        fontSize: 17,
+                                    Flexible(
+                                      flex: 1,
+                                      child: Container(
+                                        alignment: Alignment.center,
                                         color: Colors.red,
+                                        child: Text(
+                                          '$_quantity',
+                                          style: const TextStyle(
+                                            fontSize: 10,
+                                            color: Colors.white,
+                                          ),
+                                          textAlign: TextAlign.center,
+                                        ),
                                       ),
-                                      textAlign: TextAlign.center,
                                     ),
-                                  ),
+                                    Flexible(
+                                      flex: 1,
+                                      child: GestureDetector(
+                                        onTap: () {
+                                          if (_quantity <
+                                              widget.book.physicalStock) {
+                                            _updateQuantity(_quantity + 1);
+                                          }
+                                        },
+                                        child: Container(
+                                          alignment: Alignment.center,
+                                          child: const Text(
+                                            '+',
+                                            style: TextStyle(
+                                              fontSize: 17,
+                                              color: Colors.red,
+                                            ),
+                                            textAlign: TextAlign.center,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
-                            ],
-                          ),
-                        ),
-                      ),
+                            ),
                     ],
                   ),
                 ),

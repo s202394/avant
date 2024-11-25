@@ -58,6 +58,9 @@ class DsrEntryPageState extends State<DsrEntry> {
   int? selectedPersonMetId;
   bool? samplingDone;
   bool? followUpAction;
+
+  bool displayFollowUpAction = false;
+
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
   final DatabaseHelper dbHelper = DatabaseHelper();
@@ -181,6 +184,7 @@ class DsrEntryPageState extends State<DsrEntry> {
     super.initState();
     _visitDsrData = _fetchVisitDsrData();
 
+    _fetchDisplayFollowUpAction();
     getAddressData();
   }
 
@@ -321,12 +325,13 @@ class DsrEntryPageState extends State<DsrEntry> {
                                 samplingDone = value;
                               });
                             }),
-                            buildRadioButtons(
-                                'Follow Up Action', followUpAction, (value) {
-                              setState(() {
-                                followUpAction = value;
-                              });
-                            }),
+                            if (displayFollowUpAction)
+                              buildRadioButtons(
+                                  'Follow Up Action', followUpAction, (value) {
+                                setState(() {
+                                  followUpAction = value;
+                                });
+                              }),
                             const CustomText('Capture Image',
                                 fontWeight: FontWeight.bold, fontSize: 14),
                             buildCaptureImage(),
@@ -383,6 +388,13 @@ class DsrEntryPageState extends State<DsrEntry> {
         },
       ),
     );
+  }
+
+  Future<void> _fetchDisplayFollowUpAction() async {
+    final String? result = await dbHelper.getDisplayFollowUpAction();
+    setState(() {
+      displayFollowUpAction = result?.toLowerCase() == 'yes';
+    });
   }
 
   void _handleSelectionChange(List<JoinVisit> selectedItems) {
@@ -600,11 +612,18 @@ class DsrEntryPageState extends State<DsrEntry> {
       child: InkWell(
         onTap: isDateField
             ? () async {
+                final int? allowedDays = await dbHelper.getVisitEntryDays();
+                final DateTime now = DateTime.now();
+                final DateTime earliestDate = allowedDays != null
+                    ? now.subtract(Duration(days: allowedDays))
+                    : DateTime(
+                        1970, 1, 1); // No restriction if allowedDays is null
+
                 final DateTime? picked = await showDatePicker(
                   context: context,
-                  initialDate: DateTime.now(),
-                  firstDate: DateTime(1970, 1, 1),
-                  lastDate: DateTime.now(),
+                  initialDate: now,
+                  firstDate: earliestDate,
+                  lastDate: now,
                   builder: (BuildContext context, Widget? child) {
                     return Theme(data: ThemeData.light(), child: child!);
                   },

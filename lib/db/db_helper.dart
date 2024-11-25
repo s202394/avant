@@ -844,8 +844,11 @@ class DatabaseHelper {
     if (kDebugMode) {
       print('cartItem:$cartItem');
     }
-    await db.insert('Cart', cartItem,
+    final result = await db.insert('Cart', cartItem,
         conflictAlgorithm: ConflictAlgorithm.replace);
+    if (kDebugMode) {
+      print('updated item status in the database: $result');
+    }
   }
 
   //Delete
@@ -896,6 +899,23 @@ class DatabaseHelper {
   Future<void> deleteAllCartItems() async {
     final db = await database;
     await db.delete('Cart');
+  }
+
+  Future<int> getQuantityForBook(int bookId) async {
+    final db = await database;
+
+    final List<Map<String, dynamic>> result = await db.query(
+      'Cart',
+      columns: ['RequestedQty'],
+      where: 'BookId = ?',
+      whereArgs: [bookId],
+    );
+
+    if (result.isNotEmpty) {
+      return result.first['RequestedQty'] as int;
+    } else {
+      return 0;
+    }
   }
 
   Future<int> getItemCount() async {
@@ -980,6 +1000,7 @@ class DatabaseHelper {
     final db = await database;
     await db.delete('FollowUpActionCart');
   }
+
 //END FollowUpActionCart
 
   Future<String?> getVisitFeedbackMandatory() async {
@@ -997,6 +1018,7 @@ class DatabaseHelper {
     }
     return null; // Return null if the key doesn't exist in the DB
   }
+
   Future<int?> getVisitFeedbackMinChar() async {
     final db = await database;
     final List<Map<String, dynamic>> result = await db.query(
@@ -1011,5 +1033,175 @@ class DatabaseHelper {
       return int.tryParse(result.first['KeyValue'] as String? ?? '0');
     }
     return null; // Return null if the key doesn't exist or cannot be parsed to an int
+  }
+
+  Future<int?> getVisitEntryDays() async {
+    final db = await database;
+    final List<Map<String, dynamic>> result = await db.query(
+      'setupValues',
+      columns: ['KeyValue', 'KeyStatus'], // Fetch both KeyValue and KeyStatus
+      where: 'KeyName = ?',
+      whereArgs: ['VisitEntryDays'],
+      limit: 1,
+    );
+
+    if (result.isNotEmpty) {
+      final Map<String, dynamic> row = result.first;
+      final bool keyStatus = row['KeyStatus'] ==
+          1; // Assuming KeyStatus is stored as integer (1 for true, 0 for false)
+      final int? keyValue = int.tryParse(row['KeyValue'] as String? ?? '0');
+
+      // Return KeyValue only if KeyStatus is true and KeyValue is greater than 0
+      if (keyStatus && (keyValue ?? 0) > 0) {
+        return keyValue;
+      }
+    }
+
+    return null; // No restriction if KeyStatus is false or KeyValue is 0
+  }
+
+  Future<int?> getSamplingCustomerMaxQtyAllowed() async {
+    final db = await database;
+    final List<Map<String, dynamic>> result = await db.query(
+      'setupValues', // Your table name
+      columns: ['KeyValue'], // Only fetch the keyValue column
+      where: 'KeyName = ?',
+      whereArgs: ['SamplingCustomerMaxQtyAllowed'],
+      limit: 1,
+    );
+
+    if (result.isNotEmpty) {
+      return int.tryParse(result.first['KeyValue'] as String? ?? '0');
+    }
+    return null; // Return null if the key doesn't exist or cannot be parsed to an int
+  }
+
+  Future<int?> getSamplingSelfStockMaxQtyAllowed() async {
+    final db = await database;
+    final List<Map<String, dynamic>> result = await db.query(
+      'setupValues', // Your table name
+      columns: ['KeyValue'], // Only fetch the keyValue column
+      where: 'KeyName = ?',
+      whereArgs: ['SamplingSelfStockMaxQtyAllowed'],
+      limit: 1,
+    );
+
+    if (result.isNotEmpty) {
+      return int.tryParse(result.first['KeyValue'] as String? ?? '0');
+    }
+    return null; // Return null if the key doesn't exist or cannot be parsed to an int
+  }
+
+  Future<String?> getCustomerTypes() async {
+    final db = await database;
+    final List<Map<String, dynamic>> result = await db.query(
+      'setupValues', // Your table name
+      columns: ['KeyValue'], // Only fetch the keyValue column
+      where: 'KeyName = ?',
+      whereArgs: ['CustomerTypes'],
+      limit: 1,
+    );
+
+    if (result.isNotEmpty) {
+      return result.first['KeyValue'] as String?;
+    }
+    return null; // Return null if the key doesn't exist in the DB
+  }
+
+  Future<String?> getDisplayFollowUpAction() async {
+    final db = await database;
+    final List<Map<String, dynamic>> result = await db.query(
+      'setupValues',
+      columns: ['KeyValue', 'KeyStatus'], // Fetch both KeyValue and KeyStatus
+      where: 'KeyName = ?',
+      whereArgs: ['DisplayFollowUpAction'],
+      limit: 1,
+    );
+
+    if (result.isNotEmpty) {
+      final Map<String, dynamic> row = result.first;
+      final bool keyStatus = row['KeyStatus'] ==
+          1; // Assuming KeyStatus is stored as an integer (1 for true, 0 for false)
+      final String? keyValue = row['KeyValue'] as String?;
+
+      // Return KeyValue only if KeyStatus is true
+      if (keyStatus) {
+        return keyValue;
+      }
+    }
+
+    return null; // Return null if KeyStatus is false or key not found
+  }
+
+  Future<String?> getDisplayBookCode() async {
+    final db = await database;
+    final List<Map<String, dynamic>> result = await db.query(
+      'setupValues', // Your table name
+      columns: ['KeyValue'], // Only fetch the keyValue column
+      where: 'KeyName = ?',
+      whereArgs: ['DisplayBookCode'],
+      limit: 1,
+    );
+
+    if (result.isNotEmpty) {
+      return result.first['KeyValue'] as String?;
+    }
+    return null; // Return null if the key doesn't exist in the DB
+  }
+
+  Future<String?> getGoogleMapAPIKey() async {
+    final db = await database;
+    final List<Map<String, dynamic>> result = await db.query(
+      'setupValues', // Your table name
+      columns: ['KeyValue'], // Only fetch the keyValue column
+      where: 'KeyName = ?',
+      whereArgs: ['GoogleMapAPIKey'],
+      limit: 1,
+    );
+
+    if (result.isNotEmpty) {
+      return result.first['KeyValue'] as String?;
+    }
+    return null; // Return null if the key doesn't exist in the DB
+  }
+
+  Future<String?> getTeacherMobileEmailMandatory() async {
+    final db = await database;
+    final List<Map<String, dynamic>> result = await db.query(
+      'setupValues',
+      columns: ['KeyValue', 'KeyStatus'],
+      where: 'KeyName = ?',
+      whereArgs: ['TeacherMobileEmailMandatory'],
+      limit: 1,
+    );
+
+    if (result.isNotEmpty) {
+      // Check if KeyStatus is true, and if so, return KeyValue
+      if (result.first['KeyStatus'] == 1) {
+        // Assuming 1 = true in the database
+        return result.first['KeyValue'] as String?;
+      }
+    }
+    return null;
+  }
+
+  Future<String?> getSchoolMobileEmailMandatory() async {
+    final db = await database;
+    final List<Map<String, dynamic>> result = await db.query(
+      'setupValues',
+      columns: ['KeyValue', 'KeyStatus'],
+      where: 'KeyName = ?',
+      whereArgs: ['SchoolMobileEmailMandatory'],
+      limit: 1,
+    );
+
+    if (result.isNotEmpty) {
+      // Check if KeyStatus is true, and if so, return KeyValue
+      if (result.first['KeyStatus'] == 1) {
+        // Assuming 1 = true in the database
+        return result.first['KeyValue'] as String?;
+      }
+    }
+    return null;
   }
 }

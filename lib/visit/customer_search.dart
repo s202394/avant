@@ -245,8 +245,8 @@ class CustomerSearchPageState extends State<CustomerSearch> {
         },
         decoration: InputDecoration(
           labelText: label,
-          contentPadding: const EdgeInsets.symmetric(
-              vertical: 0, horizontal: 10),
+          contentPadding:
+              const EdgeInsets.symmetric(vertical: 0, horizontal: 10),
           labelStyle: TextStyle(fontSize: labelFontSize),
           border: const OutlineInputBorder(),
         ),

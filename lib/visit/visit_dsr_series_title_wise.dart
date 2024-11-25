@@ -69,7 +69,7 @@ class VisitDsrSeriesTitleWise extends StatefulWidget {
 }
 
 class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late TabController _tabController;
 
   String? selectedSamplingType;
@@ -107,6 +107,8 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
   @override
   void initState() {
     super.initState();
+    print('state:initState');
+    WidgetsBinding.instance.addObserver(this);
     _tabController = TabController(length: 2, vsync: this);
     _tabController.index = widget.selectedIndex;
 
@@ -122,15 +124,17 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
 
   @override
   void dispose() {
+    print('state:dispose');
+    WidgetsBinding.instance.removeObserver(this);
     _tabController.dispose();
     super.dispose();
   }
 
-  Future<void> _fetchBooksCount() async {
-    int count = await databaseHelper.getItemCount();
-    setState(() {
-      _cartBooksCount = count;
-    });
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    print('state:didChangeDependencies');
+    _updateQuantityIfCartNotEmpty();
   }
 
   Future<void> _fetchData() async {
@@ -180,6 +184,8 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
           sampleTos = samplingResponse.sampleTo ?? [];
           isLoading = false;
         });
+
+        _loadQuantitiesFromDatabase();
       } else {
         // Await the sampling details API call
         final samplingResponse = await GetVisitDsrService().samplingDetails(
@@ -205,11 +211,69 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
           sampleTos = samplingResponse.sampleTo ?? [];
           isLoading = false;
         });
+
+        _loadQuantitiesFromDatabase();
       }
     } catch (e) {
       setState(() {
-        errorMessage = e.toString();
-        isLoading = false;
+        if (mounted) {
+          errorMessage = e.toString();
+          isLoading = false;
+        }
+      });
+    }
+  }
+
+  Future<void> _fetchBooksCount() async {
+    int count = await databaseHelper.getItemCount();
+    setState(() {
+      _cartBooksCount = count;
+    });
+
+    _loadQuantitiesFromDatabase();
+  }
+
+  Future<void> _loadQuantitiesFromDatabase() async {
+    for (var book in books) {
+      book.quantity = await databaseHelper.getQuantityForBook(book.bookId);
+    }
+  }
+
+  Future<void> _updateQuantityIfCartNotEmpty() async {
+    await _fetchBooksCount();
+
+    print('_cartBooksCount: $_cartBooksCount');
+
+    if (_cartBooksCount > 0) {
+      final cartItems = await databaseHelper.getAllCarts();
+
+      setState(() {
+        for (var cartItem in cartItems) {
+          final bookId = cartItem['BookId'] as int?;
+          final quantity = cartItem['RequestedQty'] as int?;
+
+          if (kDebugMode) {
+            print('BookId: $bookId, RequestedQty: $quantity');
+          }
+
+          // Only update if a matching book exists
+          try {
+            var matchingBook =
+                books.firstWhere((book) => book.bookId == bookId);
+
+            if (quantity != null) {
+              if (kDebugMode) {
+                print('matchingBook : ${matchingBook.isbn}');
+              }
+              matchingBook.updateItemQuantity(matchingBook, quantity);
+            }
+          } catch (e) {
+            // Book not found in the list, so skip updating
+            if (kDebugMode) {
+              print('BookId: $bookId not found in the list, skipping update.');
+            }
+          }
+        }
       });
     }
   }
@@ -271,82 +335,93 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
 
   @override
   Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 2,
-      child: Scaffold(
-        appBar: const CommonAppBar(title: 'DSR Entry'),
-        body: isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : errorMessage != null
-                ? Center(child: CustomText('Error: $errorMessage'))
-                : Form(
-                    key: _formKey,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              CustomText(widget.customerName,
-                                  fontWeight: FontWeight.bold, fontSize: 16),
-                              RichTextWidget(label: widget.address),
-                              LabeledText(
-                                  label: 'Visit Date', value: widget.visitDate),
-                            ],
+    return WillPopScope(
+      onWillPop: () async {
+        if (kDebugMode) {
+          print('WillPopScope called');
+        }
+        _updateQuantityIfCartNotEmpty();
+        return true;
+      },
+      child: DefaultTabController(
+        length: 2,
+        child: Scaffold(
+          appBar: const CommonAppBar(title: 'DSR Entry'),
+          body: isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : errorMessage != null
+                  ? Center(child: CustomText('Error: $errorMessage'))
+                  : Form(
+                      key: _formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                CustomText(widget.customerName,
+                                    fontWeight: FontWeight.bold, fontSize: 16),
+                                RichTextWidget(label: widget.address),
+                                LabeledText(
+                                    label: 'Visit Date',
+                                    value: widget.visitDate),
+                              ],
+                            ),
                           ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.only(
-                              left: 16, right: 16, bottom: 8),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              LabeledText(
-                                  label: 'Sampling Done',
-                                  value: widget.samplingDone ? 'Yes' : 'No'),
-                              LabeledText(
-                                  label: 'Follow Up Action',
-                                  value: widget.followUpAction ? 'Yes' : 'No'),
-                            ],
+                          Padding(
+                            padding: const EdgeInsets.only(
+                                left: 16, right: 16, bottom: 8),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                LabeledText(
+                                    label: 'Sampling Done',
+                                    value: widget.samplingDone ? 'Yes' : 'No'),
+                                LabeledText(
+                                    label: 'Follow Up Action',
+                                    value:
+                                        widget.followUpAction ? 'Yes' : 'No'),
+                              ],
+                            ),
                           ),
-                        ),
-                        Container(
-                          height: 40,
-                          color: Colors.orange,
-                          child: TabBar(
-                            controller: _tabController,
-                            labelColor: Colors.white,
-                            unselectedLabelColor: Colors.white,
-                            indicatorColor: Colors.blue,
-                            tabs: [
-                              AbsorbPointer(
-                                absorbing: widget.selectedIndex == 1,
-                                // Disable if selectedIndex is 1
-                                child: const Tab(text: 'Series/ Title'),
-                              ),
-                              AbsorbPointer(
-                                absorbing: widget.selectedIndex == 0,
-                                // Disable if selectedIndex is 0
-                                child: const Tab(text: 'Title wise'),
-                              ),
-                            ],
+                          Container(
+                            height: 40,
+                            color: Colors.orange,
+                            child: TabBar(
+                              controller: _tabController,
+                              labelColor: Colors.white,
+                              unselectedLabelColor: Colors.white,
+                              indicatorColor: Colors.blue,
+                              tabs: [
+                                AbsorbPointer(
+                                  absorbing: widget.selectedIndex == 1,
+                                  // Disable if selectedIndex is 1
+                                  child: const Tab(text: 'Series/ Title'),
+                                ),
+                                AbsorbPointer(
+                                  absorbing: widget.selectedIndex == 0,
+                                  // Disable if selectedIndex is 0
+                                  child: const Tab(text: 'Title wise'),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                        Expanded(
-                          child: TabBarView(
-                            physics: const NeverScrollableScrollPhysics(),
-                            controller: _tabController,
-                            children: [
-                              _buildSeriesTitleTab(),
-                              _buildSeriesTitleTab(),
-                            ],
+                          Expanded(
+                            child: TabBarView(
+                              physics: const NeverScrollableScrollPhysics(),
+                              controller: _tabController,
+                              children: [
+                                _buildSeriesTitleTab(),
+                                _buildSeriesTitleTab(),
+                              ],
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
+        ),
       ),
     );
   }
@@ -561,11 +636,17 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
                       itemCount: books.length,
                       itemBuilder: (context, index) {
                         return BookListItem(
-                            book: books[index],
-                            onQuantityChanged: (newQuantity) {
-                              _handleQuantityChange(index, newQuantity);
-                            },
-                            areDropdownsSelected: _areDropdownsSelected());
+                          book: books[index],
+                          onQuantityChanged: (newQuantity) {
+                            if (kDebugMode) {
+                              print(
+                                  'Updating BookId:${books[index].bookId}, RequestedQty:$newQuantity');
+                            }
+
+                            _handleQuantityChange(index, newQuantity);
+                          },
+                          areDropdownsSelected: _areDropdownsSelected(),
+                        );
                       },
                     ),
             ),
