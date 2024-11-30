@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:io';
-import 'package:avant/views/menu_widget.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:avant/api/api_service.dart';
 import 'package:avant/approval/approval_list_form.dart';
@@ -14,7 +13,6 @@ import 'package:avant/login.dart';
 import 'package:avant/model/login_model.dart';
 import 'package:avant/model/menu_model.dart';
 import 'package:avant/model/travel_plan_model.dart';
-import 'package:avant/new_customer/new_customer_school_form1.dart';
 import 'package:avant/service/fetch_location_task.dart';
 import 'package:avant/service/location_service.dart';
 import 'package:avant/views/custom_text.dart';
@@ -30,7 +28,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:workmanager/workmanager.dart';
 
 import 'new_customer/new_customer_list.dart';
-import 'new_customer/new_customer_trade_library_form1.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
