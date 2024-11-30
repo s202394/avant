@@ -71,6 +71,7 @@ class SelfStockSeriesTitleWiseState extends State<SelfStockSeriesTitleWise>
   late int? profileId;
 
   int _cartBooksCount = 0;
+  int samplingSelfStockMaxQtyAllowed = 0;
 
   @override
   void initState() {
@@ -84,8 +85,19 @@ class SelfStockSeriesTitleWiseState extends State<SelfStockSeriesTitleWise>
         _handleTabChange(_tabController.index);
       }
     });
+    _fetchSamplingSelfStockMaxQtyAllowed();
     _fetchBooksCount();
     _fetchData();
+  }
+
+  Future<void> _fetchSamplingSelfStockMaxQtyAllowed() async {
+    final int? result = await databaseHelper.getSamplingCustomerMaxQtyAllowed();
+    setState(() {
+      samplingSelfStockMaxQtyAllowed = result ?? 0;
+      if (kDebugMode) {
+        print('samplingSelfStockMaxQtyAllowed:$samplingSelfStockMaxQtyAllowed');
+      }
+    });
   }
 
   @override
@@ -239,7 +251,8 @@ class SelfStockSeriesTitleWiseState extends State<SelfStockSeriesTitleWise>
                             onQuantityChanged: (newQuantity) {
                               _handleQuantityChange(index, newQuantity);
                             },
-                            areDropdownsSelected: true);
+                            areDropdownsSelected: true,
+                            maxQtyAllowed: samplingSelfStockMaxQtyAllowed);
                       },
                     ),
             ),

@@ -164,7 +164,7 @@ class DatabaseHelper {
 
         //Create table for Geography
         await database.execute(
-          "CREATE TABLE Geography(CountryId Int, Country TEXT, StateId Int, State TEXT, CityId Int, City TEXT)",
+          "CREATE TABLE Geography(CountryId Int, Country TEXT, StateId Int, State TEXT, DistrictId Int, District TEXT, CityId Int, City TEXT)",
         );
         if (kDebugMode) {
           print("Geography table successfully created.");
@@ -1063,7 +1063,7 @@ class DatabaseHelper {
   Future<int?> getSamplingCustomerMaxQtyAllowed() async {
     final db = await database;
     final List<Map<String, dynamic>> result = await db.query(
-      'setupValues', // Your table name
+      'setupValues',
       columns: ['KeyValue'], // Only fetch the keyValue column
       where: 'KeyName = ?',
       whereArgs: ['SamplingCustomerMaxQtyAllowed'],
@@ -1079,7 +1079,7 @@ class DatabaseHelper {
   Future<int?> getSamplingSelfStockMaxQtyAllowed() async {
     final db = await database;
     final List<Map<String, dynamic>> result = await db.query(
-      'setupValues', // Your table name
+      'setupValues',
       columns: ['KeyValue'], // Only fetch the keyValue column
       where: 'KeyName = ?',
       whereArgs: ['SamplingSelfStockMaxQtyAllowed'],

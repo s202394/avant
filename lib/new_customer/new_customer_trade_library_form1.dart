@@ -133,7 +133,7 @@ class NewCustomerTradeLibraryForm1State
   }
 
   Future<void> _initializeMandatorySettings() async {
-    mandatorySetting = await dbHelper.getSchoolMobileEmailMandatory();
+    mandatorySetting = await dbHelper.getTeacherMobileEmailMandatory();
     setState(() {});
   }
 
@@ -291,7 +291,7 @@ class NewCustomerTradeLibraryForm1State
       child: Container(
         height: 300.0,
         decoration: BoxDecoration(
-          border: Border.all(color: Colors.blueAccent, width: 2.0),
+          border: Border.all(width: 1.0),
           borderRadius: BorderRadius.circular(8.0),
         ),
         child: _currentPosition == null

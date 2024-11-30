@@ -27,6 +27,8 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../model/city_list_for_search_customer_response.dart';
+import '../model/customer_list_model.dart';
+import '../model/fetch_customer_details_model.dart';
 import '../model/sampling_details_response.dart';
 import '../model/save_file_model.dart';
 import '../model/search_customer_result_response.dart';
@@ -584,6 +586,7 @@ class GetVisitDsrService {
       print('Request body: $body');
       print('Response status: ${response.statusCode}');
       print('Response body: ${response.body}');
+      print('token: $token');
     }
     if (response.statusCode == 200) {
       final jsonResponse = json.decode(response.body);
@@ -1214,10 +1217,8 @@ class CustomerEntryMasterService {
 class CustomerSamplingApprovalListService {
   Future<ApprovalListResponse> fetchCustomerSamplingApprovalList(
       String type, int executiveId, String listFor, String token) async {
-    final body = jsonEncode(<String, dynamic>{
-      'ExecutiveId': executiveId,
-      'ListFor': listFor,
-    });
+    final body = jsonEncode(
+        <String, dynamic>{'ExecutiveId': executiveId, 'ListFor': listFor});
 
     final response = await http.post(
       Uri.parse(type == customerSampleApproval
@@ -2808,16 +2809,18 @@ class SelfStockSamplingService {
   }
 
   Future<SubmitRequestApprovalResponse> refreshAndRetry(
-      int loggedInExecutiveId,
-      String profileCode,
-      int executiveId,
-      String selfStockDetailsXml,
-      String shippingAddress,
-      String shipTo,
-      int shipmentModeId,
-      int enteredBy, int tradeId,
-      String shippingInstructions,
-      String remarks,) async {
+    int loggedInExecutiveId,
+    String profileCode,
+    int executiveId,
+    String selfStockDetailsXml,
+    String shippingAddress,
+    String shipTo,
+    int shipmentModeId,
+    int enteredBy,
+    int tradeId,
+    String shippingInstructions,
+    String remarks,
+  ) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String username = prefs.getString('token_username') ?? '';
     String password = prefs.getString('password') ?? '';
@@ -2836,9 +2839,9 @@ class SelfStockSamplingService {
             shipTo,
             shipmentModeId,
             enteredBy,
-             tradeId,
-             shippingInstructions,
-             remarks,
+            tradeId,
+            shippingInstructions,
+            remarks,
             newToken);
       } else {
         throw Exception('Failed to retrieve new token');
@@ -2901,6 +2904,412 @@ class SaveFileService {
       if (newToken != null && newToken.isNotEmpty) {
         return await saveFile(
             fileName, fileExtension, module, base64String, newToken);
+      } else {
+        throw Exception('Failed to retrieve new token');
+      }
+    } else {
+      throw Exception(
+          'Username or password is not stored in SharedPreferences');
+    }
+  }
+}
+
+class CustomerListService {
+  Future<CustomerListResponse> customerList(
+      int pageSize,
+      int pageNumber,
+      String customerType,
+      String executiveProfileCode,
+      String cityAccess,
+      String validated,
+      String token) async {
+    String body = jsonEncode(<String, dynamic>{
+      'PageSize': pageSize,
+      'PageNumber': pageNumber,
+      'CustomerType': customerType,
+      'ExecutiveProfileCode': executiveProfileCode,
+      'CityAccess': cityAccess,
+      'Validated': validated,
+    });
+    final response = await http.post(
+      Uri.parse(customerListUrl),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+        'Authorization': 'Bearer $token',
+      },
+      body: body,
+    );
+    if (kDebugMode) {
+      print('Request url: ${response.request?.url}');
+      print('Request body: $body');
+      print('Response body: ${response.body}');
+      print('Response status: ${response.statusCode}');
+    }
+    if (response.statusCode == 200) {
+      final jsonResponse = json.decode(response.body);
+      return CustomerListResponse.fromJson(jsonResponse);
+    } else if (response.statusCode == 401) {
+      // Token is invalid or expired, refresh the token and retry
+      return await refreshAndRetry(pageSize, pageNumber, customerType,
+          executiveProfileCode, cityAccess, validated);
+    } else {
+      throw Exception('Failed to get customer list for $customerType');
+    }
+  }
+
+  Future<CustomerListResponse> refreshAndRetry(
+      int pageSize,
+      int pageNumber,
+      String customerType,
+      String executiveProfileCode,
+      String cityAccess,
+      String validated) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String username = prefs.getString('token_username') ?? '';
+    String password = prefs.getString('password') ?? '';
+
+    if (username.isNotEmpty && password.isNotEmpty) {
+      await TokenService().token(username, password);
+      String? newToken = prefs.getString('token');
+
+      if (newToken != null && newToken.isNotEmpty) {
+        return await customerList(pageSize, pageNumber, customerType,
+            executiveProfileCode, cityAccess, validated, newToken);
+      } else {
+        throw Exception('Failed to retrieve new token');
+      }
+    } else {
+      throw Exception(
+          'Username or password is not stored in SharedPreferences');
+    }
+  }
+
+  Future<CustomerListTradeResponse> customerTradeList(
+      int pageSize,
+      int pageNumber,
+      String customerType,
+      String executiveProfileCode,
+      String cityAccess,
+      String validated,
+      String token) async {
+    String body = jsonEncode(<String, dynamic>{
+      'PageSize': pageSize,
+      'PageNumber': pageNumber,
+      'CustomerType': customerType,
+      'ExecutiveProfileCode': executiveProfileCode,
+      'CityAccess': cityAccess,
+      'Validated': validated,
+    });
+    final response = await http.post(
+      Uri.parse(customerListUrl),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+        'Authorization': 'Bearer $token',
+      },
+      body: body,
+    );
+    if (kDebugMode) {
+      print('Request url: ${response.request?.url}');
+      print('Request body: $body');
+      print('Response body: ${response.body}');
+      print('Response status: ${response.statusCode}');
+    }
+    if (response.statusCode == 200) {
+      final jsonResponse = json.decode(response.body);
+      return CustomerListTradeResponse.fromJson(jsonResponse);
+    } else if (response.statusCode == 401) {
+      // Token is invalid or expired, refresh the token and retry
+      return await refreshAndRetryTrade(pageSize, pageNumber, customerType,
+          executiveProfileCode, cityAccess, validated);
+    } else {
+      throw Exception('Failed to get customer list for $customerType');
+    }
+  }
+
+  Future<CustomerListTradeResponse> refreshAndRetryTrade(
+      int pageSize,
+      int pageNumber,
+      String customerType,
+      String executiveProfileCode,
+      String cityAccess,
+      String validated) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String username = prefs.getString('token_username') ?? '';
+    String password = prefs.getString('password') ?? '';
+
+    if (username.isNotEmpty && password.isNotEmpty) {
+      await TokenService().token(username, password);
+      String? newToken = prefs.getString('token');
+
+      if (newToken != null && newToken.isNotEmpty) {
+        return await customerTradeList(pageSize, pageNumber, customerType,
+            executiveProfileCode, cityAccess, validated, newToken);
+      } else {
+        throw Exception('Failed to retrieve new token');
+      }
+    } else {
+      throw Exception(
+          'Username or password is not stored in SharedPreferences');
+    }
+  }
+
+  Future<CustomerContactListResponse> customerContactList(
+      int pageSize,
+      int pageNumber,
+      int customerId,
+      String customerType,
+      String validated,
+      String token) async {
+    String body = jsonEncode(<String, dynamic>{
+      'PageSize': pageSize,
+      'PageNumber': pageNumber,
+      'CustomerId': customerId,
+      'CustomerType': customerType,
+      'Validated': validated,
+    });
+    final response = await http.post(
+      Uri.parse(customerContactListUrl),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+        'Authorization': 'Bearer $token',
+      },
+      body: body,
+    );
+    if (kDebugMode) {
+      print('Request url: ${response.request?.url}');
+      print('Request body: $body');
+      print('Response body: ${response.body}');
+      print('Response status: ${response.statusCode}');
+    }
+    if (response.statusCode == 200) {
+      final jsonResponse = json.decode(response.body);
+      return CustomerContactListResponse.fromJson(jsonResponse);
+    } else if (response.statusCode == 401) {
+      // Token is invalid or expired, refresh the token and retry
+      return await refreshAndRetryContactList(
+          pageSize, pageNumber, customerId, customerType, validated);
+    } else {
+      throw Exception('Failed to get customer contact list for $customerType');
+    }
+  }
+
+  Future<CustomerContactListResponse> refreshAndRetryContactList(
+      int pageSize,
+      int pageNumber,
+      int customerId,
+      String customerType,
+      String validated) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String username = prefs.getString('token_username') ?? '';
+    String password = prefs.getString('password') ?? '';
+
+    if (username.isNotEmpty && password.isNotEmpty) {
+      await TokenService().token(username, password);
+      String? newToken = prefs.getString('token');
+
+      if (newToken != null && newToken.isNotEmpty) {
+        return await customerContactList(pageSize, pageNumber, customerId,
+            customerType, validated, newToken);
+      } else {
+        throw Exception('Failed to retrieve new token');
+      }
+    } else {
+      throw Exception(
+          'Username or password is not stored in SharedPreferences');
+    }
+  }
+}
+
+class FetchCustomerDetailsService {
+  Future<T> fetchCustomerDetails<T>(
+      int customerId,
+      String validated,
+      String customerType,
+      String token,
+      T Function(Map<String, dynamic>) fromJson) async {
+    String body = jsonEncode(<String, dynamic>{
+      'CustomerId': customerId,
+      'Validated': validated,
+      'CustomerType': customerType,
+    });
+
+    final response = await http.post(
+      Uri.parse(fetchCustomerDetailsUrl),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+        'Authorization': 'Bearer $token',
+      },
+      body: body,
+    );
+
+    if (kDebugMode) {
+      print('Request URL: ${response.request?.url}');
+      print('Request Body: $body');
+      print('Response Body: ${response.body}');
+      print('Response Status: ${response.statusCode}');
+    }
+
+    if (response.statusCode == 200) {
+      final jsonResponse = json.decode(response.body);
+      return fromJson(jsonResponse);
+    } else if (response.statusCode == 401) {
+      return await _refreshAndRetry<T>(
+          customerId, validated, customerType, fromJson);
+    } else {
+      throw Exception('Failed to get customer detail for $customerType');
+    }
+  }
+
+  Future<T> _refreshAndRetry<T>(int customerId, String validated,
+      String customerType, T Function(Map<String, dynamic>) fromJson) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String username = prefs.getString('token_username') ?? '';
+    String password = prefs.getString('password') ?? '';
+
+    if (username.isNotEmpty && password.isNotEmpty) {
+      await TokenService().token(username, password);
+      String? newToken = prefs.getString('token');
+
+      if (newToken != null && newToken.isNotEmpty) {
+        return await fetchCustomerDetails(
+            customerId, validated, customerType, newToken, fromJson);
+      } else {
+        throw Exception('Failed to retrieve new token');
+      }
+    } else {
+      throw Exception(
+          'Username or password is not stored in SharedPreferences');
+    }
+  }
+}
+
+class DeleteCustomerService {
+  Future<SubmitRequestApprovalResponse> deleteCustomer(
+      int executiveId,
+      int customerId,
+      int enteredBy,
+      String validated,
+      String remarks,
+      String token) async {
+    String body = jsonEncode(<String, dynamic>{
+      'Executiveid': executiveId,
+      'CustomerId': customerId,
+      'EnteredBy': enteredBy,
+      'Validated': validated,
+      'Remarks': remarks,
+    });
+
+    final response = await http.post(
+      Uri.parse(deleteCustomerUrl),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+        'Authorization': 'Bearer $token',
+      },
+      body: body,
+    );
+
+    if (kDebugMode) {
+      print('Request URL: ${response.request?.url}');
+      print('Request Body: $body');
+      print('Response Body: ${response.body}');
+      print('Response Status: ${response.statusCode}');
+    }
+
+    if (response.statusCode == 200) {
+      final jsonResponse = json.decode(response.body);
+      return SubmitRequestApprovalResponse.fromJson(jsonResponse);
+    } else if (response.statusCode == 401) {
+      return await _refreshAndRetryDelete(
+          executiveId, customerId, enteredBy, validated, remarks);
+    } else {
+      throw Exception('Failed to delete customer $customerId');
+    }
+  }
+
+  Future<SubmitRequestApprovalResponse> _refreshAndRetryDelete(int executiveId,
+      int customerId, int enteredBy, String validated, String remarks) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String username = prefs.getString('token_username') ?? '';
+    String password = prefs.getString('password') ?? '';
+
+    if (username.isNotEmpty && password.isNotEmpty) {
+      await TokenService().token(username, password);
+      String? newToken = prefs.getString('token');
+
+      if (newToken != null && newToken.isNotEmpty) {
+        return await deleteCustomer(
+            executiveId, customerId, enteredBy, validated, remarks, newToken);
+      } else {
+        throw Exception('Failed to retrieve new token');
+      }
+    } else {
+      throw Exception(
+          'Username or password is not stored in SharedPreferences');
+    }
+  }
+
+  Future<SubmitRequestApprovalResponse> deleteCustomerContact(
+      int executiveId,
+      int customerId,
+      int customerContactId,
+      int enteredBy,
+      String validated,
+      String remarks,
+      String token) async {
+    String body = jsonEncode(<String, dynamic>{
+      'Executiveid': executiveId,
+      'CustomerId': customerId,
+      'CustomerContactId': customerContactId,
+      'EnteredBy': enteredBy,
+      'Validated': validated,
+      'Remarks': remarks,
+    });
+
+    final response = await http.post(
+      Uri.parse(deleteCustomerContactUrl),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+        'Authorization': 'Bearer $token',
+      },
+      body: body,
+    );
+
+    if (kDebugMode) {
+      print('Request URL: ${response.request?.url}');
+      print('Request Body: $body');
+      print('Response Body: ${response.body}');
+      print('Response Status: ${response.statusCode}');
+    }
+
+    if (response.statusCode == 200) {
+      final jsonResponse = json.decode(response.body);
+      return SubmitRequestApprovalResponse.fromJson(jsonResponse);
+    } else if (response.statusCode == 401) {
+      return await _refreshAndRetryContactDelete(executiveId, customerId,
+          customerContactId, enteredBy, validated, remarks);
+    } else {
+      throw Exception('Failed to delete customer $customerId');
+    }
+  }
+
+  Future<SubmitRequestApprovalResponse> _refreshAndRetryContactDelete(
+      int executiveId,
+      int customerId,
+      int customerContactId,
+      int enteredBy,
+      String validated,
+      String remarks) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String username = prefs.getString('token_username') ?? '';
+    String password = prefs.getString('password') ?? '';
+
+    if (username.isNotEmpty && password.isNotEmpty) {
+      await TokenService().token(username, password);
+      String? newToken = prefs.getString('token');
+
+      if (newToken != null && newToken.isNotEmpty) {
+        return await deleteCustomerContact(executiveId, customerId,
+            customerContactId, enteredBy, validated, remarks, newToken);
       } else {
         throw Exception('Failed to retrieve new token');
       }

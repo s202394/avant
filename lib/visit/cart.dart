@@ -26,8 +26,6 @@ class Cart extends StatefulWidget {
   final String customerCode;
   final String customerType;
   final String address;
-  final String city;
-  final String state;
   final String visitFeedback;
   final String visitDate;
   final int visitPurposeId;
@@ -46,8 +44,6 @@ class Cart extends StatefulWidget {
     required this.customerCode,
     required this.customerType,
     required this.address,
-    required this.city,
-    required this.state,
     required this.visitFeedback,
     required this.visitDate,
     required this.visitPurposeId,
@@ -92,6 +88,7 @@ class CartState extends State<Cart> with TickerProviderStateMixin {
   late Future<SelfStockRequestResponse> _selfStockRequestData;
 
   int tabCount = 0;
+  int samplingCustomerMaxQtyAllowed = 0;
 
   String? selectedShipmentMode;
   int? selectedShipmentModeId;
@@ -102,11 +99,22 @@ class CartState extends State<Cart> with TickerProviderStateMixin {
 
     _tabController = TabController(length: 0, vsync: this);
 
+    _fetchSamplingCustomerMaxQtyAllowed();
     getAddressData();
 
     _fetchCartData();
 
     _selfStockRequestData = _fetchSelfStockData();
+  }
+
+  Future<void> _fetchSamplingCustomerMaxQtyAllowed() async {
+    final int? result = await databaseHelper.getSamplingCustomerMaxQtyAllowed();
+    setState(() {
+      samplingCustomerMaxQtyAllowed = result ?? 0;
+      if (kDebugMode) {
+        print('samplingCustomerMaxQtyAllowed:$samplingCustomerMaxQtyAllowed');
+      }
+    });
   }
 
   Future<SelfStockRequestResponse> _fetchSelfStockData() async {
@@ -128,7 +136,8 @@ class CartState extends State<Cart> with TickerProviderStateMixin {
     setState(() {
       _titleItems = titleItems;
       setState(() {
-        _seriesItems = List.from(seriesItems.map((item) => Map<String, dynamic>.from(item))); // Make a mutable copy
+        _seriesItems = List.from(seriesItems.map(
+            (item) => Map<String, dynamic>.from(item))); // Make a mutable copy
       });
 
       tabCount = 0; // Reset tabCount to avoid old values.
@@ -289,45 +298,47 @@ class CartState extends State<Cart> with TickerProviderStateMixin {
       child: _seriesItems.isEmpty
           ? _noDataLayout() // Replace with your no data layout widget
           : ListView.builder(
-        itemCount: _seriesItems.length,
-        itemBuilder: (context, index) {
-          final item = _seriesItems[index]; // Get the current item
-          TitleList titleList = TitleList(
-            bookId: item['BookId'],
-            title: item['Title'],
-            isbn: item['ISBN'],
-            author: item['Author'],
-            price: item['Price'],
-            listPrice: item['ListPrice'],
-            bookNum: item['BookNum'],
-            image: item['Image'],
-            bookType: item['BookType'],
-            imageUrl: item['ImageUrl'],
-            physicalStock: item['PhysicalStock'],
-            quantity: item['RequestedQty'], // Current quantity
-          );
+              itemCount: _seriesItems.length,
+              itemBuilder: (context, index) {
+                final item = _seriesItems[index]; // Get the current item
+                TitleList titleList = TitleList(
+                  bookId: item['BookId'],
+                  title: item['Title'],
+                  isbn: item['ISBN'],
+                  author: item['Author'],
+                  price: item['Price'],
+                  listPrice: item['ListPrice'],
+                  bookNum: item['BookNum'],
+                  image: item['Image'],
+                  bookType: item['BookType'],
+                  imageUrl: item['ImageUrl'],
+                  physicalStock: item['PhysicalStock'],
+                  quantity: item['RequestedQty'], // Current quantity
+                );
 
-          return BookListItem(
-            book: titleList,
-            onQuantityChanged: (newQuantity) {
-              _handleQuantityChange(index, newQuantity);
-            },
-            areDropdownsSelected: true,
-          );
-        },
-      ),
+                return BookListItem(
+                    book: titleList,
+                    onQuantityChanged: (newQuantity) {
+                      _handleQuantityChange(index, newQuantity);
+                    },
+                    areDropdownsSelected: true,
+                    maxQtyAllowed: samplingCustomerMaxQtyAllowed);
+              },
+            ),
     );
   }
 
   void _handleQuantityChange(int index, int newQuantity) {
     setState(() {
       // Create a mutable copy of the item
-      Map<String, dynamic> updatedItem = Map<String, dynamic>.from(_seriesItems[index]);
+      Map<String, dynamic> updatedItem =
+          Map<String, dynamic>.from(_seriesItems[index]);
 
       updatedItem['RequestedQty'] = newQuantity; // Update the quantity
 
       // Update the books list with the modified item
-      _seriesItems[index] = updatedItem; // Assign the updated item back to the list
+      _seriesItems[index] =
+          updatedItem; // Assign the updated item back to the list
     });
 
     // Perform the database operation outside of setState
@@ -371,6 +382,7 @@ class CartState extends State<Cart> with TickerProviderStateMixin {
       _seriesItems.removeAt(index); // Remove from mutable list
     });
   }
+
   Widget _noDataLayout() {
     return const Center(
       child: Padding(
@@ -403,14 +415,14 @@ class CartState extends State<Cart> with TickerProviderStateMixin {
               quantity: item['RequestedQty'],
             );
             return BookListItem(
-              book: titleList,
-              onQuantityChanged: (quantity) {
-                setState(() {
-                  item['RequestedQty'] = quantity;
-                });
-              },
-              areDropdownsSelected: true,
-            );
+                book: titleList,
+                onQuantityChanged: (quantity) {
+                  setState(() {
+                    item['RequestedQty'] = quantity;
+                  });
+                },
+                areDropdownsSelected: true,
+                maxQtyAllowed: samplingCustomerMaxQtyAllowed);
           }).toList(),
         ),
       ),

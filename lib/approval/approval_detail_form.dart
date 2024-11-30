@@ -337,12 +337,12 @@ class ApprovalDetailFormState extends State<ApprovalDetailForm> {
                                           leading: CustomText(
                                             'SNo.',
                                             fontWeight: FontWeight.bold,
-                                            fontSize: 14,
+                                            fontSize: 13,
                                           ),
                                           title: CustomText(
                                             'Title Details',
                                             fontWeight: FontWeight.bold,
-                                            fontSize: 14,
+                                            fontSize: 13,
                                           ),
                                         ),
                                       ),
@@ -353,7 +353,7 @@ class ApprovalDetailFormState extends State<ApprovalDetailForm> {
                                                 textAlign: TextAlign.center,
                                                 'Req Qty',
                                                 fontWeight: FontWeight.bold,
-                                                fontSize: 14),
+                                                fontSize: 13),
                                           ),
                                           SizedBox(width: 8.0),
                                           Center(
@@ -361,7 +361,7 @@ class ApprovalDetailFormState extends State<ApprovalDetailForm> {
                                                 textAlign: TextAlign.center,
                                                 'Appr Qty',
                                                 fontWeight: FontWeight.bold,
-                                                fontSize: 14),
+                                                fontSize: 13),
                                           ),
                                           SizedBox(width: 5.0),
                                           Center(
@@ -369,7 +369,7 @@ class ApprovalDetailFormState extends State<ApprovalDetailForm> {
                                                 textAlign: TextAlign.center,
                                                 'Reject',
                                                 fontWeight: FontWeight.bold,
-                                                fontSize: 14),
+                                                fontSize: 13),
                                           ),
                                         ],
                                       ),
@@ -524,108 +524,113 @@ class ApprovalDetailFormState extends State<ApprovalDetailForm> {
                                               .clarificationList![index];
                                           return Column(
                                             children: [
-                                              ListTile(
-                                                contentPadding:
-                                                    const EdgeInsets.symmetric(
-                                                        horizontal: 12.0,
-                                                        vertical: 0.0),
-                                                title: Column(
-                                                  crossAxisAlignment:
-                                                      CrossAxisAlignment.start,
+                                              Padding(
+                                                padding:
+                                                    const EdgeInsets.all(8.0),
+                                                child: Stack(
                                                   children: [
-                                                    _detailText.buildDetailText(
-                                                        'Query By: ',
-                                                        clarification.queryBy,
-                                                        labelFontSize: 14,
-                                                        valueFontSize: 12,
-                                                        labelColor:
-                                                            Colors.indigo,
-                                                        valueColor: Colors
-                                                            .indigoAccent),
-                                                    _detailText.buildDetailText(
-                                                        'Query To: ',
-                                                        clarification
-                                                            .clarificationQueryTo,
-                                                        labelFontSize: 14,
-                                                        valueFontSize: 12,
-                                                        labelColor:
-                                                            Colors.indigo,
-                                                        valueColor: Colors
-                                                            .indigoAccent),
-                                                    _detailText.buildDetailText(
-                                                        'Date: ',
-                                                        clarification
-                                                            .clarificationQueryDate,
-                                                        labelFontSize: 14,
-                                                        valueFontSize: 12,
-                                                        labelColor:
-                                                            Colors.indigo,
-                                                        valueColor: Colors
-                                                            .indigoAccent),
-                                                    _detailText.buildDetailText(
-                                                        'Query: ',
-                                                        clarification
-                                                            .clarificationQuery,
-                                                        labelFontSize: 14,
-                                                        valueFontSize: 12,
-                                                        labelColor:
-                                                            Colors.indigo,
-                                                        valueColor: Colors
-                                                            .indigoAccent),
-                                                    const Divider(),
+                                                    // Main content (left side)
+                                                    Column(
+                                                      crossAxisAlignment:
+                                                          CrossAxisAlignment
+                                                              .start,
+                                                      children: [
+                                                        _detailText.buildDetailText(
+                                                            'Query By: ',
+                                                            clarification
+                                                                .queryBy,
+                                                            labelFontSize: 14,
+                                                            valueFontSize: 12,
+                                                            labelColor:
+                                                                Colors.indigo,
+                                                            valueColor: Colors
+                                                                .indigoAccent),
+                                                        _detailText.buildDetailText(
+                                                            'Query To: ',
+                                                            clarification
+                                                                .clarificationQueryTo,
+                                                            labelFontSize: 14,
+                                                            valueFontSize: 12,
+                                                            labelColor:
+                                                                Colors.indigo,
+                                                            valueColor: Colors
+                                                                .indigoAccent),
+                                                        _detailText.buildDetailText(
+                                                            'Date: ',
+                                                            clarification
+                                                                .clarificationQueryDate,
+                                                            labelFontSize: 14,
+                                                            valueFontSize: 12,
+                                                            labelColor:
+                                                                Colors.indigo,
+                                                            valueColor: Colors
+                                                                .indigoAccent),
+                                                        _detailText.buildDetailText(
+                                                            'Query: ',
+                                                            clarification
+                                                                .clarificationQuery,
+                                                            labelFontSize: 14,
+                                                            valueFontSize: 12,
+                                                            labelColor:
+                                                                Colors.indigo,
+                                                            valueColor: Colors
+                                                                .indigoAccent),
+                                                        const Divider(),
+                                                        _detailText.buildDetailText(
+                                                            'Response By: ',
+                                                            clarification
+                                                                .responseBy,
+                                                            labelFontSize: 14,
+                                                            valueFontSize: 12,
+                                                            labelColor: Colors
+                                                                .deepOrange,
+                                                            valueColor: Colors
+                                                                .deepOrangeAccent),
+                                                        _detailText.buildDetailText(
+                                                            'Date: ',
+                                                            clarification
+                                                                .clarificationResponseDate,
+                                                            labelFontSize: 14,
+                                                            valueFontSize: 12,
+                                                            labelColor: Colors
+                                                                .deepOrange,
+                                                            valueColor: Colors
+                                                                .deepOrangeAccent),
+                                                        _detailText.buildDetailText(
+                                                            'Response: ',
+                                                            clarification
+                                                                .clarificationResponse,
+                                                            labelFontSize: 14,
+                                                            valueFontSize: 12,
+                                                            labelColor: Colors
+                                                                .deepOrange,
+                                                            valueColor: Colors
+                                                                .deepOrangeAccent),
+                                                      ],
+                                                    ),
+                                                    // Trailing widget (right bottom)
+                                                    Positioned(
+                                                      bottom: 0,
+                                                      right: 0,
+                                                      child: Visibility(
+                                                        visible: clarification
+                                                            .clarificationResponseFileUpload
+                                                            .isNotEmpty,
+                                                        child: IconButton(
+                                                          icon: const Icon(
+                                                              Icons.save_alt,
+                                                              color:
+                                                                  Colors.blue),
+                                                          onPressed: () {
+                                                            if (kDebugMode) {
+                                                              print(
+                                                                  'Download Image URL : ${clarification.clarificationResponseFileUpload}');
+                                                            }
+                                                          },
+                                                        ),
+                                                      ),
+                                                    ),
                                                   ],
-                                                ),
-                                                subtitle: Column(
-                                                  crossAxisAlignment:
-                                                      CrossAxisAlignment.start,
-                                                  children: [
-                                                    _detailText.buildDetailText(
-                                                        'Response By: ',
-                                                        clarification
-                                                            .responseBy,
-                                                        labelFontSize: 14,
-                                                        valueFontSize: 12,
-                                                        labelColor:
-                                                            Colors.deepOrange,
-                                                        valueColor: Colors
-                                                            .deepOrangeAccent),
-                                                    _detailText.buildDetailText(
-                                                        'Date: ',
-                                                        clarification
-                                                            .clarificationResponseDate,
-                                                        labelFontSize: 14,
-                                                        valueFontSize: 12,
-                                                        labelColor:
-                                                            Colors.deepOrange,
-                                                        valueColor: Colors
-                                                            .deepOrangeAccent),
-                                                    _detailText.buildDetailText(
-                                                        'Response: ',
-                                                        clarification
-                                                            .clarificationResponse,
-                                                        labelFontSize: 14,
-                                                        valueFontSize: 12,
-                                                        labelColor:
-                                                            Colors.deepOrange,
-                                                        valueColor: Colors
-                                                            .deepOrangeAccent)
-                                                  ],
-                                                ),
-                                                trailing: Visibility(
-                                                  visible: clarification
-                                                      .clarificationResponseFileUpload
-                                                      .isNotEmpty,
-                                                  child: IconButton(
-                                                    icon: const Icon(
-                                                        Icons.save_alt,
-                                                        color: Colors.blue),
-                                                    onPressed: () {
-                                                      if (kDebugMode) {
-                                                        print(
-                                                            'Download Image URL : ${clarification.clarificationResponseFileUpload}');
-                                                      }
-                                                    },
-                                                  ),
                                                 ),
                                               ),
                                               if (index !=

@@ -60,6 +60,8 @@ class SelfStockRequestCartState extends State<SelfStockRequestCart>
   late Position position;
   late String address;
 
+  int samplingSelfStockMaxQtyAllowed = 0;
+
   List<Map<String, dynamic>> _cartItems = [];
 
   DatabaseHelper databaseHelper = DatabaseHelper();
@@ -72,8 +74,19 @@ class SelfStockRequestCartState extends State<SelfStockRequestCart>
 
     _tabController = TabController(length: 1, vsync: this);
 
+    _fetchSamplingSelfStockMaxQtyAllowed();
     _fetchCartDetails();
     _fetchCartData();
+  }
+
+  Future<void> _fetchSamplingSelfStockMaxQtyAllowed() async {
+    final int? result = await databaseHelper.getSamplingCustomerMaxQtyAllowed();
+    setState(() {
+      samplingSelfStockMaxQtyAllowed = result ?? 0;
+      if (kDebugMode) {
+        print('samplingSelfStockMaxQtyAllowed:$samplingSelfStockMaxQtyAllowed');
+      }
+    });
   }
 
   Future<void> _fetchCartData() async {
@@ -218,12 +231,12 @@ class SelfStockRequestCartState extends State<SelfStockRequestCart>
                 );
 
                 return BookListItem(
-                  book: titleList,
-                  onQuantityChanged: (newQuantity) {
-                    _handleQuantityChange(index, newQuantity);
-                  },
-                  areDropdownsSelected: true,
-                );
+                    book: titleList,
+                    onQuantityChanged: (newQuantity) {
+                      _handleQuantityChange(index, newQuantity);
+                    },
+                    areDropdownsSelected: true,
+                    maxQtyAllowed: samplingSelfStockMaxQtyAllowed);
               },
             ),
     );

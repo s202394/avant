@@ -80,6 +80,7 @@ class SamplingSeriesTitleWiseState extends State<SamplingSeriesTitleWise>
   late int? profileId;
 
   int _cartBooksCount = 0;
+  int samplingCustomerMaxQtyAllowed = 0;
 
   ToastMessage toastMessage = ToastMessage();
 
@@ -95,6 +96,7 @@ class SamplingSeriesTitleWiseState extends State<SamplingSeriesTitleWise>
         _handleTabChange(_tabController.index);
       }
     });
+    _fetchSamplingCustomerMaxQtyAllowed();
     _fetchBooksCount();
     _fetchData();
   }
@@ -189,6 +191,16 @@ class SamplingSeriesTitleWiseState extends State<SamplingSeriesTitleWise>
         isLoading = false;
       });
     }
+  }
+
+  Future<void> _fetchSamplingCustomerMaxQtyAllowed() async {
+    final int? result = await databaseHelper.getSamplingCustomerMaxQtyAllowed();
+    setState(() {
+      samplingCustomerMaxQtyAllowed = result ?? 0;
+      if (kDebugMode) {
+        print('samplingCustomerMaxQtyAllowed:$samplingCustomerMaxQtyAllowed');
+      }
+    });
   }
 
   void _handleTabChange(int newIndex) {
@@ -484,7 +496,8 @@ class SamplingSeriesTitleWiseState extends State<SamplingSeriesTitleWise>
                             onQuantityChanged: (newQuantity) {
                               _handleQuantityChange(index, newQuantity);
                             },
-                            areDropdownsSelected: _areDropdownsSelected());
+                            areDropdownsSelected: _areDropdownsSelected(),
+                            maxQtyAllowed: samplingCustomerMaxQtyAllowed);
                       },
                     ),
             ),
@@ -667,8 +680,6 @@ class SamplingSeriesTitleWiseState extends State<SamplingSeriesTitleWise>
           customerCode: widget.customerCode,
           customerType: widget.customerType,
           address: widget.address,
-          city: '',
-          state: '',
           visitFeedback: '',
           visitDate: '',
           visitPurposeId: 0,

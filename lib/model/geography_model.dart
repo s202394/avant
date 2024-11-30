@@ -24,6 +24,8 @@ class Geography {
   final String country;
   final int stateId;
   final String state;
+  final int districtId;
+  final String district;
   final int cityId;
   final String city;
 
@@ -32,6 +34,8 @@ class Geography {
     required this.country,
     required this.stateId,
     required this.state,
+    required this.districtId,
+    required this.district,
     required this.cityId,
     required this.city,
   });
@@ -42,6 +46,8 @@ class Geography {
       country: json['Country'] ?? '',
       stateId: json['StateId'] ?? 0,
       state: json['State'] ?? '',
+      districtId: json['DistrictId'] ?? 0,
+      district: json['District'] ?? '',
       cityId: json['CityId'] ?? 0,
       city: json['City'] ?? '',
     );
@@ -53,6 +59,8 @@ class Geography {
       'Country': country,
       'StateId': stateId,
       'State': state,
+      'DistrictId': districtId,
+      'District': district,
       'CityId': cityId,
       'City': city,
     };

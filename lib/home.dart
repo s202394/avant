@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:avant/views/menu_widget.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:avant/api/api_service.dart';
 import 'package:avant/approval/approval_list_form.dart';
@@ -28,6 +29,7 @@ import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:workmanager/workmanager.dart';
 
+import 'new_customer/new_customer_list.dart';
 import 'new_customer/new_customer_trade_library_form1.dart';
 
 class HomePage extends StatefulWidget {
@@ -257,7 +259,7 @@ class HomePageState extends State<HomePage> with WidgetsBindingObserver {
     }
   }
 
- Future<void> startForegroundService() async {
+  Future<void> startForegroundService() async {
     try {
       // Check and request notification permission on Android
       if (await Permission.notification.isDenied) {
@@ -269,12 +271,13 @@ class HomePageState extends State<HomePage> with WidgetsBindingObserver {
             showDialog(
               context: context,
               builder: (context) => AlertDialog(
-                title: Text("Permission Required"),
-                content: Text("Notification permission is required for this feature."),
+                title: const Text("Permission Required"),
+                content: const Text(
+                    "Notification permission is required for this feature."),
                 actions: [
                   TextButton(
                     onPressed: () => Navigator.of(context).pop(),
-                    child: Text("OK"),
+                    child: const Text("OK"),
                   ),
                 ],
               ),
@@ -284,10 +287,9 @@ class HomePageState extends State<HomePage> with WidgetsBindingObserver {
         }
       }
 
-      // Start the foreground service if permission is granted
-      await FlutterForegroundTask.startService(notificationTitle: 'DART CRM', notificationText: 'Location Tracking');
+      await FlutterForegroundTask.startService(
+          notificationTitle: 'DART CRM', notificationText: 'Location Tracking');
     } catch (e) {
-      // Handle the exception by logging or displaying a user-friendly message
       debugPrint("Error starting foreground service: $e");
     }
   }
@@ -345,7 +347,9 @@ class HomePageState extends State<HomePage> with WidgetsBindingObserver {
           PlanResponse(status: "Success", todayPlan: [], tomorrowPlan: []));
     }
 
-    print('executiveId:$executiveId');
+    if (kDebugMode) {
+      print('executiveId:$executiveId');
+    }
 
     await SetupValuesService().setupValues(token ?? '');
 
@@ -427,7 +431,6 @@ class HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
   // Method to handle Punch In
   void punchIn() async {
-    // You can also trigger an API call here if needed
     await _updatePunchState(true);
 
     if (kDebugMode) {
@@ -464,12 +467,10 @@ class HomePageState extends State<HomePage> with WidgetsBindingObserver {
               title: "Logout",
               content: "You are sure you want to logout.",
               onConfirm: () {
-                // Handle confirm action
                 Navigator.of(context).pop();
                 logout();
               },
               onCancel: () {
-                // Handle cancel action
                 Navigator.of(context).pop();
               },
             );
@@ -607,15 +608,15 @@ class HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                   if (childMenu.menuName == 'Customer') {
                                     if (childMenu.childMenuName ==
                                         'School List') {
-                                      gotoNewCustomerSchool('School');
+                                      gotoNewCustomer('School');
                                     } else if (childMenu.childMenuName ==
                                         'Institute List') {
                                     } else if (childMenu.childMenuName ==
                                         'Trade List') {
-                                      gotoNewCustomerTradeLibrary('Trade');
+                                      gotoNewCustomer('Trade');
                                     } else if (childMenu.childMenuName ==
                                         'Library List') {
-                                      gotoNewCustomerTradeLibrary('Library');
+                                      gotoNewCustomer('Library');
                                     }
                                   } else {
                                     gotoWebView(childMenu.linkURL);
@@ -762,7 +763,7 @@ class HomePageState extends State<HomePage> with WidgetsBindingObserver {
           actions: <Widget>[
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop(false); // Do not exit
+                Navigator.of(context).pop(false);
               },
               child: const CustomText('Cancel', fontSize: 14),
             ),
@@ -778,31 +779,16 @@ class HomePageState extends State<HomePage> with WidgetsBindingObserver {
     );
   }
 
-  void gotoNewCustomerTradeLibrary(String type) {
+  void gotoNewCustomer(String type) {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => NewCustomerTradeLibraryForm1(type: type),
-      ),
-    );
-  }
-
-  void gotoNewCustomerSchool(String type) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => NewCustomerSchoolForm1(type: type),
-      ),
+      MaterialPageRoute(builder: (context) => NewCustomerList(type: type)),
     );
   }
 
   void gotoWebView(String linkURL) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => WebViewScreen(url: linkURL),
-      ),
-    );
+    Navigator.push(context,
+        MaterialPageRoute(builder: (context) => WebViewScreen(url: linkURL)));
   }
 
   void goToCustomerSearchVisit() {
@@ -831,12 +817,8 @@ class HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
   void goToSelfStockEntry() {
     deleteAllCartItems();
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const SelfStockEntry(),
-      ),
-    );
+    Navigator.push(context,
+        MaterialPageRoute(builder: (context) => const SelfStockEntry()));
   }
 
   void gotoCustomerSampleApproval() {
@@ -1087,9 +1069,4 @@ class ServerErrorScreen extends StatelessWidget {
 Future<void> clearSharedPreferences() async {
   SharedPreferences prefs = await SharedPreferences.getInstance();
   await prefs.clear();
-}
-
-void testDatabase() async {
-  DatabaseHelper dbHelper = DatabaseHelper();
-  await dbHelper.checkMenuData();
 }

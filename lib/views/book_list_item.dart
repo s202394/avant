@@ -7,12 +7,14 @@ class BookListItem extends StatefulWidget {
   final TitleList book;
   final ValueChanged<int> onQuantityChanged;
   final bool areDropdownsSelected;
+  final int maxQtyAllowed;
 
   const BookListItem({
     super.key,
     required this.book,
     required this.onQuantityChanged,
     required this.areDropdownsSelected,
+    required this.maxQtyAllowed,
   });
 
   @override
@@ -41,7 +43,7 @@ class BookListItemState extends State<BookListItem> {
 
   @override
   Widget build(BuildContext context) {
-    Color color = (widget.areDropdownsSelected && widget.book.physicalStock > 0)
+    Color color = (widget.areDropdownsSelected && widget.maxQtyAllowed > 0)
         ? Colors.white
         : Colors.black;
 
@@ -102,7 +104,7 @@ class BookListItemState extends State<BookListItem> {
             const SizedBox(width: 8),
             Column(
               children: [
-                CustomText('Stock Available: ${widget.book.physicalStock}',
+                CustomText('Stock Available: ${widget.maxQtyAllowed}',
                     fontSize: 8),
                 const SizedBox(height: 8),
                 SizedBox(
@@ -114,7 +116,7 @@ class BookListItemState extends State<BookListItem> {
                           ? Positioned.fill(
                               child: ElevatedButton(
                                 onPressed: (widget.areDropdownsSelected &&
-                                        widget.book.physicalStock > 0)
+                                        widget.maxQtyAllowed > 0)
                                     ? () {
                                         _updateQuantity(_quantity + 1);
                                       }
@@ -180,7 +182,7 @@ class BookListItemState extends State<BookListItem> {
                                       child: GestureDetector(
                                         onTap: () {
                                           if (_quantity <
-                                              widget.book.physicalStock) {
+                                              widget.maxQtyAllowed) {
                                             _updateQuantity(_quantity + 1);
                                           }
                                         },

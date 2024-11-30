@@ -362,10 +362,14 @@ class DsrEntryPageState extends State<DsrEntry> {
                             child: Container(
                               width: double.infinity,
                               color: _isLoading ? Colors.grey : Colors.blue,
-                              child: const Padding(
-                                padding: EdgeInsets.symmetric(
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
                                     vertical: 8.0, horizontal: 16),
-                                child: CustomText('Submit',
+                                child: CustomText(
+                                    (samplingDone == true ||
+                                            followUpAction == true)
+                                        ? 'Next'
+                                        : 'Submit',
                                     textAlign: TextAlign.center,
                                     color: Colors.white,
                                     fontWeight: FontWeight.bold,
@@ -778,8 +782,6 @@ class DsrEntryPageState extends State<DsrEntry> {
           customerCode: widget.customerCode,
           customerType: widget.customerType,
           address: fetchedAddress,
-          city: widget.city,
-          state: widget.state,
           visitFeedback: _visitFeedbackController.text,
           visitDate: _dateController.text,
           visitPurposeId: selectedVisitPurposeId ?? 0,
@@ -805,8 +807,6 @@ class DsrEntryPageState extends State<DsrEntry> {
           customerCode: widget.customerCode,
           customerType: widget.customerType,
           address: fetchedAddress,
-          city: widget.city,
-          state: widget.state,
           visitFeedback: _visitFeedbackController.text,
           visitDate: _dateController.text,
           visitPurposeId: selectedVisitPurposeId ?? 0,
@@ -943,6 +943,8 @@ class DsrEntryPageState extends State<DsrEntry> {
   }
 
   void nextAction(GetVisitDsrResponse visitDsrData) {
+    dbHelper.deleteAllCartItems();
+    dbHelper.deleteAllFollowUpActionCarts();
     List<int> selectedIds =
         _selectedJointVisitWithItems.map((e) => e.executiveId).toList();
 

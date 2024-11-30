@@ -30,6 +30,15 @@ const String searchCustomerResultUrl = '${baseUrl}SearchCustomerResult';
 const String selfStockRequestUrl = '${baseUrl}SelfStockRequestAPI';
 const String selfStockRequestTradeUrl = '${baseUrl}selfstockRequesttradeAPI';
 
+const String customerListUrl = '${baseUrl}CustomerListAPI';
+const String customerContactListUrl = '${baseUrl}FetchCustomerContactList';
+const String fetchCustomerDetailsUrl = '${baseUrl}FetchCustomerDetails';
+const String deleteCustomerUrl = '${baseUrl}DeleteCustomerAPI';
+const String deleteCustomerContactUrl = '${baseUrl}DeleteCustomerContactAPI';
+
+const String workshopFeedbackRequestDetailsUrl = '${baseUrl}WorkshopFeedbackRequestDetails';
+const String sponsorshipFeedbackRequestDetailsUrl = '${baseUrl}SponsorshipFeedbackRequestDetails';
+
 // Customer Sampling Approval
 const String customerSamplingApprovalListUrl =
     '${baseUrl}CustomerSamplingApprovalList';

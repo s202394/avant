@@ -26,8 +26,6 @@ class VisitDsrSeriesTitleWise extends StatefulWidget {
   final String customerCode;
   final String customerType;
   final String address;
-  final String city;
-  final String state;
   final SeriesList? selectedSeries;
   final ClassLevelList? selectedClassLevel;
   final TitleList? selectedTitle;
@@ -49,8 +47,6 @@ class VisitDsrSeriesTitleWise extends StatefulWidget {
     required this.customerCode,
     required this.customerType,
     required this.address,
-    required this.city,
-    required this.state,
     required this.selectedSeries,
     required this.selectedClassLevel,
     required this.selectedTitle,
@@ -103,11 +99,11 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
   late int? profileId;
 
   int _cartBooksCount = 0;
+  int samplingCustomerMaxQtyAllowed = 0;
 
   @override
   void initState() {
     super.initState();
-    print('state:initState');
     WidgetsBinding.instance.addObserver(this);
     _tabController = TabController(length: 2, vsync: this);
     _tabController.index = widget.selectedIndex;
@@ -118,13 +114,16 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
         _handleTabChange(_tabController.index);
       }
     });
+    _fetchSamplingCustomerMaxQtyAllowed();
     _fetchBooksCount();
     _fetchData();
   }
 
   @override
   void dispose() {
-    print('state:dispose');
+    if (kDebugMode) {
+      print('state:dispose');
+    }
     WidgetsBinding.instance.removeObserver(this);
     _tabController.dispose();
     super.dispose();
@@ -133,7 +132,9 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    print('state:didChangeDependencies');
+    if (kDebugMode) {
+      print('state:didChangeDependencies');
+    }
     _updateQuantityIfCartNotEmpty();
   }
 
@@ -224,6 +225,16 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
     }
   }
 
+  Future<void> _fetchSamplingCustomerMaxQtyAllowed() async {
+    final int? result = await databaseHelper.getSamplingCustomerMaxQtyAllowed();
+    setState(() {
+      samplingCustomerMaxQtyAllowed = result ?? 0;
+      if (kDebugMode) {
+        print('samplingCustomerMaxQtyAllowed:$samplingCustomerMaxQtyAllowed');
+      }
+    });
+  }
+
   Future<void> _fetchBooksCount() async {
     int count = await databaseHelper.getItemCount();
     setState(() {
@@ -242,7 +253,9 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
   Future<void> _updateQuantityIfCartNotEmpty() async {
     await _fetchBooksCount();
 
-    print('_cartBooksCount: $_cartBooksCount');
+    if (kDebugMode) {
+      print('_cartBooksCount: $_cartBooksCount');
+    }
 
     if (_cartBooksCount > 0) {
       final cartItems = await databaseHelper.getAllCarts();
@@ -636,17 +649,17 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
                       itemCount: books.length,
                       itemBuilder: (context, index) {
                         return BookListItem(
-                          book: books[index],
-                          onQuantityChanged: (newQuantity) {
-                            if (kDebugMode) {
-                              print(
-                                  'Updating BookId:${books[index].bookId}, RequestedQty:$newQuantity');
-                            }
+                            book: books[index],
+                            onQuantityChanged: (newQuantity) {
+                              if (kDebugMode) {
+                                print(
+                                    'Updating BookId:${books[index].bookId}, RequestedQty:$newQuantity');
+                              }
 
-                            _handleQuantityChange(index, newQuantity);
-                          },
-                          areDropdownsSelected: _areDropdownsSelected(),
-                        );
+                              _handleQuantityChange(index, newQuantity);
+                            },
+                            areDropdownsSelected: _areDropdownsSelected(),
+                            maxQtyAllowed: samplingCustomerMaxQtyAllowed);
                       },
                     ),
             ),
@@ -655,7 +668,7 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
       ),
       bottomNavigationBar: Padding(
         padding: const EdgeInsets.all(8.0),
-        child: _cartBooksCount > 0 ? _buildTwoOptions() : _buildSingleOption(),
+        child: _cartBooksCount > 0 ? _buildThreeOption() : _buildTwoOptions(),
       ),
     );
   }
@@ -673,7 +686,7 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
               });
               if (_formKey.currentState?.validate() == true &&
                   _areDropdownsSelected()) {
-                _submitForm();
+                _submitForm(false);
               }
             },
             style: ElevatedButton.styleFrom(
@@ -681,7 +694,77 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
             ),
-            child: const CustomText('Next', color: Colors.white, fontSize: 14),
+            child: const CustomText('Add', color: Colors.white, fontSize: 14),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: ElevatedButton(
+            onPressed: () {
+              setState(() {
+                _submitted = true;
+              });
+              if (_formKey.currentState?.validate() == true &&
+                  _areDropdownsSelected()) {
+                _submitForm(true);
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            ),
+            child:
+                const CustomText('Add More', color: Colors.white, fontSize: 14),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // Widget to display when book count is greater than 0
+  Widget _buildThreeOption() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Expanded(
+          child: ElevatedButton(
+            onPressed: () {
+              setState(() {
+                _submitted = true;
+              });
+              if (_formKey.currentState?.validate() == true &&
+                  _areDropdownsSelected()) {
+                _submitForm(false);
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.blue,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            ),
+            child: const CustomText('Add', color: Colors.white, fontSize: 14),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: ElevatedButton(
+            onPressed: () {
+              setState(() {
+                _submitted = true;
+              });
+              if (_formKey.currentState?.validate() == true &&
+                  _areDropdownsSelected()) {
+                _submitForm(true);
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            ),
+            child:
+                const CustomText('Add More', color: Colors.white, fontSize: 14),
           ),
         ),
         const SizedBox(width: 8), // Spacing between the buttons
@@ -691,7 +774,7 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
               gotoCart();
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.green,
+              backgroundColor: Colors.orange,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
             ),
@@ -703,36 +786,12 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
     );
   }
 
-  // Widget to display when book count is 0
-  Widget _buildSingleOption() {
-    return ElevatedButton(
-      onPressed: () {
-        setState(() {
-          _submitted = true;
-        });
-        if (_formKey.currentState?.validate() == true &&
-            _areDropdownsSelected()) {
-          _submitForm();
-        }
-      },
-      style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.blue,
-        foregroundColor: Colors.white,
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-      ),
-      child: const CustomText('Next', color: Colors.white),
-    );
-  }
-
   Widget _noDataLayout() {
     return const Center(
       child: Padding(
         padding: EdgeInsets.all(16.0),
-        child: CustomText(
-          'No data found.',
-          fontSize: 16,
-          fontWeight: FontWeight.bold,
-        ),
+        child: CustomText('No data found.',
+            fontSize: 16, fontWeight: FontWeight.bold),
       ),
     );
   }
@@ -778,7 +837,7 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
     await databaseHelper.deleteCartItem(books[index].bookId);
   }
 
-  void _submitForm() {
+  void _submitForm(bool isAddMore) {
     if (kDebugMode) {
       print('Form submitted!');
     }
@@ -795,32 +854,34 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
       return;
     }
 
-    if (widget.followUpAction) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => FollowUpAction(
-            visitDsrData: widget.visitDsrData,
-            customerId: widget.customerId,
-            customerName: widget.customerName,
-            customerCode: widget.customerCode,
-            customerType: widget.customerType,
-            address: widget.address,
-            city: widget.city,
-            state: widget.state,
-            visitFeedback: widget.visitFeedback,
-            visitDate: widget.visitDate,
-            visitPurposeId: widget.visitPurposeId,
-            jointVisitWithIds: widget.jointVisitWithIds,
-            personMetId: widget.personMetId,
-            samplingDone: widget.samplingDone,
-            followUpAction: widget.followUpAction,
-            fileName: widget.fileName,
-          ),
-        ),
-      );
+    if (isAddMore) {
+      Navigator.of(context).pop(false);
     } else {
-      gotoCart();
+      if (widget.followUpAction) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => FollowUpAction(
+              visitDsrData: widget.visitDsrData,
+              customerId: widget.customerId,
+              customerName: widget.customerName,
+              customerCode: widget.customerCode,
+              customerType: widget.customerType,
+              address: widget.address,
+              visitFeedback: widget.visitFeedback,
+              visitDate: widget.visitDate,
+              visitPurposeId: widget.visitPurposeId,
+              jointVisitWithIds: widget.jointVisitWithIds,
+              personMetId: widget.personMetId,
+              samplingDone: widget.samplingDone,
+              followUpAction: widget.followUpAction,
+              fileName: widget.fileName,
+            ),
+          ),
+        );
+      } else {
+        gotoCart();
+      }
     }
   }
 
@@ -862,8 +923,6 @@ class VisitDsrSeriesTitleWiseState extends State<VisitDsrSeriesTitleWise>
           customerCode: widget.customerCode,
           customerType: widget.customerType,
           address: widget.address,
-          city: widget.city,
-          state: widget.state,
           visitFeedback: widget.visitFeedback,
           visitDate: widget.visitDate,
           visitPurposeId: widget.visitPurposeId,

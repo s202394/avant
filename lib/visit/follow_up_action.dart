@@ -22,8 +22,6 @@ class FollowUpAction extends StatefulWidget {
   final String customerCode;
   final String customerType;
   final String address;
-  final String city;
-  final String state;
   final String visitFeedback;
   final String visitDate;
   final int visitPurposeId;
@@ -41,8 +39,6 @@ class FollowUpAction extends StatefulWidget {
     required this.customerCode,
     required this.customerType,
     required this.address,
-    required this.city,
-    required this.state,
     required this.visitFeedback,
     required this.visitDate,
     required this.visitPurposeId,
@@ -383,8 +379,6 @@ class FollowUpActionState extends State<FollowUpAction> {
           customerCode: widget.customerCode,
           customerType: widget.customerType,
           address: widget.address,
-          city: widget.city,
-          state: widget.state,
           visitFeedback: widget.visitFeedback,
           visitDate: widget.visitDate,
           visitPurposeId: widget.visitPurposeId,
