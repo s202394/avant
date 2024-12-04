@@ -3127,36 +3127,41 @@ class FetchCustomerDetailsService {
       String customerType,
       String token,
       T Function(Map<String, dynamic>) fromJson) async {
-    String body = jsonEncode(<String, dynamic>{
-      'CustomerId': customerId,
-      'Validated': validated,
-      'CustomerType': customerType,
-    });
+    try {
+      String body = jsonEncode({
+        'CustomerId': customerId,
+        'Validated': validated,
+        'CustomerType': customerType,
+      });
 
-    final response = await http.post(
-      Uri.parse(fetchCustomerDetailsUrl),
-      headers: <String, String>{
-        'Content-Type': 'application/json; charset=UTF-8',
-        'Authorization': 'Bearer $token',
-      },
-      body: body,
-    );
+      final response = await http.post(
+        Uri.parse(fetchCustomerDetailsUrl),
+        headers: {
+          'Content-Type': 'application/json; charset=UTF-8',
+          'Authorization': 'Bearer $token',
+        },
+        body: body,
+      );
 
-    if (kDebugMode) {
-      print('Request URL: ${response.request?.url}');
-      print('Request Body: $body');
-      print('Response Body: ${response.body}');
-      print('Response Status: ${response.statusCode}');
-    }
+      if (kDebugMode) {
+        print('Request URL: ${response.request?.url}');
+        print('Request Body: $body');
+        print('Response Body: ${response.body}');
+        print('Response Status: ${response.statusCode}');
+      }
 
-    if (response.statusCode == 200) {
-      final jsonResponse = json.decode(response.body);
-      return fromJson(jsonResponse);
-    } else if (response.statusCode == 401) {
-      return await _refreshAndRetry<T>(
-          customerId, validated, customerType, fromJson);
-    } else {
-      throw Exception('Failed to get customer detail for $customerType');
+      if (response.statusCode == 200) {
+        final jsonResponse = json.decode(response.body);
+        return fromJson(jsonResponse);
+      } else if (response.statusCode == 401) {
+        return await _refreshAndRetry<T>(
+            customerId, validated, customerType, fromJson);
+      } else {
+        throw FetchCustomerDetailsException(
+            'Failed with status: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw FetchCustomerDetailsException('Error: $e');
     }
   }
 
@@ -3181,6 +3186,15 @@ class FetchCustomerDetailsService {
           'Username or password is not stored in SharedPreferences');
     }
   }
+}
+
+class FetchCustomerDetailsException implements Exception {
+  final String message;
+
+  FetchCustomerDetailsException(this.message);
+
+  @override
+  String toString() => message;
 }
 
 class DeleteCustomerService {

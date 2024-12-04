@@ -608,6 +608,7 @@ class HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                       gotoNewCustomer('School');
                                     } else if (childMenu.childMenuName ==
                                         'Institute List') {
+                                      // gotoNewCustomer('Institute');
                                     } else if (childMenu.childMenuName ==
                                         'Trade List') {
                                       gotoNewCustomer('Trade');

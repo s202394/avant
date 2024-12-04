@@ -15,13 +15,22 @@ import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:location/location.dart' as loc;
+import '../common/utils.dart';
+import '../model/fetch_customer_details_model.dart';
 import '../views/common_app_bar.dart';
 import '../views/custom_text.dart';
 
 class NewCustomerTradeLibraryForm1 extends StatefulWidget {
   final String type;
+  final bool isEdit;
+  final String action;
 
-  const NewCustomerTradeLibraryForm1({super.key, required this.type});
+  const NewCustomerTradeLibraryForm1({
+    super.key,
+    required this.type,
+    this.isEdit = false,
+    this.action = '',
+  });
 
   @override
   NewCustomerTradeLibraryForm1State createState() =>
@@ -86,6 +95,8 @@ class NewCustomerTradeLibraryForm1State
 
   String? mandatorySetting;
 
+  bool _isLoading = false;
+
   @override
   void dispose() {
     _customerNameController.dispose();
@@ -129,12 +140,19 @@ class NewCustomerTradeLibraryForm1State
         affiliateTypeList: [],
       ),
     );
-    _fetchCityAccess();
+
+    _fetchData();
   }
 
   Future<void> _initializeMandatorySettings() async {
     mandatorySetting = await dbHelper.getTeacherMobileEmailMandatory();
-    setState(() {});
+
+    prefs = await SharedPreferences.getInstance();
+    setState(() {
+      token = prefs.getString('token') ?? '';
+      executiveId = prefs.getInt('executiveId') ?? 0;
+      _cityAccess = prefs.getString('CityAccess') ?? '';
+    });
   }
 
   Future<void> _setInitialLocation() async {
@@ -341,96 +359,116 @@ class NewCustomerTradeLibraryForm1State
     }
   }
 
-  void _fetchCityAccess() async {
-    prefs = await SharedPreferences.getInstance();
+  void _fetchData() async {
     setState(() {
-      token = prefs.getString('token') ?? '';
-      executiveId = prefs.getInt('executiveId') ?? 0;
-      _cityAccess = prefs.getString('CityAccess') ?? '';
+      _isLoading = true; // Show loader
     });
-    _loadGeographyData();
-    futureData = initializePreferencesAndData();
-  }
 
-  void _loadGeographyData() async {
-    // Retrieve geography data from the database
-    List<Geography> dbData = await dbHelper.getGeographyDataFromDB();
-    if (dbData.isNotEmpty) {
+    try {
+      // Load geography data
+      await _loadGeographyData();
+
+      // Fetch customer data
+      futureData = getCustomerData();
+
+      // Wait for customer data and proceed to edit
+      await futureData;
+      if (widget.isEdit) {
+        await checkForEdit();
+      }
+    } catch (e) {
+      debugPrint('Error during fetch or edit operations: $e');
+    } finally {
       setState(() {
-        _filteredCities = dbData;
+        _isLoading = false; // Hide loader
       });
-      if (kDebugMode) {
-        print("Loaded geography data from the database.");
-      }
-    } else {
-      if (kDebugMode) {
-        print("No data in DB, fetching from API.");
-      }
-      _fetchGeographyData();
     }
   }
 
-  void _fetchGeographyData() async {
-    GeographyService geographyService = GeographyService();
+  Future<void> _loadGeographyData() async {
     try {
-      GeographyResponse geographyResponse = await geographyService
-          .fetchGeographyData(_cityAccess, executiveId, token);
+      List<Geography> dbData = await dbHelper.getGeographyDataFromDB();
+      if (dbData.isNotEmpty) {
+        setState(() {
+          _filteredCities = dbData;
+        });
+        if (kDebugMode) {
+          print("Loaded geography data from the database.");
+        }
+      } else {
+        if (kDebugMode) {
+          print("No data in DB, fetching from API.");
+        }
+        await _fetchGeographyData(); // Wait for API data
+      }
+    } catch (e) {
+      debugPrint("Error in _loadGeographyData: $e");
+      rethrow;
+    }
+  }
+
+  Future<void> _fetchGeographyData() async {
+    try {
+      GeographyService geographyService = GeographyService();
+      GeographyResponse geographyResponse =
+          await geographyService.fetchGeographyData(
+        _cityAccess,
+        executiveId,
+        token,
+      );
       List<int> cityIds =
           _cityAccess.split(',').map((id) => int.parse(id)).toList();
       setState(() {
         _filteredCities = geographyResponse.geographyList
             .where((geography) => cityIds.contains(geography.cityId))
             .toList();
+
+        if (kDebugMode) {
+          print('_filteredCities:${_filteredCities.toString()}');
+        }
+        _filteredCities = _filteredCities
+            .where((city) =>
+                _filteredCities.indexWhere((e) => e.cityId == city.cityId) ==
+                _filteredCities.indexOf(city))
+            .toList();
+
+        if (kDebugMode) {
+          print('_filteredCities unique:${_filteredCities.toString()}');
+        }
       });
     } catch (e) {
       if (kDebugMode) {
-        print(e);
+        print("Error fetching geography data: $e");
       }
+      rethrow;
     }
   }
 
-  Future<CustomerEntryMasterResponse> initializePreferencesAndData() async {
-    // Check if data exists in the database
-    CustomerEntryMasterResponse? existingData =
-        await dbHelper.getCustomerEntryMasterResponse();
+  Future<CustomerEntryMasterResponse> getCustomerData() async {
+    try {
+      CustomerEntryMasterResponse? existingData =
+          await dbHelper.getCustomerEntryMasterResponse();
 
-    if (existingData != null && !isEmptyData(existingData)) {
-      // Data exists in the database, return it
-      if (kDebugMode) {
-        print(
-            "CustomerEntryMaster data found in db: ${existingData.salutationMasterList}");
-      }
-      return existingData;
-    } else {
-      String downHierarchy = prefs.getString('DownHierarchy') ?? '';
-
-      // Data does not exist in the database, fetch from API
-      if (kDebugMode) {
-        print("CustomerEntryMaster data not found in db. Fetching from API...");
-      }
-
-      try {
+      if (existingData != null && !isEmptyData(existingData)) {
+        if (kDebugMode) {
+          print("CustomerEntryMaster data found in db.");
+        }
+        return existingData;
+      } else {
+        if (kDebugMode) {
+          print("CustomerEntryMaster data not found, fetching from API...");
+        }
+        String downHierarchy = prefs.getString('DownHierarchy') ?? '';
         CustomerEntryMasterResponse response =
             await CustomerEntryMasterService()
                 .fetchCustomerEntryMaster(downHierarchy, token);
-        if (kDebugMode) {
-          print(
-              "CustomerEntryMaster data fetched from API and saved to db. $response");
-        }
-        // Save the fetched data to the database
-        await dbHelper.insertCustomerEntryMasterResponse(response);
 
-        if (kDebugMode) {
-          print(
-              "CustomerEntryMaster data fetched from API and saved to db. $response");
-        }
+        await dbHelper.insertCustomerEntryMasterResponse(response);
         return response;
-      } catch (e) {
-        if (kDebugMode) {
-          print("Error fetching CustomerEntryMaster data from API: $e");
-        }
-        rethrow;
       }
+    } catch (e) {
+      debugPrint("Error in getCustomerData: $e");
+      rethrow;
     }
   }
 
@@ -458,20 +496,24 @@ class NewCustomerTradeLibraryForm1State
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: CommonAppBar(title: 'New Customer - ${widget.type}'),
-      body: FutureBuilder<CustomerEntryMasterResponse>(
-        future: futureData,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          } else if (snapshot.hasData) {
-            return buildForm(snapshot.data!);
-          } else {
-            return const Center(child: Text('No data found'));
-          }
-        },
-      ),
+      body: _isLoading
+          ? const Center(
+              child:
+                  CircularProgressIndicator()) // Show loader if data is still loading
+          : FutureBuilder<CustomerEntryMasterResponse>(
+              future: futureData,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                } else if (snapshot.hasError) {
+                  return Center(child: Text('Error: ${snapshot.error}'));
+                } else if (snapshot.hasData) {
+                  return buildForm(snapshot.data!);
+                } else {
+                  return const Center(child: Text('No data found'));
+                }
+              },
+            ),
     );
   }
 
@@ -888,6 +930,68 @@ class NewCustomerTradeLibraryForm1State
           }
           return null;
         },
+      ),
+    );
+  }
+
+  Future<void> checkForEdit() async {
+    try {
+      int customerId = extractNumericPart(widget.action);
+      String validated = extractStringPart(widget.action);
+
+      FetchCustomerDetailsService service = FetchCustomerDetailsService();
+      FetchCustomerDetailsLibraryResponse response =
+          await service.fetchCustomerDetails(
+              customerId,
+              validated,
+              widget.type,
+              token,
+              (json) => FetchCustomerDetailsLibraryResponse.fromJson(json));
+
+      _populateCustomerDetails(response.customerDetails);
+    } catch (e) {
+      debugPrint('Error in checkForEdit: $e');
+    }
+  }
+
+  void _populateCustomerDetails(CustomerDetails? details) {
+    if (details == null) return;
+    _customerNameController.text = details.customerName;
+    _addressController.text = details.address;
+    _pinCodeController.text = details.pinCode;
+    _phoneNumberController.text = details.mobile;
+    _emailIdController.text = details.emailId;
+    _panController.text = details.panNumber;
+    _gstController.text = details.gstNumber;
+
+    _selectedKeyCustomer = details.keyCustomer == 'Y';
+    _selectedCustomerStatus = details.customerStatus == 'Active';
+
+    final selectedCity = _findCityById(details.cityId);
+    if (selectedCity.cityId == 0) {
+      _selectedCity = null;
+      _cityController.text = '';
+      debugPrint('City ID ${details.cityId} not found in filtered cities.');
+    } else {
+      debugPrint('City ID ${details.cityId} found in filtered cities.');
+      _selectedCity = selectedCity;
+      _cityController.text = _selectedCity?.city ?? '';
+    }
+  }
+
+// Use the overridden equality operator to compare Geography objects
+  Geography _findCityById(int? cityId) {
+    return _filteredCities.firstWhere(
+      (city) => city.cityId == cityId,
+      orElse: () => Geography(
+        countryId: 0,
+        country: '',
+        stateId: 0,
+        state: '',
+        districtId: 0,
+        district: '',
+        cityId: 0,
+        city: '',
       ),
     );
   }

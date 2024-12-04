@@ -65,4 +65,13 @@ class Geography {
       'City': city,
     };
   }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is Geography && other.cityId == cityId;
+  }
+
+  @override
+  int get hashCode => cityId.hashCode;
 }

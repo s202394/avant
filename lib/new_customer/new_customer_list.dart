@@ -179,21 +179,7 @@ class NewCustomerListState extends State<NewCustomerList> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          if (widget.type == 'Trade') {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (context) =>
-                      NewCustomerTradeLibraryForm1(type: widget.type)),
-            );
-          } else {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (context) =>
-                      NewCustomerSchoolForm1(type: widget.type)),
-            );
-          }
+          addCustomer();
         },
         backgroundColor: Colors.blue,
         child: const Icon(Icons.add, color: Colors.white),
@@ -229,6 +215,7 @@ class NewCustomerListState extends State<NewCustomerList> {
                   if (kDebugMode) {
                     print('Edit tapped');
                   }
+                  editCustomer(customer);
                 },
                 child: const Icon(Icons.edit, size: 30, color: Colors.blue),
               ),
@@ -328,5 +315,40 @@ class NewCustomerListState extends State<NewCustomerList> {
         );
       },
     );
+  }
+
+  void addCustomer() {
+    if (widget.type == 'Trade') {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+            builder: (context) =>
+                NewCustomerTradeLibraryForm1(type: widget.type)),
+      );
+    } else {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+            builder: (context) => NewCustomerSchoolForm1(type: widget.type)),
+      );
+    }
+  }
+
+  void editCustomer(CommonCustomerList customer) {
+    if (widget.type == 'Trade' || widget.type == 'Library') {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+            builder: (context) => NewCustomerTradeLibraryForm1(
+                type: widget.type, isEdit: true, action: customer.action)),
+      );
+    } else {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+            builder: (context) => NewCustomerSchoolForm1(
+                type: widget.type, isEdit: true, action: customer.action)),
+      );
+    }
   }
 }
