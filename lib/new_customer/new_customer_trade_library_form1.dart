@@ -96,6 +96,11 @@ class NewCustomerTradeLibraryForm1State
   String? mandatorySetting;
 
   bool _isLoading = false;
+  bool isMapControllerInitialized = false;
+  int retryCount = 0;
+  bool hasCheckedForEdit = false;
+
+  late CustomerEntryMasterResponse customerEntryMasterResponse;
 
   @override
   void dispose() {
@@ -179,62 +184,159 @@ class NewCustomerTradeLibraryForm1State
     Position position = await Geolocator.getCurrentPosition();
     setState(() {
       _currentPosition = LatLng(position.latitude, position.longitude);
-      _addressController.text = "${position.latitude}, ${position.longitude}";
+      // _addressController.text = "${position.latitude}, ${position.longitude}";
       _getUserLocation();
     });
   }
 
   Future<void> _getUserLocation() async {
-    loc.Location location = loc.Location(); // Using the alias
+    loc.Location location = loc.Location(); // Using alias for location package
     bool serviceEnabled;
     loc.PermissionStatus permissionGranted;
 
+    // Check if location services are enabled
     serviceEnabled = await location.serviceEnabled();
     if (!serviceEnabled) {
       serviceEnabled = await location.requestService();
       if (!serviceEnabled) {
-        return;
+        return; // Exit if the user does not enable location services
       }
     }
 
+    // Check location permissions
     permissionGranted = await location.hasPermission();
     if (permissionGranted == loc.PermissionStatus.denied) {
       permissionGranted = await location.requestPermission();
       if (permissionGranted != loc.PermissionStatus.granted) {
-        return;
+        return; // Exit if the user does not grant location permissions
       }
     }
-
-    loc.LocationData locationData = await location.getLocation();
-    LatLng initialPosition =
-        LatLng(locationData.latitude!, locationData.longitude!);
-
-    setState(() {
-      _currentPosition = initialPosition;
-      _currentMarker = Marker(
-        markerId: const MarkerId('currentLocation'),
-        position: initialPosition,
-        draggable: true,
-        // Make the marker draggable
-        onTap: () {
-          _onMarkerTapped(
-              initialPosition); // Update address when marker is tapped
-        },
-        onDragEnd: (newPosition) {
-          _onMarkerDragEnd(
-              newPosition); // Update address when marker is dragged
-        },
-      );
-      _updateAddressFromPosition(initialPosition); // Set initial address
-    });
+    debugPrint('Customer address ${_addressController.text.toString()}');
+    // Handle edit mode and pre-filled address
+    if (widget.isEdit && _addressController.text.toString().isNotEmpty) {
+      editAddress();
+    } else {
+      addAddress();
+    }
   }
 
-// Update the address when the marker is tapped
+  void addAddress() async {
+    loc.Location location = loc.Location();
+    debugPrint('Add customer address}');
+    // Get current user location
+    try {
+      loc.LocationData locationData = await location.getLocation();
+      LatLng initialPosition =
+          LatLng(locationData.latitude!, locationData.longitude!);
+
+      if (!mounted) return; // Exit if widget is no longer mounted
+
+      setState(() {
+        debugPrint('Customer address ${_addressController.text.toString()}');
+        debugPrint(
+            'Add customer address _currentPosition ${_currentPosition?.latitude} ${_currentPosition?.longitude}');
+        _currentPosition = initialPosition;
+        _currentMarker = Marker(
+          markerId: const MarkerId('currentLocation'),
+          position: initialPosition,
+          draggable: true,
+          onTap: () => _onMarkerTapped(initialPosition),
+          onDragEnd: (newPosition) => _onMarkerDragEnd(newPosition),
+        );
+        _updateAddressFromPosition(initialPosition);
+      });
+    } catch (e) {
+      if (kDebugMode) {
+        print("Error fetching user location: $e");
+      }
+    }
+  }
+
+  void editAddress() async {
+    final address = _addressController.text.toString().trim();
+    debugPrint('Edit customer address $address');
+    try {
+      List<Location> locations = await locationFromAddress(address);
+      debugPrint('Edit customer address locations size ${locations.length}');
+      if (locations.isNotEmpty) {
+        // Use the first matched location
+        Location addressLocation = locations.first;
+        debugPrint(
+            'Edit customer address latitude ${addressLocation.latitude}, longitude : ${addressLocation.longitude}');
+        LatLng initialPosition =
+            LatLng(addressLocation.latitude, addressLocation.longitude);
+        debugPrint(
+            'Edit customer initialPosition latitude ${initialPosition.latitude}, longitude : ${initialPosition.longitude}');
+
+        // Update marker and position
+        _currentPosition = initialPosition;
+        debugPrint(
+            'Edit customer _currentPosition latitude ${_currentPosition?.latitude}, longitude : ${_currentPosition?.longitude}');
+
+        _currentMarker = Marker(
+          markerId: const MarkerId('currentLocation'),
+          position: initialPosition,
+          draggable: true,
+          onTap: () => _onMarkerTapped(initialPosition),
+          onDragEnd: (newPosition) => _onMarkerDragEnd(newPosition),
+        );
+
+        await placemarkFromCoordinates(
+          initialPosition.latitude,
+          initialPosition.longitude,
+        ).timeout(
+          const Duration(seconds: 10), // Timeout duration
+          onTimeout: () {
+            throw TimeoutException("Geocoding timed out after 10 seconds.");
+          },
+        );
+
+        setState(() {
+          _currentMarker =
+              _currentMarker!.copyWith(positionParam: _currentPosition);
+          debugPrint("_currentMarker markerId ${_currentMarker?.markerId}");
+        });
+
+        debugPrint("_currentMarker ${_currentMarker?.position.longitude}");
+        _animateToPosition(initialPosition);
+
+        debugPrint("animateCamera.");
+      } else {
+        debugPrint("Fetching location empty.");
+      }
+    } catch (e) {
+      addAddress();
+      debugPrint("Error fetching location from address: $e");
+      return;
+    }
+  }
+
+  void _animateToPosition(LatLng position) {
+    debugPrint("isMapControllerInitialized: $isMapControllerInitialized");
+    if (isMapControllerInitialized) {
+      mapController.animateCamera(
+        CameraUpdate.newLatLng(position),
+      );
+    } else {
+      if (kDebugMode) {
+        print("Error: mapController is not initialized yet.");
+      }
+      if (retryCount < 3) {
+        debugPrint("if retryCount: $retryCount");
+        retryCount++;
+        editAddress();
+      } else {
+        debugPrint("else retryCount: $retryCount");
+      }
+    }
+  }
+
+  // Update the address when the marker is tapped
   Future<void> _onMarkerTapped(LatLng position) async {
     _updateAddressFromPosition(position);
   }
 
-// Update the address when the marker is dragged
+  // Update the address when the marker is dragged
   Future<void> _onMarkerDragEnd(LatLng newPosition) async {
     _updateAddressFromPosition(newPosition);
   }
@@ -254,7 +356,7 @@ class NewCustomerTradeLibraryForm1State
 
       if (placemarks.isNotEmpty) {
         Placemark place = placemarks[0];
-
+        debugPrint('place : ${place.name}');
         // Dynamically building the address
         String address = '';
 
@@ -262,9 +364,9 @@ class NewCustomerTradeLibraryForm1State
         if (place.name != null && place.name!.isNotEmpty) {
           address += '${place.name!}, ';
         }
-        if (place.street != null && place.street!.isNotEmpty) {
+        /* if (place.street != null && place.street!.isNotEmpty) {
           address += '${place.street!}, ';
-        }
+        }*/
         if (place.locality != null && place.locality!.isNotEmpty) {
           address += '${place.locality!}, ';
         }
@@ -292,6 +394,8 @@ class NewCustomerTradeLibraryForm1State
             print(address);
           }
         });
+      } else {
+        debugPrint('Place mark empty');
       }
     } catch (e) {
       if (kDebugMode) {
@@ -305,7 +409,7 @@ class NewCustomerTradeLibraryForm1State
 
   Widget _buildMapContainer() {
     return GestureDetector(
-      onVerticalDragUpdate: (_) {}, // Prevents scroll interference
+      onVerticalDragUpdate: (_) {},
       child: Container(
         height: 300.0,
         decoration: BoxDecoration(
@@ -324,6 +428,9 @@ class NewCustomerTradeLibraryForm1State
                 myLocationButtonEnabled: true,
                 onMapCreated: (controller) {
                   mapController = controller;
+                  setState(() {
+                    isMapControllerInitialized = true;
+                  });
                 },
                 onTap: (LatLng tappedPosition) {
                   _updateMarkerAndAddress(tappedPosition);
@@ -365,17 +472,20 @@ class NewCustomerTradeLibraryForm1State
     });
 
     try {
-      // Load geography data
+      debugPrint('_loadGeographyData');
+      // 1. Load geography data first
       await _loadGeographyData();
 
-      // Fetch customer data
+      debugPrint('getCustomerData');
+      // 2. Fetch customer data next
       futureData = getCustomerData();
+      await futureData; // Wait for the customer data response
 
-      // Wait for customer data and proceed to edit
-      await futureData;
-      if (widget.isEdit) {
-        await checkForEdit();
-      }
+      // 3. If it's in edit mode, then fetch additional data for edit
+      /*if (widget.isEdit) {
+        debugPrint('checkForEdit');
+        await checkForEdit(); // Only proceed with this if edit mode
+      }*/
     } catch (e) {
       debugPrint('Error during fetch or edit operations: $e');
     } finally {
@@ -494,8 +604,9 @@ class NewCustomerTradeLibraryForm1State
 
   @override
   Widget build(BuildContext context) {
+    final type = widget.isEdit ? 'Edit' : 'New';
     return Scaffold(
-      appBar: CommonAppBar(title: 'New Customer - ${widget.type}'),
+      appBar: CommonAppBar(title: '$type Customer - ${widget.type}'),
       body: _isLoading
           ? const Center(
               child:
@@ -508,6 +619,18 @@ class NewCustomerTradeLibraryForm1State
                 } else if (snapshot.hasError) {
                   return Center(child: Text('Error: ${snapshot.error}'));
                 } else if (snapshot.hasData) {
+                  // Once data is available, initialize the response
+                  customerEntryMasterResponse = snapshot.data!;
+
+                  // If in edit mode, trigger checkForEdit only once
+                  if (widget.isEdit && !hasCheckedForEdit) {
+                    hasCheckedForEdit = true;
+                    Future.delayed(Duration.zero, () {
+                      checkForEdit(); // Call checkForEdit after the build method
+                    });
+                  }
+
+                  // Return the form UI
                   return buildForm(snapshot.data!);
                 } else {
                   return const Center(child: Text('No data found'));
@@ -961,8 +1084,6 @@ class NewCustomerTradeLibraryForm1State
     _pinCodeController.text = details.pinCode;
     _phoneNumberController.text = details.mobile;
     _emailIdController.text = details.emailId;
-    _panController.text = details.panNumber;
-    _gstController.text = details.gstNumber;
 
     _selectedKeyCustomer = details.keyCustomer == 'Y';
     _selectedCustomerStatus = details.customerStatus == 'Active';
@@ -977,9 +1098,41 @@ class NewCustomerTradeLibraryForm1State
       _selectedCity = selectedCity;
       _cityController.text = _selectedCity?.city ?? '';
     }
+
+    debugPrint(
+        'customerCategoryList size : ${customerEntryMasterResponse.customerCategoryList}');
+    if (customerEntryMasterResponse.customerCategoryList.isNotEmpty) {
+      final customerCategoryId = details.xmlCustomerCategoryId;
+      if (isNumeric(customerCategoryId)) {
+        debugPrint(
+            "$customerCategoryId is a valid number: ${int.parse(customerCategoryId)}");
+        final customerCategory =
+            customerEntryMasterResponse.customerCategoryList.firstWhere(
+          (s) => s.customerCategoryId == int.parse(customerCategoryId),
+          orElse: () {
+            debugPrint(
+                'Edit customer category ID ${details.xmlCustomerCategoryId} not found.');
+            return CustomerCategory(
+                customerCategoryId: 0, customerCategoryName: '');
+          },
+        );
+        if (customerCategory.customerCategoryId > 0) {
+          setState(() {
+            _selectedCustomerCategory = customerCategory;
+            _customerCategoryController.text =
+                customerCategory.customerCategoryName;
+          });
+        } else {
+          debugPrint('Edit Customer category 0');
+        }
+      } else {
+        debugPrint("$customerCategoryId is not a valid number.");
+      }
+    }
+
+    editAddress();
   }
 
-// Use the overridden equality operator to compare Geography objects
   Geography _findCityById(int? cityId) {
     return _filteredCities.firstWhere(
       (city) => city.cityId == cityId,

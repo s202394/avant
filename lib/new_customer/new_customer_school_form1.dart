@@ -88,9 +88,15 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
 
   String? mandatorySetting;
 
+  bool hasCheckedForEdit = false;
+
   late GoogleMapController mapController;
   LatLng? _currentPosition;
   Marker? _currentMarker;
+  bool isMapControllerInitialized = false;
+  int retryCount = 0;
+
+  late CustomerEntryMasterResponse customerEntryMasterResponse;
 
   @override
   void dispose() {
@@ -111,7 +117,9 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
 
     _initializeMandatorySettings();
 
+    // if (!widget.isEdit) {
     _setInitialLocation();
+    // }
 
     futureData = Future<CustomerEntryMasterResponse>.value(
       CustomerEntryMasterResponse(
@@ -173,63 +181,159 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
     Position position = await Geolocator.getCurrentPosition();
     setState(() {
       _currentPosition = LatLng(position.latitude, position.longitude);
-      _addressController.text = "${position.latitude}, ${position.longitude}";
+      // _addressController.text = "${position.latitude}, ${position.longitude}";
       _getUserLocation();
     });
   }
 
   Future<void> _getUserLocation() async {
-    loc.Location location = loc.Location(); // Using the alias
+    loc.Location location = loc.Location(); // Using alias for location package
     bool serviceEnabled;
     loc.PermissionStatus permissionGranted;
 
+    // Check if location services are enabled
     serviceEnabled = await location.serviceEnabled();
     if (!serviceEnabled) {
       serviceEnabled = await location.requestService();
       if (!serviceEnabled) {
-        return;
+        return; // Exit if the user does not enable location services
       }
     }
 
+    // Check location permissions
     permissionGranted = await location.hasPermission();
     if (permissionGranted == loc.PermissionStatus.denied) {
       permissionGranted = await location.requestPermission();
       if (permissionGranted != loc.PermissionStatus.granted) {
-        return;
+        return; // Exit if the user does not grant location permissions
       }
     }
-
-    loc.LocationData locationData = await location.getLocation();
-    LatLng initialPosition =
-        LatLng(locationData.latitude!, locationData.longitude!);
-
-    if (!mounted) return; // Check if the widget is still in the tree
-
-    setState(() {
-      _currentPosition = initialPosition;
-      _currentMarker = Marker(
-        markerId: const MarkerId('currentLocation'),
-        position: initialPosition,
-        draggable: true,
-        onTap: () {
-          _onMarkerTapped(
-              initialPosition); // Update address when marker is tapped
-        },
-        onDragEnd: (newPosition) {
-          _onMarkerDragEnd(
-              newPosition); // Update address when marker is dragged
-        },
-      );
-      _updateAddressFromPosition(initialPosition); // Set initial address
-    });
+    debugPrint('Customer address ${_addressController.text.toString()}');
+    // Handle edit mode and pre-filled address
+    if (widget.isEdit && _addressController.text.toString().isNotEmpty) {
+      editAddress();
+    } else {
+      addAddress();
+    }
   }
 
-// Update the address when the marker is tapped
+  void addAddress() async {
+    loc.Location location = loc.Location();
+    debugPrint('Add customer address}');
+    // Get current user location
+    try {
+      loc.LocationData locationData = await location.getLocation();
+      LatLng initialPosition =
+          LatLng(locationData.latitude!, locationData.longitude!);
+
+      if (!mounted) return; // Exit if widget is no longer mounted
+
+      setState(() {
+        debugPrint('Customer address ${_addressController.text.toString()}');
+        debugPrint(
+            'Add customer address _currentPosition ${_currentPosition?.latitude} ${_currentPosition?.longitude}');
+        _currentPosition = initialPosition;
+        _currentMarker = Marker(
+          markerId: const MarkerId('currentLocation'),
+          position: initialPosition,
+          draggable: true,
+          onTap: () => _onMarkerTapped(initialPosition),
+          onDragEnd: (newPosition) => _onMarkerDragEnd(newPosition),
+        );
+        _updateAddressFromPosition(initialPosition);
+      });
+    } catch (e) {
+      if (kDebugMode) {
+        print("Error fetching user location: $e");
+      }
+    }
+  }
+
+  void editAddress() async {
+    final address = '${_customerNameController.text.toString().trim()}, ${_addressController.text.toString().trim()}, ${_pinCodeController.text.toString().trim()}';
+    debugPrint('Edit customer address $address');
+    try {
+      List<Location> locations = await locationFromAddress(address);
+      debugPrint('Edit customer address locations size ${locations.length}');
+      if (locations.isNotEmpty) {
+        // Use the first matched location
+        Location addressLocation = locations.first;
+        debugPrint(
+            'Edit customer address latitude ${addressLocation.latitude}, longitude : ${addressLocation.longitude}');
+        LatLng initialPosition =
+            LatLng(addressLocation.latitude, addressLocation.longitude);
+        debugPrint(
+            'Edit customer initialPosition latitude ${initialPosition.latitude}, longitude : ${initialPosition.longitude}');
+
+        // Update marker and position
+        _currentPosition = initialPosition;
+        debugPrint(
+            'Edit customer _currentPosition latitude ${_currentPosition?.latitude}, longitude : ${_currentPosition?.longitude}');
+
+        _currentMarker = Marker(
+          markerId: const MarkerId('currentLocation'),
+          position: initialPosition,
+          draggable: true,
+          onTap: () => _onMarkerTapped(initialPosition),
+          onDragEnd: (newPosition) => _onMarkerDragEnd(newPosition),
+        );
+
+        await placemarkFromCoordinates(
+          initialPosition.latitude,
+          initialPosition.longitude,
+        ).timeout(
+          const Duration(seconds: 10), // Timeout duration
+          onTimeout: () {
+            throw TimeoutException("Geocoding timed out after 10 seconds.");
+          },
+        );
+
+        setState(() {
+          _currentMarker =
+              _currentMarker!.copyWith(positionParam: _currentPosition);
+          debugPrint("_currentMarker markerId ${_currentMarker?.markerId.value}");
+        });
+
+        debugPrint("_currentMarker ${_currentMarker?.position.latitude} ${_currentMarker?.position.longitude}");
+        _animateToPosition(initialPosition);
+
+        debugPrint("animateCamera.");
+      } else {
+        debugPrint("Fetching location empty.");
+      }
+    } catch (e) {
+      debugPrint("Error fetching location from address: $e");
+      addAddress();
+      return;
+    }
+  }
+
+  void _animateToPosition(LatLng position) {
+    debugPrint("isMapControllerInitialized: $isMapControllerInitialized");
+    if (isMapControllerInitialized) {
+      mapController.animateCamera(
+        CameraUpdate.newLatLng(position),
+      );
+    } else {
+      if (kDebugMode) {
+        print("Error: mapController is not initialized yet.");
+      }
+      if (retryCount < 3) {
+        debugPrint("if retryCount: $retryCount");
+        retryCount++;
+        editAddress();
+      } else {
+        debugPrint("else retryCount: $retryCount");
+      }
+    }
+  }
+
+  // Update the address when the marker is tapped
   Future<void> _onMarkerTapped(LatLng position) async {
     _updateAddressFromPosition(position);
   }
 
-// Update the address when the marker is dragged
+  // Update the address when the marker is dragged
   Future<void> _onMarkerDragEnd(LatLng newPosition) async {
     _updateAddressFromPosition(newPosition);
   }
@@ -249,7 +353,7 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
 
       if (placemarks.isNotEmpty) {
         Placemark place = placemarks[0];
-
+        debugPrint('place : ${place.name}');
         // Dynamically building the address
         String address = '';
 
@@ -257,9 +361,9 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
         if (place.name != null && place.name!.isNotEmpty) {
           address += '${place.name!}, ';
         }
-        if (place.street != null && place.street!.isNotEmpty) {
+        /* if (place.street != null && place.street!.isNotEmpty) {
           address += '${place.street!}, ';
-        }
+        }*/
         if (place.locality != null && place.locality!.isNotEmpty) {
           address += '${place.locality!}, ';
         }
@@ -287,6 +391,8 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
             print(address);
           }
         });
+      } else {
+        debugPrint('Place mark empty');
       }
     } catch (e) {
       if (kDebugMode) {
@@ -319,6 +425,9 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
                 myLocationButtonEnabled: true,
                 onMapCreated: (controller) {
                   mapController = controller;
+                  setState(() {
+                    isMapControllerInitialized = true;
+                  });
                 },
                 onTap: (LatLng tappedPosition) {
                   _updateMarkerAndAddress(tappedPosition);
@@ -360,15 +469,20 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
     });
 
     try {
-      // Load geography data
+      debugPrint('_loadGeographyData');
+      // 1. Load geography data first
       await _loadGeographyData();
-      // Fetch customer data
+
+      debugPrint('getCustomerData');
+      // 2. Fetch customer data next
       futureData = getCustomerData();
-      // Wait for customer data and proceed to edit
-      await futureData;
-      if (widget.isEdit) {
-        await checkForEdit();
-      }
+      await futureData; // Wait for the customer data response
+
+      // 3. If it's in edit mode, then fetch additional data for edit
+      /*if (widget.isEdit) {
+        debugPrint('checkForEdit');
+        await checkForEdit(); // Only proceed with this if edit mode
+      }*/
     } catch (e) {
       debugPrint('Error during fetch or edit operations: $e');
     } finally {
@@ -474,8 +588,9 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
 
   @override
   Widget build(BuildContext context) {
+    final type = widget.isEdit ? 'Edit' : 'New';
     return Scaffold(
-      appBar: CommonAppBar(title: 'New Customer - ${widget.type}'),
+      appBar: CommonAppBar(title: '$type Customer - ${widget.type}'),
       body: _isLoading
           ? const Center(
               child:
@@ -488,6 +603,18 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
                 } else if (snapshot.hasError) {
                   return Center(child: Text('Error: ${snapshot.error}'));
                 } else if (snapshot.hasData) {
+                  // Once data is available, initialize the response
+                  customerEntryMasterResponse = snapshot.data!;
+
+                  // If in edit mode, trigger checkForEdit only once
+                  if (widget.isEdit && !hasCheckedForEdit) {
+                    hasCheckedForEdit = true;
+                    Future.delayed(Duration.zero, () {
+                      checkForEdit(); // Call checkForEdit after the build method
+                    });
+                  }
+
+                  // Return the form UI
                   return buildForm(snapshot.data!);
                 } else {
                   return const Center(child: Text('No data found'));
@@ -541,9 +668,6 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
                     onChanged: (newValue) {
                       setState(() {
                         _selectedKeyCustomer = newValue;
-                        if (kDebugMode) {
-                          print("_selectedKeyCustomer:$_selectedKeyCustomer");
-                        }
                       });
                     },
                   ),
@@ -556,9 +680,6 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
                     onChanged: (newValue) {
                       setState(() {
                         _selectedKeyCustomer = newValue;
-                        if (kDebugMode) {
-                          print("_selectedKeyCustomer:$_selectedKeyCustomer");
-                        }
                       });
                     },
                   ),
@@ -576,10 +697,6 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
                     onChanged: (newValue) {
                       setState(() {
                         _selectedCustomerStatus = newValue;
-                        if (kDebugMode) {
-                          print(
-                              "_selectedCustomerStatus:$_selectedCustomerStatus");
-                        }
                       });
                     },
                   ),
@@ -592,10 +709,6 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
                     onChanged: (newValue) {
                       setState(() {
                         _selectedCustomerStatus = newValue;
-                        if (kDebugMode) {
-                          print(
-                              "_selectedCustomerStatus:$_selectedCustomerStatus");
-                        }
                       });
                     },
                   ),
@@ -940,6 +1053,8 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
 
   void _populateCustomerDetails(SchoolDetails? details) {
     if (details == null) return;
+    debugPrint('boardId : ${details.boardId}');
+    debugPrint('chainSchoolId : ${details.chainSchoolId}');
     _customerNameController.text = details.schoolName;
     _addressController.text = details.address;
     _pinCodeController.text = details.pinCode;
@@ -948,6 +1063,49 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
 
     _selectedKeyCustomer = details.keyCustomer == 'Y';
     _selectedCustomerStatus = details.customerStatus == 'Active';
+
+    debugPrint(
+        'boardMasterList size : ${customerEntryMasterResponse.boardMasterList.length}');
+    if (customerEntryMasterResponse.boardMasterList.isNotEmpty) {
+      final board = customerEntryMasterResponse.boardMasterList.firstWhere(
+        (b) => b.boardId == details.boardId,
+        orElse: () {
+          debugPrint('Edit Board ID ${details.boardId} not found.');
+          return BoardMaster(boardId: 0, boardName: '');
+        },
+      );
+      if (board.boardId > 0) {
+        debugPrint('board.boardName ${board.boardName}');
+        setState(() {
+          _selectedBoard = board;
+          _boardController.text = board.boardName;
+        });
+      } else {
+        debugPrint('Edit board 0');
+      }
+    }
+
+    debugPrint(
+        'chainSchoolList size : ${customerEntryMasterResponse.chainSchoolList.length}');
+    if (customerEntryMasterResponse.chainSchoolList.isNotEmpty) {
+      final chainSchool =
+          customerEntryMasterResponse.chainSchoolList.firstWhere(
+        (s) => s.chainSchoolId == details.chainSchoolId,
+        orElse: () {
+          debugPrint(
+              'Edit Chain School ID ${details.chainSchoolId} not found.');
+          return ChainSchool(chainSchoolId: 0, chainSchoolName: '');
+        },
+      );
+      if (chainSchool.chainSchoolId > 0) {
+        setState(() {
+          _selectedChainSchool = chainSchool;
+          _chainSchoolController.text = chainSchool.chainSchoolName;
+        });
+      } else {
+        debugPrint('Edit Chain school 0');
+      }
+    }
 
     final selectedCity = _findCityById(details.cityId);
     if (selectedCity.cityId == 0) {
@@ -959,9 +1117,10 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
       _selectedCity = selectedCity;
       _cityController.text = _selectedCity?.city ?? '';
     }
+
+    editAddress();
   }
 
-// Use the overridden equality operator to compare Geography objects
   Geography _findCityById(int? cityId) {
     return _filteredCities.firstWhere(
       (city) => city.cityId == cityId,
