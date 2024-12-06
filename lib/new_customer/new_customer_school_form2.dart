@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../model/fetch_customer_details_model.dart';
 import '../model/geography_model.dart';
 import '../model/search_bookseller_response.dart';
 import '../views/common_app_bar.dart';
@@ -27,22 +28,25 @@ class NewCustomerSchoolForm2 extends StatefulWidget {
   final int chainSchoolId;
   final String keyCustomer;
   final String customerStatus;
+  final bool isEdit;
+  final FetchCustomerDetailsSchoolResponse? customerDetailsSchoolResponse;
 
-  const NewCustomerSchoolForm2({
-    super.key,
-    required this.type,
-    required this.customerName,
-    required this.address,
-    required this.cityId,
-    required this.cityName,
-    required this.pinCode,
-    required this.phoneNumber,
-    required this.emailId,
-    required this.boardId,
-    required this.chainSchoolId,
-    required this.keyCustomer,
-    required this.customerStatus,
-  });
+  const NewCustomerSchoolForm2(
+      {super.key,
+      required this.type,
+      required this.customerName,
+      required this.address,
+      required this.cityId,
+      required this.cityName,
+      required this.pinCode,
+      required this.phoneNumber,
+      required this.emailId,
+      required this.boardId,
+      required this.chainSchoolId,
+      required this.keyCustomer,
+      required this.customerStatus,
+      required this.isEdit,
+      this.customerDetailsSchoolResponse});
 
   @override
   NewCustomerSchoolForm2State createState() => NewCustomerSchoolForm2State();
@@ -114,6 +118,10 @@ class NewCustomerSchoolForm2State extends State<NewCustomerSchoolForm2> {
   Geography? _selectedCity;
 
   List<BookSellers> _booksellers = [];
+
+  bool hasCheckedForEdit = false;
+
+  late CustomerEntryMasterResponse customerEntryMasterResponse;
 
   @override
   void initState() {
@@ -261,8 +269,9 @@ class NewCustomerSchoolForm2State extends State<NewCustomerSchoolForm2> {
 
   @override
   Widget build(BuildContext context) {
+    final type = widget.isEdit ? 'Edit' : 'New';
     return Scaffold(
-      appBar: CommonAppBar(title: 'New Customer - ${widget.type}'),
+      appBar: CommonAppBar(title: '$type Customer - ${widget.type}'),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : FutureBuilder<CustomerEntryMasterResponse>(
@@ -273,6 +282,18 @@ class NewCustomerSchoolForm2State extends State<NewCustomerSchoolForm2> {
                 } else if (snapshot.hasError) {
                   return Center(child: Text('Error: ${snapshot.error}'));
                 } else if (snapshot.hasData) {
+                  // Once data is available, initialize the response
+                  customerEntryMasterResponse = snapshot.data!;
+
+                  // If in edit mode, trigger checkForEdit only once
+                  if (widget.isEdit && !hasCheckedForEdit) {
+                    hasCheckedForEdit = true;
+                    Future.delayed(Duration.zero, () {
+                      checkForEdit(); // Call checkForEdit after the build method
+                    });
+                  }
+
+                  // Return the form UI
                   return buildForm(snapshot.data!);
                 } else {
                   return const Center(child: Text('No data found'));
@@ -989,8 +1010,137 @@ class NewCustomerSchoolForm2State extends State<NewCustomerSchoolForm2> {
             pan: panController.text,
             gst: gstController.text,
             purchaseMode: _selectedPurchaseMode ?? '',
-            bookseller: _booksellers),
+            bookseller: _booksellers,
+            isEdit: widget.isEdit,
+            customerDetailsSchoolResponse:
+                widget.customerDetailsSchoolResponse),
       ),
     );
+  }
+
+  void checkForEdit() {
+    final customerData = widget.customerDetailsSchoolResponse;
+
+    if (customerData != null && customerData.schoolDetails != null) {
+      final schoolDetails = customerData.schoolDetails;
+      // Set controller values
+
+      final startClasses = customerEntryMasterResponse.classesList.firstWhere(
+        (b) => b.classNumId == schoolDetails?.startClassId,
+        orElse: () {
+          debugPrint(
+              'Edit Start Class ID ${schoolDetails?.startClassId} not found.');
+          return Classes(classNumId: 0, className: '');
+        },
+      );
+      if (startClasses.classNumId > 0) {
+        debugPrint('startClasses.className ${startClasses.className}');
+        setState(() {
+          _selectedStartClass = startClasses;
+          startClassController.text = startClasses.className;
+        });
+      } else {
+        debugPrint('Edit startClasses class 0');
+      }
+
+      final endClasses = customerEntryMasterResponse.classesList.firstWhere(
+        (b) => b.classNumId == schoolDetails?.endClassId,
+        orElse: () {
+          debugPrint(
+              'Edit End Class ID ${schoolDetails?.endClassId} not found.');
+          return Classes(classNumId: 0, className: '');
+        },
+      );
+      if (endClasses.classNumId > 0) {
+        debugPrint('endClasses.className ${endClasses.className}');
+        setState(() {
+          _selectedEndClass = endClasses;
+          endClassController.text = endClasses.className;
+        });
+      } else {
+        debugPrint('Edit endClasses class 0');
+      }
+
+      final samplingMonth = customerEntryMasterResponse.monthsList.firstWhere(
+        (b) => b.id == schoolDetails?.samplingMonth,
+        orElse: () {
+          debugPrint(
+              'Edit Sampling Month ID ${schoolDetails?.samplingMonth} not found.');
+          return Months(id: 0, name: '');
+        },
+      );
+      if (samplingMonth.id > 0) {
+        debugPrint('samplingMonth ${samplingMonth.name}');
+        setState(() {
+          _selectedSamplingMonth = samplingMonth;
+          samplingMonthController.text = samplingMonth.name;
+        });
+      } else {
+        debugPrint('Edit samplingMonth 0');
+      }
+
+      final decisionMonth = customerEntryMasterResponse.monthsList.firstWhere(
+        (b) => b.id == schoolDetails?.decisionMonth,
+        orElse: () {
+          debugPrint(
+              'Edit Decision Month ID ${schoolDetails?.decisionMonth} not found.');
+          return Months(id: 0, name: '');
+        },
+      );
+      if (decisionMonth.id > 0) {
+        debugPrint('decisionMonth ${decisionMonth.name}');
+        setState(() {
+          _selectedDecisionMonth = decisionMonth;
+          decisionMonthController.text = decisionMonth.name;
+        });
+      } else {
+        debugPrint('Edit decisionMonth 0');
+      }
+
+      final purchaseMode =
+          customerEntryMasterResponse.purchaseModeList.firstWhere(
+        (b) => b.modeValue == schoolDetails?.purchaseMode,
+        orElse: () {
+          debugPrint(
+              'Edit Purchase Mode ID ${schoolDetails?.purchaseMode} not found.');
+          return PurchaseMode(modeName: '', modeValue: '');
+        },
+      );
+      if (purchaseMode.modeName.isNotEmpty) {
+        debugPrint('purchaseMode ${purchaseMode.modeValue}');
+        setState(() {
+          _selectedPurchaseMode = purchaseMode.modeValue;
+        });
+      } else {
+        debugPrint('Edit purchaseMode 0');
+      }
+
+      final ranking = ["A", "B", "C"].firstWhere(
+        (b) => b == schoolDetails?.ranking,
+        orElse: () {
+          debugPrint('Edit Ranking ${schoolDetails?.ranking} not found.');
+          return '';
+        },
+      );
+      if (ranking.isNotEmpty) {
+        debugPrint('ranking $ranking');
+        setState(() {
+          _selectedRanking = ranking;
+          rankingController.text = schoolDetails?.ranking ?? '';
+        });
+      } else {
+        debugPrint('Edit ranking not available');
+      }
+
+      mediumController.text = schoolDetails?.mediumInstruction ?? '';
+      panController.text = schoolDetails?.panNumber ?? '';
+      gstController.text = schoolDetails?.gstNumber ?? '';
+
+      // Initialize Bookseller list (if needed)
+      if (_selectedPurchaseMode == 'Book Seller' ||
+          _selectedPurchaseMode == 'Bookseller') {
+        //_booksellers = schoolDetails.bookSeller1 ?? [];
+      }
+    }
   }
 }

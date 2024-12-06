@@ -14,6 +14,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../model/fetch_customer_details_model.dart';
 import '../model/search_bookseller_response.dart';
 import '../views/common_app_bar.dart';
 import '../views/custom_text.dart';
@@ -42,31 +43,35 @@ class NewCustomerSchoolForm3 extends StatefulWidget {
   final String purchaseMode;
   final List<BookSellers> bookseller;
 
-  const NewCustomerSchoolForm3({
-    super.key,
-    required this.type,
-    required this.customerName,
-    required this.address,
-    required this.cityId,
-    required this.cityName,
-    required this.pinCode,
-    required this.phoneNumber,
-    required this.emailId,
-    required this.boardId,
-    required this.chainSchoolId,
-    required this.keyCustomer,
-    required this.customerStatus,
-    required this.startClassId,
-    required this.endClassId,
-    required this.samplingMonthId,
-    required this.decisionMonthId,
-    required this.medium,
-    required this.ranking,
-    required this.pan,
-    required this.gst,
-    required this.purchaseMode,
-    required this.bookseller,
-  });
+  final bool isEdit;
+  final FetchCustomerDetailsSchoolResponse? customerDetailsSchoolResponse;
+
+  const NewCustomerSchoolForm3(
+      {super.key,
+      required this.type,
+      required this.customerName,
+      required this.address,
+      required this.cityId,
+      required this.cityName,
+      required this.pinCode,
+      required this.phoneNumber,
+      required this.emailId,
+      required this.boardId,
+      required this.chainSchoolId,
+      required this.keyCustomer,
+      required this.customerStatus,
+      required this.startClassId,
+      required this.endClassId,
+      required this.samplingMonthId,
+      required this.decisionMonthId,
+      required this.medium,
+      required this.ranking,
+      required this.pan,
+      required this.gst,
+      required this.purchaseMode,
+      required this.bookseller,
+      required this.isEdit,
+      this.customerDetailsSchoolResponse});
 
   @override
   NewCustomerSchoolForm3State createState() => NewCustomerSchoolForm3State();
@@ -127,6 +132,10 @@ class NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
   bool _isLoading = false;
 
   final Map<int, String> _classValues = {};
+
+  bool hasCheckedForEdit = false;
+
+  late CustomerEntryMasterResponse customerEntryMasterResponse;
 
   @override
   void initState() {
@@ -287,22 +296,37 @@ class NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
 
   @override
   Widget build(BuildContext context) {
+    final type = widget.isEdit ? 'Edit' : 'New';
     return Scaffold(
-      appBar: CommonAppBar(title: 'New Customer - ${widget.type}'),
-      body: FutureBuilder<CustomerEntryMasterResponse>(
-        future: futureData,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          } else if (snapshot.hasData) {
-            return buildForm(snapshot.data!);
-          } else {
-            return const Center(child: Text('No data found'));
-          }
-        },
-      ),
+      appBar: CommonAppBar(title: '$type Customer - ${widget.type}'),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : FutureBuilder<CustomerEntryMasterResponse>(
+              future: futureData,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                } else if (snapshot.hasError) {
+                  return Center(child: Text('Error: ${snapshot.error}'));
+                } else if (snapshot.hasData) {
+                  // Once data is available, initialize the response
+                  customerEntryMasterResponse = snapshot.data!;
+
+                  // If in edit mode, trigger checkForEdit only once
+                  if (widget.isEdit && !hasCheckedForEdit) {
+                    hasCheckedForEdit = true;
+                    Future.delayed(Duration.zero, () {
+                      checkForEdit(); // Call checkForEdit after the build method
+                    });
+                  }
+
+                  // Return the form UI
+                  return buildForm(snapshot.data!);
+                } else {
+                  return const Center(child: Text('No data found'));
+                }
+              },
+            ),
     );
   }
 
@@ -967,5 +991,16 @@ class NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
       return false;
     }
     return true;
+  }
+
+  void checkForEdit() {
+    final customerData = widget.customerDetailsSchoolResponse;
+
+    if (customerData != null) {
+      for (final enrolment in customerData.enrolmentList) {
+        _classValues[enrolment.classNumId] = enrolment.enrolValue.toString();
+      }
+      setState(() {});
+    }
   }
 }

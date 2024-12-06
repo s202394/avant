@@ -97,6 +97,7 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
   int retryCount = 0;
 
   late CustomerEntryMasterResponse customerEntryMasterResponse;
+  late FetchCustomerDetailsSchoolResponse customerDetailsSchoolResponse;
 
   @override
   void dispose() {
@@ -250,7 +251,8 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
   }
 
   void editAddress() async {
-    final address = '${_customerNameController.text.toString().trim()}, ${_addressController.text.toString().trim()}, ${_pinCodeController.text.toString().trim()}';
+    final address =
+        '${_customerNameController.text.toString().trim()}, ${_addressController.text.toString().trim()}, ${_pinCodeController.text.toString().trim()}';
     debugPrint('Edit customer address $address');
     try {
       List<Location> locations = await locationFromAddress(address);
@@ -291,10 +293,12 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
         setState(() {
           _currentMarker =
               _currentMarker!.copyWith(positionParam: _currentPosition);
-          debugPrint("_currentMarker markerId ${_currentMarker?.markerId.value}");
+          debugPrint(
+              "_currentMarker markerId ${_currentMarker?.markerId.value}");
         });
 
-        debugPrint("_currentMarker ${_currentMarker?.position.latitude} ${_currentMarker?.position.longitude}");
+        debugPrint(
+            "_currentMarker ${_currentMarker?.position.latitude} ${_currentMarker?.position.longitude}");
         _animateToPosition(initialPosition);
 
         debugPrint("animateCamera.");
@@ -769,6 +773,8 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
               keyCustomer: (_selectedKeyCustomer ?? false) ? "Y" : "N",
               customerStatus:
                   (_selectedCustomerStatus ?? false) ? "Active" : "Inactive",
+              isEdit: widget.isEdit,
+              customerDetailsSchoolResponse: customerDetailsSchoolResponse,
             ),
           ),
         );
@@ -1037,15 +1043,14 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
       String validated = extractStringPart(widget.action);
 
       FetchCustomerDetailsService service = FetchCustomerDetailsService();
-      FetchCustomerDetailsSchoolResponse response =
-          await service.fetchCustomerDetails(
-              customerId,
-              validated,
-              widget.type,
-              token,
-              (json) => FetchCustomerDetailsSchoolResponse.fromJson(json));
+      customerDetailsSchoolResponse = await service.fetchCustomerDetails(
+          customerId,
+          validated,
+          widget.type,
+          token,
+          (json) => FetchCustomerDetailsSchoolResponse.fromJson(json));
 
-      _populateCustomerDetails(response.schoolDetails);
+      _populateCustomerDetails(customerDetailsSchoolResponse.schoolDetails);
     } catch (e) {
       debugPrint('Error in checkForEdit: $e');
     }
