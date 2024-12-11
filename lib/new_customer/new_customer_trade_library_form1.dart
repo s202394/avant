@@ -16,9 +16,13 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:location/location.dart' as loc;
 import '../common/utils.dart';
+import '../home.dart';
 import '../model/fetch_customer_details_model.dart';
+import '../model/login_model.dart';
+import '../service/location_service.dart';
 import '../views/common_app_bar.dart';
 import '../views/custom_text.dart';
+import '../views/multi_selection_dropdown.dart';
 
 class NewCustomerTradeLibraryForm1 extends StatefulWidget {
   final String type;
@@ -39,6 +43,8 @@ class NewCustomerTradeLibraryForm1 extends StatefulWidget {
 
 class NewCustomerTradeLibraryForm1State
     extends State<NewCustomerTradeLibraryForm1> {
+  int? userId;
+
   late Future<CustomerEntryMasterResponse> futureData;
 
   final _formKey = GlobalKey<FormState>();
@@ -46,22 +52,19 @@ class NewCustomerTradeLibraryForm1State
   final ToastMessage _toastMessage = ToastMessage();
 
   DatabaseHelper dbHelper = DatabaseHelper();
+  LocationService locationService = LocationService();
 
   final TextEditingController _customerNameController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
-  final TextEditingController _cityController = TextEditingController();
   final TextEditingController _pinCodeController = TextEditingController();
-  final TextEditingController _customerCategoryController =
-      TextEditingController();
+
   final TextEditingController _phoneNumberController = TextEditingController();
   final TextEditingController _emailIdController = TextEditingController();
   final TextEditingController _panController = TextEditingController();
   final TextEditingController _gstController = TextEditingController();
 
   final _customerNameFieldKey = GlobalKey<FormFieldState>();
-  final _customerCategoryFieldKey = GlobalKey<FormFieldState>();
   final _addressFieldKey = GlobalKey<FormFieldState>();
-  final _cityFieldKey = GlobalKey<FormFieldState>();
   final _pinCodeFieldKey = GlobalKey<FormFieldState>();
   final _phoneNumberFieldKey = GlobalKey<FormFieldState>();
   final _emailIdFieldKey = GlobalKey<FormFieldState>();
@@ -82,16 +85,29 @@ class NewCustomerTradeLibraryForm1State
   LatLng? _currentPosition;
   Marker? _currentMarker;
 
-  String _cityAccess = '';
-  List<Geography> _filteredCities = [];
+  Geography? _selectedCountry;
+  Geography? _selectedState;
+  Geography? _selectedDistrict;
   Geography? _selectedCity;
-  CustomerCategory? _selectedCustomerCategory;
+
+  List<Geography> _filteredCountries = [];
+  List<Geography> _filteredStates = [];
+  List<Geography> _filteredDistricts = [];
+  List<Geography> _filteredCities = [];
+
+  List<Geography> _allGeographies = [];
+
+  String _cityAccess = '';
+
   bool? _selectedKeyCustomer;
   bool? _selectedCustomerStatus;
 
   late SharedPreferences prefs;
   late String token;
   late int executiveId;
+
+  int customerId = 0;
+  String validated = '';
 
   String? mandatorySetting;
 
@@ -100,14 +116,15 @@ class NewCustomerTradeLibraryForm1State
   int retryCount = 0;
   bool hasCheckedForEdit = false;
 
+  List<CustomerCategory> _selectedCustomerCategoryWithItems = [];
+
   late CustomerEntryMasterResponse customerEntryMasterResponse;
+  late CustomerDetails customerDetails;
 
   @override
   void dispose() {
     _customerNameController.dispose();
-    _customerCategoryController.dispose();
     _addressController.dispose();
-    _cityController.dispose();
     _pinCodeController.dispose();
     _phoneNumberController.dispose();
     _emailIdController.dispose();
@@ -153,6 +170,9 @@ class NewCustomerTradeLibraryForm1State
     mandatorySetting = await dbHelper.getTeacherMobileEmailMandatory();
 
     prefs = await SharedPreferences.getInstance();
+
+    userId = await getUserId();
+
     setState(() {
       token = prefs.getString('token') ?? '';
       executiveId = prefs.getInt('executiveId') ?? 0;
@@ -222,7 +242,7 @@ class NewCustomerTradeLibraryForm1State
 
   void addAddress() async {
     loc.Location location = loc.Location();
-    debugPrint('Add customer address}');
+    debugPrint('Add customer address');
     // Get current user location
     try {
       loc.LocationData locationData = await location.getLocation();
@@ -253,8 +273,9 @@ class NewCustomerTradeLibraryForm1State
   }
 
   void editAddress() async {
-    final address = _addressController.text.toString().trim();
-    debugPrint('Edit customer address $address');
+    final address =
+        '${_customerNameController.text.toString().trim()}, ${_addressController.text.toString().trim()}, ${_pinCodeController.text.toString().trim()}';
+    debugPrint('Edit customer address 1 $address');
     try {
       List<Location> locations = await locationFromAddress(address);
       debugPrint('Edit customer address locations size ${locations.length}');
@@ -305,8 +326,8 @@ class NewCustomerTradeLibraryForm1State
         debugPrint("Fetching location empty.");
       }
     } catch (e) {
-      addAddress();
       debugPrint("Error fetching location from address: $e");
+      unableToGetAddress();
       return;
     }
   }
@@ -500,20 +521,14 @@ class NewCustomerTradeLibraryForm1State
       List<Geography> dbData = await dbHelper.getGeographyDataFromDB();
       if (dbData.isNotEmpty) {
         setState(() {
-          _filteredCities = dbData;
+          _allGeographies = dbData;
+          _initializeCountries();
         });
-        if (kDebugMode) {
-          print("Loaded geography data from the database.");
-        }
       } else {
-        if (kDebugMode) {
-          print("No data in DB, fetching from API.");
-        }
-        await _fetchGeographyData(); // Wait for API data
+        await _fetchGeographyData(); // Fetch from API if DB is empty
       }
     } catch (e) {
-      debugPrint("Error in _loadGeographyData: $e");
-      rethrow;
+      debugPrint("Error loading geography data: $e");
     }
   }
 
@@ -526,22 +541,19 @@ class NewCustomerTradeLibraryForm1State
         executiveId,
         token,
       );
-      List<int> cityIds =
-          _cityAccess.split(',').map((id) => int.parse(id)).toList();
       setState(() {
-        _filteredCities = geographyResponse.geographyList
-            .where((geography) => cityIds.contains(geography.cityId))
+        List<Geography> geographyList = geographyResponse.geographyList;
+        _filteredCountries = geographyList
+            .where((g) =>
+                geographyList.indexWhere((e) => e.countryId == g.countryId) ==
+                geographyList.indexOf(g))
             .toList();
+
+        _filteredCities = geographyResponse.geographyList.toList();
 
         if (kDebugMode) {
           print('_filteredCities:${_filteredCities.toString()}');
         }
-        _filteredCities = _filteredCities
-            .where((city) =>
-                _filteredCities.indexWhere((e) => e.cityId == city.cityId) ==
-                _filteredCities.indexOf(city))
-            .toList();
-
         if (kDebugMode) {
           print('_filteredCities unique:${_filteredCities.toString()}');
         }
@@ -656,20 +668,58 @@ class NewCustomerTradeLibraryForm1State
             _buildTextField('Address', _addressController, _addressFieldKey,
                 _addressFocusNode,
                 maxLines: 5),
-            _buildDropdownFieldCity(
-                'City', _cityController, _cityFieldKey, _cityFocusNode),
+            const SizedBox(height: 8),
+            _buildDropdown(
+              label: 'Country',
+              selectedValue: _selectedCountry,
+              items: _filteredCountries,
+              displayText: (geo) => geo.country,
+              onChanged: _onCountryChanged,
+            ),
+            const SizedBox(height: 16),
+            _buildDropdown(
+              label: 'State',
+              selectedValue: _selectedState,
+              items: _filteredStates,
+              displayText: (geo) => geo.state,
+              onChanged: _onStateChanged,
+            ),
+            const SizedBox(height: 16),
+            _buildDropdown(
+              label: 'District',
+              selectedValue: _selectedDistrict,
+              items: _filteredDistricts,
+              displayText: (geo) => geo.district,
+              onChanged: _onDistrictChanged,
+            ),
+            const SizedBox(height: 16),
+            _buildDropdown(
+              label: 'City',
+              selectedValue: _selectedCity,
+              items: _filteredCities,
+              displayText: (geo) => geo.city,
+              onChanged: (selected) {
+                setState(() {
+                  _selectedCity = selected;
+                });
+              },
+            ),
+            const SizedBox(height: 8),
             _buildTextField('Pin Code', _pinCodeController, _pinCodeFieldKey,
                 _pinCodeFocusNode),
             _buildTextField('Phone Number', _phoneNumberController,
                 _phoneNumberFieldKey, _phoneNumberFocusNode),
             _buildTextField('Email Id', _emailIdController, _emailIdFieldKey,
                 _emailIdFocusNode),
-            _buildDropdownFieldCustomerCategory(
-                'Customer Category',
-                _customerCategoryController,
-                _customerCategoryFieldKey,
-                data.customerCategoryList,
-                _customerCategoryFocusNode),
+            MultiSelectDropdown<CustomerCategory>(
+              label: 'Customer Category',
+              items: customerEntryMasterResponse.customerCategoryList,
+              selectedItems: _selectedCustomerCategoryWithItems,
+              itemLabelBuilder: (item) => item.customerCategoryName,
+              onChanged: _onCategoryChanged,
+              isMandatory: true,
+              isSubmitted: false,
+            ),
             _buildTextField('PAN', _panController, _panFieldKey, _panFocusNode),
             _buildTextField('GST', _gstController, _gstFieldKey, _gstFocusNode),
             const SizedBox(height: 16.0),
@@ -753,12 +803,13 @@ class NewCustomerTradeLibraryForm1State
               child: Container(
                 width: double.infinity,
                 color: Colors.blue,
-                child: const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 8.0, horizontal: 16),
+                child: Padding(
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16),
                   child: Text(
-                    'Next',
+                    widget.isEdit ? 'Update' : 'Next',
                     textAlign: TextAlign.center,
-                    style: TextStyle(
+                    style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
                       fontSize: 18,
@@ -781,6 +832,8 @@ class NewCustomerTradeLibraryForm1State
         _toastMessage.showToastMessage("Please select Key Customer");
       } else if (_selectedCustomerStatus == null) {
         _toastMessage.showToastMessage("Please select Customer Status");
+      } else if (widget.isEdit) {
+        updateCustomer();
       } else {
         Navigator.push(
           context,
@@ -794,7 +847,7 @@ class NewCustomerTradeLibraryForm1State
               phoneNumber: _phoneNumberController.text,
               emailId: _emailIdController.text,
               customerCategoryId:
-                  _selectedCustomerCategory?.customerCategoryId ?? 0,
+                  createDynamicXml(_selectedCustomerCategoryWithItems),
               pan: _panController.text,
               gst: _gstController.text,
               keyCustomer: (_selectedKeyCustomer ?? false) ? "Y" : "N",
@@ -888,17 +941,23 @@ class NewCustomerTradeLibraryForm1State
           enabled: enabled,
           maxLines: maxLines,
           validator: (value) {
-            if (label == 'Phone Number') {
+            if (label == 'PAN' || label == 'GST') {
+              if (value == null || value.isEmpty) {
+                return null;
+              }
+              if (label == 'PAN' && value.length < 10) {
+                return 'Please enter valid $label';
+              }
+              if (label == 'GST' && value.length < 15) {
+                return 'Please enter valid $label';
+              }
+            } else if (label == 'Phone Number') {
               return _validatePhoneNumber(value);
             } else if (label == 'Email Id') {
               return _validateEmail(value);
             } else if (value == null || value.isEmpty) {
               return 'Please enter $label';
             } else if (label == 'Pin Code' && value.length < 6) {
-              return 'Please enter valid $label';
-            } else if (label == 'PAN' && value.length < 10) {
-              return 'Please enter valid $label';
-            } else if (label == 'GST' && value.length < 15) {
               return 'Please enter valid $label';
             }
             return null;
@@ -954,113 +1013,10 @@ class NewCustomerTradeLibraryForm1State
     return null;
   }
 
-  Widget _buildDropdownFieldCity(
-    String label,
-    TextEditingController controller,
-    GlobalKey<FormFieldState> fieldKey,
-    FocusNode focusNode, {
-    double labelFontSize = 14.0,
-    double textFontSize = 14.0,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: DropdownButtonFormField<Geography>(
-        key: fieldKey,
-        focusNode: focusNode,
-        value: _selectedCity,
-        items: [
-          const DropdownMenuItem<Geography>(
-            value: null,
-            child: CustomText('Select'),
-          ),
-          ..._filteredCities.map(
-            (geography) => DropdownMenuItem<Geography>(
-              value: geography,
-              child: CustomText(geography.city, fontSize: textFontSize),
-            ),
-          ),
-        ],
-        onChanged: (Geography? value) {
-          setState(() {
-            _selectedCity = value;
-            controller.text = value?.city ?? '';
-            fieldKey.currentState?.validate();
-          });
-        },
-        decoration: InputDecoration(
-          labelText: label,
-          labelStyle: TextStyle(fontSize: labelFontSize),
-          border: const OutlineInputBorder(),
-        ),
-        validator: (value) {
-          if (value == null || value.city.isEmpty) {
-            return 'Please select $label';
-          }
-          return null;
-        },
-      ),
-    );
-  }
-
-  Widget _buildDropdownFieldCustomerCategory(
-    String label,
-    TextEditingController controller,
-    GlobalKey<FormFieldState> fieldKey,
-    List<CustomerCategory> customerCategoryList,
-    FocusNode focusNode, {
-    double labelFontSize = 14.0,
-    double textFontSize = 14.0,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: DropdownButtonFormField<CustomerCategory>(
-        key: fieldKey,
-        style: TextStyle(fontSize: textFontSize),
-        value: _selectedCustomerCategory,
-        focusNode: focusNode,
-        items: [
-          const DropdownMenuItem<CustomerCategory>(
-            value: null,
-            child: CustomText('Select'),
-          ),
-          ...customerCategoryList.map(
-            (customerCategory) => DropdownMenuItem<CustomerCategory>(
-              value: customerCategory,
-              child: CustomText(customerCategory.customerCategoryName,
-                  fontSize: textFontSize),
-            ),
-          ),
-        ],
-        onChanged: (CustomerCategory? value) {
-          setState(() {
-            _selectedCustomerCategory = value;
-
-            // Update the text controller with the selected category name
-            controller.text = value?.customerCategoryName ?? '';
-
-            // Validate the field
-            fieldKey.currentState?.validate();
-          });
-        },
-        decoration: InputDecoration(
-          labelText: label,
-          labelStyle: TextStyle(fontSize: labelFontSize),
-          border: const OutlineInputBorder(),
-        ),
-        validator: (value) {
-          if (value == null || value.customerCategoryName.isEmpty) {
-            return 'Please select $label';
-          }
-          return null;
-        },
-      ),
-    );
-  }
-
   Future<void> checkForEdit() async {
     try {
-      int customerId = extractNumericPart(widget.action);
-      String validated = extractStringPart(widget.action);
+      customerId = extractNumericPart(widget.action);
+      validated = extractStringPart(widget.action);
 
       FetchCustomerDetailsService service = FetchCustomerDetailsService();
       FetchCustomerDetailsLibraryResponse response =
@@ -1079,6 +1035,7 @@ class NewCustomerTradeLibraryForm1State
 
   void _populateCustomerDetails(CustomerDetails? details) {
     if (details == null) return;
+    customerDetails = details;
     _customerNameController.text = details.customerName;
     _addressController.text = details.address;
     _pinCodeController.text = details.pinCode;
@@ -1088,49 +1045,74 @@ class NewCustomerTradeLibraryForm1State
     _selectedKeyCustomer = details.keyCustomer == 'Y';
     _selectedCustomerStatus = details.customerStatus == 'Active';
 
-    final selectedCity = _findCityById(details.cityId);
-    if (selectedCity.cityId == 0) {
-      _selectedCity = null;
-      _cityController.text = '';
-      debugPrint('City ID ${details.cityId} not found in filtered cities.');
-    } else {
-      debugPrint('City ID ${details.cityId} found in filtered cities.');
-      _selectedCity = selectedCity;
-      _cityController.text = _selectedCity?.city ?? '';
-    }
+    debugPrint('details.countryId : ${details.countryId}');
+    debugPrint('details.stateId : ${details.stateId}');
+    debugPrint('details.districtId : ${details.districtId}');
+    debugPrint('details.cityId : ${details.cityId}');
 
-    debugPrint(
-        'customerCategoryList size : ${customerEntryMasterResponse.customerCategoryList}');
-    if (customerEntryMasterResponse.customerCategoryList.isNotEmpty) {
-      final customerCategoryId = details.xmlCustomerCategoryId;
-      if (isNumeric(customerCategoryId)) {
-        debugPrint(
-            "$customerCategoryId is a valid number: ${int.parse(customerCategoryId)}");
-        final customerCategory =
-            customerEntryMasterResponse.customerCategoryList.firstWhere(
-          (s) => s.customerCategoryId == int.parse(customerCategoryId),
-          orElse: () {
-            debugPrint(
-                'Edit customer category ID ${details.xmlCustomerCategoryId} not found.');
-            return CustomerCategory(
-                customerCategoryId: 0, customerCategoryName: '');
-          },
-        );
-        if (customerCategory.customerCategoryId > 0) {
-          setState(() {
-            _selectedCustomerCategory = customerCategory;
-            _customerCategoryController.text =
-                customerCategory.customerCategoryName;
-          });
-        } else {
-          debugPrint('Edit Customer category 0');
-        }
+    final selectedCountry = _findCountryById(details.countryId);
+    if (selectedCountry.countryId == 0) {
+      debugPrint('selectedCountry 0');
+    } else {
+      _onCountryChanged(selectedCountry);
+
+      final selectedState = _findStateById(details.stateId);
+      if (selectedState.stateId == 0) {
+        debugPrint('selectedState 0');
       } else {
-        debugPrint("$customerCategoryId is not a valid number.");
+        _onStateChanged(selectedState);
+
+        final selectedDistrict = _findDistrictById(details.districtId);
+        if (selectedDistrict.districtId == 0) {
+          debugPrint('selectedDistrict 0');
+        } else {
+          _onDistrictChanged(selectedDistrict);
+
+          if (_filteredCities.isNotEmpty) {
+            _selectedCity = _filteredCities.firstWhere(
+              (geo) => geo.cityId == details.cityId,
+              orElse: () => _filteredCities.first,
+            );
+          }
+
+          final selectedCity = _findCityById(details.cityId);
+          if (selectedCity.cityId == 0) {
+            debugPrint('selectedCity 0');
+          } else {
+            _selectedCity = selectedCity;
+          }
+        }
       }
     }
 
+    setCustomerCategories(details);
+
     editAddress();
+  }
+
+  void setCustomerCategories(CustomerDetails details) {
+    List<int> selectedIds = details.xmlCustomerCategoryId
+        .split(',')
+        .map((id) => int.tryParse(id) ?? 0)
+        .where((id) => id > 0)
+        .toList();
+
+    final selectedCategories = customerEntryMasterResponse.customerCategoryList
+        .where((category) => selectedIds.contains(category.customerCategoryId))
+        .toList();
+
+    if (selectedCategories.isEmpty) {
+      debugPrint("Warning: No categories matched for IDs: $selectedIds");
+    }
+
+    _onCategoryChanged(selectedCategories);
+  }
+
+  void _onCategoryChanged(List<CustomerCategory> selectedCategories) {
+    setState(() {
+      _selectedCustomerCategoryWithItems = selectedCategories;
+    });
+    debugPrint("Updated Selected Items: $_selectedCustomerCategoryWithItems");
   }
 
   Geography _findCityById(int? cityId) {
@@ -1147,5 +1129,375 @@ class NewCustomerTradeLibraryForm1State
         city: '',
       ),
     );
+  }
+
+  Geography _findCountryById(int? countryId) {
+    return _allGeographies.firstWhere(
+      (city) => city.countryId == countryId,
+      orElse: () => Geography(
+        countryId: 0,
+        country: '',
+        stateId: 0,
+        state: '',
+        districtId: 0,
+        district: '',
+        cityId: 0,
+        city: '',
+      ),
+    );
+  }
+
+  Geography _findStateById(int? stateId) {
+    return _filteredStates.firstWhere(
+      (city) => city.stateId == stateId,
+      orElse: () => Geography(
+        countryId: 0,
+        country: '',
+        stateId: 0,
+        state: '',
+        districtId: 0,
+        district: '',
+        cityId: 0,
+        city: '',
+      ),
+    );
+  }
+
+  Geography _findDistrictById(int? districtId) {
+    return _filteredDistricts.firstWhere(
+      (city) => city.districtId == districtId,
+      orElse: () => Geography(
+        countryId: 0,
+        country: '',
+        stateId: 0,
+        state: '',
+        districtId: 0,
+        district: '',
+        cityId: 0,
+        city: '',
+      ),
+    );
+  }
+
+  void _initializeCountries() {
+    // Get unique countries
+    _filteredCountries = _allGeographies
+        .where((geo) =>
+            _allGeographies
+                .indexWhere((item) => item.countryId == geo.countryId) ==
+            _allGeographies.indexOf(geo))
+        .toList();
+  }
+
+  void _onCountryChanged(Geography? selected) {
+    setState(() {
+      _selectedCountry = selected;
+      _selectedState = null;
+      _selectedDistrict = null;
+      _selectedCity = null;
+
+      // Filter unique states for the selected country
+      final Set<int> uniqueStateIds = {};
+      _filteredStates = _allGeographies
+          .where((geo) =>
+              geo.countryId == selected?.countryId &&
+              uniqueStateIds.add(geo.stateId)) // Only add unique states
+          .toList();
+
+      _filteredDistricts = []; // Clear districts when country changes
+      _filteredCities = []; // Clear cities when country changes
+    });
+  }
+
+  void _onStateChanged(Geography? selected) {
+    setState(() {
+      _selectedState = selected;
+      _selectedDistrict = null;
+      _selectedCity = null;
+
+      // Filter unique cities for the selected state
+      final Set<int> uniqueDistrictIds = {};
+      _filteredDistricts = _allGeographies
+          .where((geo) =>
+              geo.stateId == selected?.stateId &&
+              uniqueDistrictIds.add(geo.districtId)) // Only add unique district
+          .toList();
+      _filteredCities = []; // Clear cities when state changes
+    });
+  }
+
+  void _onDistrictChanged(Geography? selected) {
+    setState(() {
+      _selectedDistrict = selected;
+      _selectedCity = null;
+
+      // Filter unique cities for the selected state
+      final Set<int> uniqueCityIds = {};
+      _filteredCities = _allGeographies
+          .where((geo) =>
+              geo.districtId == selected?.districtId &&
+              uniqueCityIds.add(geo.cityId)) // Only add unique cities
+          .toList();
+    });
+  }
+
+  Widget _buildDropdown({
+    required String label,
+    required Geography? selectedValue,
+    required List<Geography> items,
+    required String Function(Geography) displayText,
+    required ValueChanged<Geography?> onChanged,
+    double labelFontSize = 14.0,
+    double textFontSize = 14.0,
+  }) {
+    final uniqueItems = items.toSet().toList();
+    return DropdownButtonFormField<Geography>(
+      value: selectedValue,
+      style: TextStyle(fontSize: textFontSize),
+      items: [
+        DropdownMenuItem<Geography>(
+          value: null,
+          child: CustomText('Select $label'),
+        ),
+        ...uniqueItems.map(
+          (geo) => DropdownMenuItem<Geography>(
+            value: geo,
+            child: CustomText(displayText(geo)),
+          ),
+        ),
+      ],
+      onChanged: onChanged,
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: TextStyle(fontSize: labelFontSize),
+        border: const OutlineInputBorder(),
+      ),
+      validator: (value) => value == null ? 'Please select $label' : null,
+    );
+  }
+
+  void unableToGetAddress() async {
+    final address =
+        '${_selectedCity?.city ?? ''}, ${_selectedState?.state ?? ''}, ${_selectedState?.district ?? ''}, ${_selectedCountry?.country ?? ''}}';
+    debugPrint('Edit customer address 2 $address');
+    try {
+      List<Location> locations = await locationFromAddress(address);
+      debugPrint('Edit customer address locations size ${locations.length}');
+      if (locations.isNotEmpty) {
+        // Use the first matched location
+        Location addressLocation = locations.first;
+        debugPrint(
+            'Edit customer address latitude ${addressLocation.latitude}, longitude : ${addressLocation.longitude}');
+        LatLng initialPosition =
+            LatLng(addressLocation.latitude, addressLocation.longitude);
+        debugPrint(
+            'Edit customer initialPosition latitude ${initialPosition.latitude}, longitude : ${initialPosition.longitude}');
+
+        // Update marker and position
+        _currentPosition = initialPosition;
+        debugPrint(
+            'Edit customer _currentPosition latitude ${_currentPosition?.latitude}, longitude : ${_currentPosition?.longitude}');
+
+        _currentMarker = Marker(
+          markerId: const MarkerId('currentLocation'),
+          position: initialPosition,
+          draggable: true,
+          onTap: () => _onMarkerTapped(initialPosition),
+          onDragEnd: (newPosition) => _onMarkerDragEnd(newPosition),
+        );
+
+        await placemarkFromCoordinates(
+          initialPosition.latitude,
+          initialPosition.longitude,
+        ).timeout(
+          const Duration(seconds: 10), // Timeout duration
+          onTimeout: () {
+            throw TimeoutException("Geocoding timed out after 10 seconds.");
+          },
+        );
+
+        setState(() {
+          _currentMarker =
+              _currentMarker!.copyWith(positionParam: _currentPosition);
+          debugPrint("_currentMarker markerId ${_currentMarker?.markerId}");
+        });
+
+        debugPrint("_currentMarker ${_currentMarker?.position.longitude}");
+        _animateToPosition(initialPosition);
+
+        debugPrint("animateCamera.");
+      } else {
+        debugPrint("Fetching location empty.");
+      }
+    } catch (e) {
+      debugPrint("Error fetching location from address: $e");
+      unableToGetAddress2();
+      return;
+    }
+  }
+
+  void unableToGetAddress2() async {
+    final address = _pinCodeController.text.toString().trim();
+    debugPrint('Edit customer address 3 $address');
+    try {
+      List<Location> locations = await locationFromAddress(address);
+      debugPrint('Edit customer address locations size ${locations.length}');
+      if (locations.isNotEmpty) {
+        // Use the first matched location
+        Location addressLocation = locations.first;
+        debugPrint(
+            'Edit customer address latitude ${addressLocation.latitude}, longitude : ${addressLocation.longitude}');
+        LatLng initialPosition =
+            LatLng(addressLocation.latitude, addressLocation.longitude);
+        debugPrint(
+            'Edit customer initialPosition latitude ${initialPosition.latitude}, longitude : ${initialPosition.longitude}');
+
+        // Update marker and position
+        _currentPosition = initialPosition;
+        debugPrint(
+            'Edit customer _currentPosition latitude ${_currentPosition?.latitude}, longitude : ${_currentPosition?.longitude}');
+
+        _currentMarker = Marker(
+          markerId: const MarkerId('currentLocation'),
+          position: initialPosition,
+          draggable: true,
+          onTap: () => _onMarkerTapped(initialPosition),
+          onDragEnd: (newPosition) => _onMarkerDragEnd(newPosition),
+        );
+
+        await placemarkFromCoordinates(
+          initialPosition.latitude,
+          initialPosition.longitude,
+        ).timeout(
+          const Duration(seconds: 10), // Timeout duration
+          onTimeout: () {
+            throw TimeoutException("Geocoding timed out after 10 seconds.");
+          },
+        );
+
+        setState(() {
+          _currentMarker =
+              _currentMarker!.copyWith(positionParam: _currentPosition);
+          debugPrint("_currentMarker markerId ${_currentMarker?.markerId}");
+        });
+
+        debugPrint("_currentMarker ${_currentMarker?.position.longitude}");
+        _animateToPosition(initialPosition);
+
+        debugPrint("animateCamera.");
+      } else {
+        debugPrint("Fetching location empty.");
+      }
+    } catch (e) {
+      debugPrint("Error fetching location from address: $e");
+      addAddress();
+      return;
+    }
+  }
+
+  void updateCustomer() async {
+    FocusScope.of(context).unfocus();
+
+    if (!await _checkInternetConnection()) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+    final type = widget.isEdit ? 'editing' : 'adding new';
+
+    try {
+      Position position = await locationService.getCurrentLocation();
+      if (kDebugMode) {
+        print(
+            "Latitude: ${position.latitude}, Longitude: ${position.longitude}");
+      }
+
+      final responseData = await UpdateCustomerService().updateCustomer(
+          customerDetails.customerId,
+          widget.type,
+          _customerNameController.text.toString().trim(),
+          customerDetails.refCode,
+          _emailIdController.text.toString().trim(),
+          _phoneNumberController.text.toString().trim(),
+          _addressController.text.toString().trim(),
+          _selectedCity?.cityId ?? 0,
+          int.parse(_pinCodeController.text.toString().trim()),
+          (_selectedKeyCustomer ?? false) ? "Y" : "N",
+          (_selectedCustomerStatus ?? false) ? "Active" : "Inactive",
+          createDynamicXml(_selectedCustomerCategoryWithItems),
+          customerDetails.xmlAccountTableExecutiveId,
+          "<CustomerComment/>",
+          userId ?? 0,
+          position.latitude,
+          position.longitude,
+          _gstController.text.toString().trim(),
+          _panController.text.toString().trim(),
+          validated,
+          token);
+
+      if (responseData.status == 'Success') {
+        String s = responseData.s;
+        String w = responseData.w;
+        if (s.isNotEmpty || w.isNotEmpty) {
+          _toastMessage.showInfoToastMessage(s);
+          if (mounted) {
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (context) => const HomePage()),
+              (Route<dynamic> route) => false,
+            );
+          }
+        } else {
+          if (kDebugMode) {
+            print('$type customer error s or w is empty');
+          }
+          _toastMessage
+              .showToastMessage("An error occurred while $type customer.");
+        }
+      } else {
+        if (kDebugMode) {
+          print('$type customer error ${responseData.status}');
+        }
+        _toastMessage
+            .showToastMessage("An error occurred while $type customer.");
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('$type customer error $e');
+      }
+      _toastMessage.showToastMessage("An error occurred while $type customer.");
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  String createDynamicXml(List<CustomerCategory> customerCategories) {
+    // Create the base XML structure
+    StringBuffer xmlBuffer = StringBuffer();
+    xmlBuffer.write('<CustomerCategory_Data>');
+
+    // Loop through the list of CustomerCategory objects and add each one to the XML structure
+    for (var category in customerCategories) {
+      xmlBuffer.write('<CustomerCategory>');
+      xmlBuffer.write(
+          '<CustomerCategoryId>${category.customerCategoryId}</CustomerCategoryId>');
+      xmlBuffer.write('</CustomerCategory>');
+    }
+
+    // Close the XML structure
+    xmlBuffer.write('</CustomerCategory_Data>');
+
+    return xmlBuffer.toString();
+  }
+
+  Future<bool> _checkInternetConnection() async {
+    if (!await checkInternetConnection()) {
+      _toastMessage.showToastMessage(
+          "No internet connection. Please check your connection and try again.");
+      return false;
+    }
+    return true;
   }
 }

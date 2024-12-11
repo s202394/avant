@@ -1,12 +1,14 @@
 class EntryResponse {
   final String status;
-  final String s;
-  final String e;
+  String s = '';
+  String e = '';
+  String w = '';
 
   EntryResponse({
     required this.status,
-    required this.s,
-    required this.e,
+    this.s = '',
+    this.e = '',
+    this.w = '',
   });
 
   factory EntryResponse.fromJson(Map<String, dynamic> json) {
@@ -14,6 +16,7 @@ class EntryResponse {
       status: json['Status'] ?? '',
       s: json['s'] ?? '',
       e: json['e'] ?? '',
+      w: json['w'] ?? '',
     );
   }
 }

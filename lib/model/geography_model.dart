@@ -66,12 +66,20 @@ class Geography {
     };
   }
 
+  // Override == operator
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    return other is Geography && other.cityId == cityId;
+    if (other is! Geography) return false;
+    return other.countryId == countryId &&
+        other.stateId == stateId &&
+        other.districtId == districtId &&
+        other.cityId == cityId; // Compare relevant fields
   }
 
+  // Override hashCode
   @override
-  int get hashCode => cityId.hashCode;
+  int get hashCode {
+    return countryId.hashCode ^ stateId.hashCode ^ districtId.hashCode ^ cityId.hashCode;
+  }
 }

@@ -25,7 +25,7 @@ class NewCustomerTradeLibraryForm2 extends StatefulWidget {
   final String pinCode;
   final String phoneNumber;
   final String emailId;
-  final int customerCategoryId;
+  final String customerCategoryId;
   final String pan;
   final String gst;
   final String keyCustomer;
@@ -413,7 +413,7 @@ class NewCustomerTradeLibraryForm2State
           int.parse(widget.pinCode),
           widget.keyCustomer,
           widget.customerStatus,
-          "<CustomerCategory_Data><CustomerCategory><CustomerCategoryId>${widget.customerCategoryId}</CustomerCategoryId></CustomerCategory></CustomerCategory_Data>",
+          widget.customerCategoryId,
           "<CustomerExecutive_Data><CustomerExecutive><AccountTableExecutiveId>${executiveId ?? 0}</AccountTableExecutiveId></CustomerExecutive></CustomerExecutive_Data>",
           "<CustomerComment/>",
           userId ?? 0,

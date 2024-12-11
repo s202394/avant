@@ -29,6 +29,7 @@ class NewCustomerSchoolForm2 extends StatefulWidget {
   final String keyCustomer;
   final String customerStatus;
   final bool isEdit;
+  final String validated;
   final FetchCustomerDetailsSchoolResponse? customerDetailsSchoolResponse;
 
   const NewCustomerSchoolForm2(
@@ -46,6 +47,7 @@ class NewCustomerSchoolForm2 extends StatefulWidget {
       required this.keyCustomer,
       required this.customerStatus,
       required this.isEdit,
+      required this.validated,
       this.customerDetailsSchoolResponse});
 
   @override
@@ -117,7 +119,7 @@ class NewCustomerSchoolForm2State extends State<NewCustomerSchoolForm2> {
   List<Geography> _filteredCities = [];
   Geography? _selectedCity;
 
-  List<BookSellers> _booksellers = [];
+  final List<BookSellers> _booksellers = [];
 
   bool hasCheckedForEdit = false;
 
@@ -1012,6 +1014,7 @@ class NewCustomerSchoolForm2State extends State<NewCustomerSchoolForm2> {
             purchaseMode: _selectedPurchaseMode ?? '',
             bookseller: _booksellers,
             isEdit: widget.isEdit,
+            validated: widget.validated,
             customerDetailsSchoolResponse:
                 widget.customerDetailsSchoolResponse),
       ),

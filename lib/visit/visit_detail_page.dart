@@ -240,13 +240,13 @@ class VisitDetailsPageState extends State<VisitDetailsPage> {
       // If the permission is permanently denied, guide the user to the app settings
       openAppSettings();
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+        const SnackBar(
             content: Text('Please enable storage permission in settings.')),
       );
     } else {
       // Handle permission denied
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Storage permission denied.')),
+        const SnackBar(content: Text('Storage permission denied.')),
       );
     }
   }

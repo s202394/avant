@@ -28,7 +28,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../model/city_list_for_search_customer_response.dart';
 import '../model/customer_list_model.dart';
-import '../model/fetch_customer_details_model.dart';
 import '../model/sampling_details_response.dart';
 import '../model/save_file_model.dart';
 import '../model/search_customer_result_response.dart';
@@ -90,10 +89,12 @@ class LoginService {
       },
       body: body,
     );
-    print('login request body: $body');
-    print('login response code: ${response.statusCode}');
-    print('login response body: ${response.body}');
-    print('login request url: ${response.request?.url}');
+    if (kDebugMode) {
+      print('login request body: $body');
+      print('login response code: ${response.statusCode}');
+      print('login response body: ${response.body}');
+      print('login request url: ${response.request?.url}');
+    }
     if (response.statusCode == 200) {
       final responseData = json.decode(response.body);
       if (kDebugMode) {
@@ -388,7 +389,7 @@ class SetupValuesService {
       );
 
       if (kDebugMode) {
-        print('Setup Values Request URL: ${token}');
+        print('token: $token');
         print('Setup Values Request URL: ${response.request?.url}');
         print('Response body: ${response.body}');
         print('Response status: ${response.statusCode}');
@@ -1106,13 +1107,14 @@ class GeographyService {
         'Authorization': 'Bearer $token',
       },
       body: jsonEncode(<String, dynamic>{
-        'CityAccess': cityAccess,
+        'CityAccess': '',
         'ExecutiveId': executiveId,
       }),
     );
     if (kDebugMode) {
       print('Response status: ${response.statusCode}');
       print('Response body: ${response.body}');
+      print('Response body: ${response.request?.url}');
     }
     if (response.statusCode == 200) {
       final jsonResponse = json.decode(response.body);
@@ -1859,10 +1861,6 @@ class CreateNewCustomerService {
       'xmlSubjectClassDM': xmlSubjectClassDM,
       'xmlClassName': xmlClassName,
     });
-    print('Request URL body: $customerCreationUrl');
-    if (kDebugMode) {
-      print("Request Body: $body");
-    }
     final response = await http.post(
       Uri.parse(customerCreationUrl),
       headers: <String, String>{
@@ -2037,6 +2035,375 @@ class CreateNewCustomerService {
             panNumber,
             birthday,
             anniversary,
+            newToken);
+      } else {
+        throw Exception('Failed to retrieve new token');
+      }
+    } else {
+      throw Exception(
+          'Username or password is not stored in SharedPreferences');
+    }
+  }
+}
+
+class UpdateCustomerService {
+  Future<EntryResponse> updateCustomer(
+      int customerId,
+      String customerType,
+      String customerName,
+      String refCode,
+      String emailId,
+      String mobile,
+      String address,
+      int cityId,
+      int pinCode,
+      String keyCustomer,
+      String customerStatus,
+      String xmlCustomerCategoryId,
+      String xmlAccountTableExecutiveId,
+      String comment,
+      int enteredBy,
+      double latEntry,
+      double longEntry,
+      String gstNumber,
+      String panNumber,
+      String validated,
+      String token) async {
+    final body = jsonEncode(<String, dynamic>{
+      'CustomerId': customerId,
+      'CustomerType': customerType,
+      'CustomerName': customerName,
+      'RefCode': refCode,
+      'EmailId': emailId,
+      'Mobile': mobile,
+      'Address': address,
+      'CityId': cityId,
+      'Pincode': pinCode,
+      'KeyCustomer': keyCustomer,
+      'CustomerStatus': customerStatus,
+      'xmlCustomerCategoryId': xmlCustomerCategoryId,
+      'xmlAccountTableExecutiveId': xmlAccountTableExecutiveId,
+      'Comment': comment,
+      'EnteredBy': enteredBy,
+      'latEntry': latEntry,
+      'longEntry': longEntry,
+      'GstNumber': gstNumber,
+      'PanNumber': panNumber,
+      // 'BirthDay': birthday,
+      // 'Anniversary': anniversary,
+      'Validated': validated,
+    });
+
+    final response = await http.post(
+      Uri.parse(customerCreationUrl),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+        'Authorization': 'Bearer $token',
+      },
+      body: body,
+    );
+    if (kDebugMode) {
+      print("Request Body: $body");
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}');
+      print('Request url: ${response.request?.url}');
+    }
+    if (response.statusCode == 200) {
+      final jsonResponse = json.decode(response.body);
+      return EntryResponse.fromJson(jsonResponse);
+    } else if (response.statusCode == 401) {
+      // Token is invalid or expired, refresh the token and retry
+      return await refreshAndRetry(
+        customerId,
+        customerType,
+        customerName,
+        refCode,
+        emailId,
+        mobile,
+        address,
+        cityId,
+        pinCode,
+        keyCustomer,
+        customerStatus,
+        xmlCustomerCategoryId,
+        xmlAccountTableExecutiveId,
+        comment,
+        enteredBy,
+        latEntry,
+        longEntry,
+        gstNumber,
+        panNumber,
+        validated,
+      );
+    } else {
+      throw Exception('Failed to update $customerType details');
+    }
+  }
+
+  Future<EntryResponse> refreshAndRetry(
+    int customerId,
+    String customerType,
+    String customerName,
+    String refCode,
+    String emailId,
+    String mobile,
+    String address,
+    int cityId,
+    int pinCode,
+    String keyCustomer,
+    String customerStatus,
+    String xmlCustomerCategoryId,
+    String xmlAccountTableExecutiveId,
+    String comment,
+    int enteredBy,
+    double latEntry,
+    double longEntry,
+    String gstNumber,
+    String panNumber,
+    String validated,
+  ) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String username = prefs.getString('token_username') ?? '';
+    String password = prefs.getString('password') ?? '';
+
+    if (username.isNotEmpty && password.isNotEmpty) {
+      await TokenService().token(username, password);
+      String? newToken = prefs.getString('token');
+
+      if (newToken != null && newToken.isNotEmpty) {
+        return await updateCustomer(
+            customerId,
+            customerType,
+            customerName,
+            refCode,
+            emailId,
+            mobile,
+            address,
+            cityId,
+            pinCode,
+            keyCustomer,
+            customerStatus,
+            xmlCustomerCategoryId,
+            xmlAccountTableExecutiveId,
+            comment,
+            enteredBy,
+            latEntry,
+            longEntry,
+            gstNumber,
+            panNumber,
+            validated,
+            newToken);
+      } else {
+        throw Exception('Failed to retrieve new token');
+      }
+    } else {
+      throw Exception(
+          'Username or password is not stored in SharedPreferences');
+    }
+  }
+
+  Future<EntryResponse> updateCustomerSchool(
+      int customerId,
+      String customerType,
+      String customerName,
+      String refCode,
+      String emailId,
+      String mobile,
+      String address,
+      int cityId,
+      int pinCode,
+      String keyCustomer,
+      String customerStatus,
+      String xmlCustomerCategoryId,
+      String xmlAccountTableExecutiveId,
+      String comment,
+      int enteredBy,
+      double latEntry,
+      double longEntry,
+      String ranking,
+      int boardId,
+      int chainSchoolId,
+      int endClassId,
+      int startClassId,
+      String mediumInstruction,
+      int samplingMonth,
+      int decisionMonth,
+      String purchaseMode,
+      String xmlClassName,
+      int bookSeller1,
+      int bookSeller2,
+      String gstNumber,
+      String panNumber,
+      String validated,
+      String token) async {
+    final body = jsonEncode(<String, dynamic>{
+      'CustomerId': customerId,
+      'CustomerType': customerType,
+      'CustomerName': customerName,
+      'RefCode': refCode,
+      'EmailId': emailId,
+      'Mobile': mobile,
+      'Address': address,
+      'CityId': cityId,
+      'Pincode': pinCode,
+      'KeyCustomer': keyCustomer,
+      'CustomerStatus': customerStatus,
+      'xmlCustomerCategoryId': xmlCustomerCategoryId,
+      'xmlAccountTableExecutiveId': xmlAccountTableExecutiveId,
+      'Comment': comment,
+      'EnteredBy': enteredBy,
+      'latEntry': latEntry,
+      'longEntry': longEntry,
+      'Ranking': ranking,
+      'BoardId': boardId,
+      'ChainSchoolId': chainSchoolId,
+      'EndClassId': endClassId,
+      'StartClassId': startClassId,
+      'MediumInstruction': mediumInstruction,
+      'SamplingMonth': samplingMonth,
+      'DecisionMonth': decisionMonth,
+      'PurchaseMode': purchaseMode,
+      if (bookSeller1 > 0) 'BookSeller1': bookSeller1,
+      if (bookSeller2 > 0) 'BookSeller2': bookSeller2,
+      'GstNumber': gstNumber,
+      'PanNumber': panNumber,
+      'xmlClassName': xmlClassName,
+      'Validated': validated,
+    });
+    final response = await http.post(
+      Uri.parse(customerCreationUrl),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+        'Authorization': 'Bearer $token',
+      },
+      body: body,
+    );
+    if (kDebugMode) {
+      print("Request Body: $body");
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}');
+      print('Request URL: ${response.request?.url}');
+    }
+    if (response.statusCode == 200) {
+      final jsonResponse = json.decode(response.body);
+      return EntryResponse.fromJson(jsonResponse);
+    } else if (response.statusCode == 401) {
+      // Token is invalid or expired, refresh the token and retry
+      return await refreshAndRetryUpdateSchool(
+        customerId,
+        customerType,
+        customerName,
+        refCode,
+        emailId,
+        mobile,
+        address,
+        cityId,
+        pinCode,
+        keyCustomer,
+        customerStatus,
+        xmlCustomerCategoryId,
+        xmlAccountTableExecutiveId,
+        comment,
+        enteredBy,
+        latEntry,
+        longEntry,
+        ranking,
+        boardId,
+        chainSchoolId,
+        endClassId,
+        startClassId,
+        mediumInstruction,
+        samplingMonth,
+        decisionMonth,
+        purchaseMode,
+        xmlClassName,
+        bookSeller1,
+        bookSeller2,
+        gstNumber,
+        panNumber,
+        validated,
+      );
+    } else {
+      throw Exception('Failed to update $customerType customer');
+    }
+  }
+
+  Future<EntryResponse> refreshAndRetryUpdateSchool(
+    int customerId,
+    String customerType,
+    String customerName,
+    String refCode,
+    String emailId,
+    String mobile,
+    String address,
+    int cityId,
+    int pinCode,
+    String keyCustomer,
+    String customerStatus,
+    String xmlCustomerCategoryId,
+    String xmlAccountTableExecutiveId,
+    String comment,
+    int enteredBy,
+    double latEntry,
+    double longEntry,
+    String ranking,
+    int boardId,
+    int chainSchoolId,
+    int endClassId,
+    int startClassId,
+    String mediumInstruction,
+    int samplingMonth,
+    int decisionMonth,
+    String purchaseMode,
+    String xmlClassName,
+    int bookSeller1,
+    int bookSeller2,
+    String gstNumber,
+    String panNumber,
+    String validated,
+  ) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String username = prefs.getString('token_username') ?? '';
+    String password = prefs.getString('password') ?? '';
+
+    if (username.isNotEmpty && password.isNotEmpty) {
+      await TokenService().token(username, password);
+      String? newToken = prefs.getString('token');
+
+      if (newToken != null && newToken.isNotEmpty) {
+        return await updateCustomerSchool(
+            customerId,
+            customerType,
+            customerName,
+            refCode,
+            emailId,
+            mobile,
+            address,
+            cityId,
+            pinCode,
+            keyCustomer,
+            customerStatus,
+            xmlCustomerCategoryId,
+            xmlAccountTableExecutiveId,
+            comment,
+            enteredBy,
+            latEntry,
+            longEntry,
+            ranking,
+            boardId,
+            chainSchoolId,
+            endClassId,
+            startClassId,
+            mediumInstruction,
+            samplingMonth,
+            decisionMonth,
+            purchaseMode,
+            xmlClassName,
+            bookSeller1,
+            bookSeller2,
+            gstNumber,
+            panNumber,
+            validated,
             newToken);
       } else {
         throw Exception('Failed to retrieve new token');
@@ -3268,15 +3635,15 @@ class DeleteCustomerService {
       int customerContactId,
       int enteredBy,
       String validated,
-      String remarks,
+      String customerType,
       String token) async {
     String body = jsonEncode(<String, dynamic>{
-      'Executiveid': executiveId,
+      'ExecutiveId': executiveId,
       'CustomerId': customerId,
       'CustomerContactId': customerContactId,
       'EnteredBy': enteredBy,
       'Validated': validated,
-      'Remarks': remarks,
+      'CustomerType': customerType,
     });
 
     final response = await http.post(
@@ -3300,7 +3667,7 @@ class DeleteCustomerService {
       return SubmitRequestApprovalResponse.fromJson(jsonResponse);
     } else if (response.statusCode == 401) {
       return await _refreshAndRetryContactDelete(executiveId, customerId,
-          customerContactId, enteredBy, validated, remarks);
+          customerContactId, enteredBy, validated, customerType);
     } else {
       throw Exception('Failed to delete customer $customerId');
     }
@@ -3312,7 +3679,7 @@ class DeleteCustomerService {
       int customerContactId,
       int enteredBy,
       String validated,
-      String remarks) async {
+      String customerType) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String username = prefs.getString('token_username') ?? '';
     String password = prefs.getString('password') ?? '';
@@ -3323,7 +3690,7 @@ class DeleteCustomerService {
 
       if (newToken != null && newToken.isNotEmpty) {
         return await deleteCustomerContact(executiveId, customerId,
-            customerContactId, enteredBy, validated, remarks, newToken);
+            customerContactId, enteredBy, validated, customerType, newToken);
       } else {
         throw Exception('Failed to retrieve new token');
       }

@@ -426,6 +426,23 @@ class CustomerCategory implements JsonSerializable {
       'CustomerCategoryName': customerCategoryName,
     };
   }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+
+    return other is CustomerCategory &&
+        other.customerCategoryId == customerCategoryId &&
+        other.customerCategoryName == customerCategoryName;
+  }
+
+  @override
+  int get hashCode =>
+      customerCategoryId.hashCode ^ customerCategoryName.hashCode;
+
+  @override
+  String toString() =>
+      'CustomerCategory($customerCategoryId, $customerCategoryName)';
 }
 
 class Months implements JsonSerializable {

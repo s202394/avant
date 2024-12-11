@@ -1,5 +1,4 @@
 import 'package:avant/views/custom_text.dart';
-import 'package:avant/views/label_text.dart';
 import 'package:flutter/material.dart';
 
 class MultiSelectDropdown<T> extends StatefulWidget {

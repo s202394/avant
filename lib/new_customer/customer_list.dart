@@ -16,16 +16,16 @@ import '../views/custom_text.dart';
 import '../views/rich_text.dart';
 import 'new_customer_trade_library_form1.dart';
 
-class NewCustomerList extends StatefulWidget {
+class CustomerList extends StatefulWidget {
   final String type;
 
-  const NewCustomerList({super.key, required this.type});
+  const CustomerList({super.key, required this.type});
 
   @override
-  NewCustomerListState createState() => NewCustomerListState();
+  CustomerListState createState() => CustomerListState();
 }
 
-class NewCustomerListState extends State<NewCustomerList> {
+class CustomerListState extends State<CustomerList> {
   late SharedPreferences prefs;
   late String token;
   late int? executiveId;

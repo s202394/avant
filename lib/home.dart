@@ -27,7 +27,7 @@ import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:workmanager/workmanager.dart';
 
-import 'new_customer/new_customer_list.dart';
+import 'new_customer/customer_list.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -780,7 +780,7 @@ class HomePageState extends State<HomePage> with WidgetsBindingObserver {
   void gotoNewCustomer(String type) {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => NewCustomerList(type: type)),
+      MaterialPageRoute(builder: (context) => CustomerList(type: type)),
     );
   }
 

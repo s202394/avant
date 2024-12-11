@@ -58,7 +58,6 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
   final _boardFieldKey = GlobalKey<FormFieldState>();
   final _chainSchoolFieldKey = GlobalKey<FormFieldState>();
   final _addressFieldKey = GlobalKey<FormFieldState>();
-  final _cityFieldKey = GlobalKey<FormFieldState>();
   final _pinCodeFieldKey = GlobalKey<FormFieldState>();
   final _phoneNumberFieldKey = GlobalKey<FormFieldState>();
   final _emailIdFieldKey = GlobalKey<FormFieldState>();
@@ -73,8 +72,19 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
   final FocusNode _boardFocusNode = FocusNode();
 
   String _cityAccess = '';
-  List<Geography> _filteredCities = [];
+
+  Geography? _selectedCountry;
+  Geography? _selectedState;
+  Geography? _selectedDistrict;
   Geography? _selectedCity;
+
+  List<Geography> _filteredCountries = [];
+  List<Geography> _filteredStates = [];
+  List<Geography> _filteredDistricts = [];
+  List<Geography> _filteredCities = [];
+
+  List<Geography> _allGeographies = [];
+
   BoardMaster? _selectedBoard;
   ChainSchool? _selectedChainSchool;
   bool? _selectedKeyCustomer;
@@ -85,6 +95,8 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
   late SharedPreferences prefs;
   late String token;
   late int executiveId;
+
+  String validated = '';
 
   String? mandatorySetting;
 
@@ -501,20 +513,14 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
       List<Geography> dbData = await dbHelper.getGeographyDataFromDB();
       if (dbData.isNotEmpty) {
         setState(() {
-          _filteredCities = dbData;
+          _allGeographies = dbData;
+          _initializeCountries();
         });
-        if (kDebugMode) {
-          print("Loaded geography data from the database.");
-        }
       } else {
-        if (kDebugMode) {
-          print("No data in DB, fetching from API.");
-        }
-        await _fetchGeographyData(); // Wait for API data
+        await _fetchGeographyData(); // Fetch from API if DB is empty
       }
     } catch (e) {
-      debugPrint("Error in _loadGeographyData: $e");
-      rethrow;
+      debugPrint("Error loading geography data: $e");
     }
   }
 
@@ -522,17 +528,27 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
     try {
       GeographyService geographyService = GeographyService();
       GeographyResponse geographyResponse =
-          await geographyService.fetchGeographyData(
+      await geographyService.fetchGeographyData(
         _cityAccess,
         executiveId,
         token,
       );
-      List<int> cityIds =
-          _cityAccess.split(',').map((id) => int.parse(id)).toList();
       setState(() {
-        _filteredCities = geographyResponse.geographyList
-            .where((geography) => cityIds.contains(geography.cityId))
+        List<Geography> geographyList = geographyResponse.geographyList;
+        _filteredCountries = geographyList
+            .where((g) =>
+        geographyList.indexWhere((e) => e.countryId == g.countryId) ==
+            geographyList.indexOf(g))
             .toList();
+
+        _filteredCities = geographyResponse.geographyList.toList();
+
+        if (kDebugMode) {
+          print('_filteredCities:${_filteredCities.toString()}');
+        }
+        if (kDebugMode) {
+          print('_filteredCities unique:${_filteredCities.toString()}');
+        }
       });
     } catch (e) {
       if (kDebugMode) {
@@ -644,8 +660,43 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
             _buildTextField('Address', _addressController, _addressFieldKey,
                 _addressFocusNode,
                 maxLines: 5),
-            _buildDropdownFieldCity(
-                'City', _cityController, _cityFieldKey, _cityFocusNode),
+            const SizedBox(height: 8),
+            _buildDropdown(
+              label: 'Country',
+              selectedValue: _selectedCountry,
+              items: _filteredCountries,
+              displayText: (geo) => geo.country,
+              onChanged: _onCountryChanged,
+            ),
+            const SizedBox(height: 16),
+            _buildDropdown(
+              label: 'State',
+              selectedValue: _selectedState,
+              items: _filteredStates,
+              displayText: (geo) => geo.state,
+              onChanged: _onStateChanged,
+            ),
+            const SizedBox(height: 16),
+            _buildDropdown(
+              label: 'District',
+              selectedValue: _selectedDistrict,
+              items: _filteredDistricts,
+              displayText: (geo) => geo.district,
+              onChanged: _onDistrictChanged,
+            ),
+            const SizedBox(height: 16),
+            _buildDropdown(
+              label: 'City',
+              selectedValue: _selectedCity,
+              items: _filteredCities,
+              displayText: (geo) => geo.city,
+              onChanged: (selected) {
+                setState(() {
+                  _selectedCity = selected;
+                });
+              },
+            ),
+            const SizedBox(height: 8),
             _buildTextField('Pin Code', _pinCodeController, _pinCodeFieldKey,
                 _pinCodeFocusNode),
             _buildTextField('Phone Number', _phoneNumberController,
@@ -774,6 +825,7 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
               customerStatus:
                   (_selectedCustomerStatus ?? false) ? "Active" : "Inactive",
               isEdit: widget.isEdit,
+              validated: validated,
               customerDetailsSchoolResponse: customerDetailsSchoolResponse,
             ),
           ),
@@ -886,48 +938,6 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
     );
   }
 
-  Widget _buildDropdownFieldCity(
-    String label,
-    TextEditingController controller,
-    GlobalKey<FormFieldState> fieldKey,
-    FocusNode focusNode, {
-    double labelFontSize = 14.0,
-    double textFontSize = 14.0,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: DropdownButtonFormField<Geography>(
-        key: fieldKey,
-        focusNode: focusNode,
-        value: _selectedCity,
-        items: [
-          const DropdownMenuItem<Geography>(
-            value: null,
-            child: CustomText('Select'),
-          ),
-          ..._filteredCities.map(
-            (geography) => DropdownMenuItem<Geography>(
-              value: geography,
-              child: CustomText(geography.city, fontSize: textFontSize),
-            ),
-          ),
-        ],
-        onChanged: (Geography? value) {
-          setState(() {
-            _selectedCity = value;
-            controller.text = value?.city ?? '';
-            fieldKey.currentState?.validate();
-          });
-        },
-        decoration: InputDecoration(
-          labelText: label,
-          labelStyle: TextStyle(fontSize: labelFontSize),
-          border: const OutlineInputBorder(),
-        ),
-      ),
-    );
-  }
-
   Widget _buildDropdownFieldBoard(
     String label,
     TextEditingController controller,
@@ -1027,12 +1037,6 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
           labelStyle: TextStyle(fontSize: labelFontSize),
           border: const OutlineInputBorder(),
         ),
-        validator: (value) {
-          if (value == null || value.chainSchoolName.isEmpty) {
-            return 'Please select $label';
-          }
-          return null;
-        },
       ),
     );
   }
@@ -1040,7 +1044,7 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
   Future<void> checkForEdit() async {
     try {
       int customerId = extractNumericPart(widget.action);
-      String validated = extractStringPart(widget.action);
+      validated = extractStringPart(widget.action);
 
       FetchCustomerDetailsService service = FetchCustomerDetailsService();
       customerDetailsSchoolResponse = await service.fetchCustomerDetails(
@@ -1112,15 +1116,44 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
       }
     }
 
-    final selectedCity = _findCityById(details.cityId);
-    if (selectedCity.cityId == 0) {
-      _selectedCity = null;
-      _cityController.text = '';
-      debugPrint('City ID ${details.cityId} not found in filtered cities.');
+    debugPrint('details.countryId : ${details.countryId}');
+    debugPrint('details.stateId : ${details.stateId}');
+    debugPrint('details.districtId : ${details.districtId}');
+    debugPrint('details.cityId : ${details.cityId}');
+
+    final selectedCountry = _findCountryById(details.countryId);
+    if (selectedCountry.countryId == 0) {
+      debugPrint('selectedCountry 0');
     } else {
-      debugPrint('City ID ${details.cityId} found in filtered cities.');
-      _selectedCity = selectedCity;
-      _cityController.text = _selectedCity?.city ?? '';
+      _onCountryChanged(selectedCountry);
+
+      final selectedState = _findStateById(details.stateId);
+      if (selectedState.stateId == 0) {
+        debugPrint('selectedState 0');
+      } else {
+        _onStateChanged(selectedState);
+
+        final selectedDistrict = _findDistrictById(details.districtId);
+        if (selectedDistrict.districtId == 0) {
+          debugPrint('selectedDistrict 0');
+        } else {
+          _onDistrictChanged(selectedDistrict);
+
+          if (_filteredCities.isNotEmpty) {
+            _selectedCity = _filteredCities.firstWhere(
+                  (geo) => geo.cityId == details.cityId,
+              orElse: () => _filteredCities.first,
+            );
+          }
+
+          final selectedCity = _findCityById(details.cityId);
+          if (selectedCity.cityId == 0) {
+            debugPrint('selectedCity 0');
+          } else {
+            _selectedCity = selectedCity;
+          }
+        }
+      }
     }
 
     editAddress();
@@ -1128,7 +1161,7 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
 
   Geography _findCityById(int? cityId) {
     return _filteredCities.firstWhere(
-      (city) => city.cityId == cityId,
+          (city) => city.cityId == cityId,
       orElse: () => Geography(
         countryId: 0,
         country: '',
@@ -1140,5 +1173,269 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
         city: '',
       ),
     );
+  }
+
+  Geography _findCountryById(int? countryId) {
+    return _allGeographies.firstWhere(
+          (city) => city.countryId == countryId,
+      orElse: () => Geography(
+        countryId: 0,
+        country: '',
+        stateId: 0,
+        state: '',
+        districtId: 0,
+        district: '',
+        cityId: 0,
+        city: '',
+      ),
+    );
+  }
+
+  Geography _findStateById(int? stateId) {
+    return _filteredStates.firstWhere(
+          (city) => city.stateId == stateId,
+      orElse: () => Geography(
+        countryId: 0,
+        country: '',
+        stateId: 0,
+        state: '',
+        districtId: 0,
+        district: '',
+        cityId: 0,
+        city: '',
+      ),
+    );
+  }
+
+  Geography _findDistrictById(int? districtId) {
+    return _filteredDistricts.firstWhere(
+          (city) => city.districtId == districtId,
+      orElse: () => Geography(
+        countryId: 0,
+        country: '',
+        stateId: 0,
+        state: '',
+        districtId: 0,
+        district: '',
+        cityId: 0,
+        city: '',
+      ),
+    );
+  }
+
+  void _initializeCountries() {
+    // Get unique countries
+    _filteredCountries = _allGeographies
+        .where((geo) =>
+    _allGeographies
+        .indexWhere((item) => item.countryId == geo.countryId) ==
+        _allGeographies.indexOf(geo))
+        .toList();
+  }
+
+  void _onCountryChanged(Geography? selected) {
+    setState(() {
+      _selectedCountry = selected;
+      _selectedState = null;
+      _selectedDistrict = null;
+      _selectedCity = null;
+
+      // Filter unique states for the selected country
+      final Set<int> uniqueStateIds = {};
+      _filteredStates = _allGeographies
+          .where((geo) =>
+      geo.countryId == selected?.countryId &&
+          uniqueStateIds.add(geo.stateId)) // Only add unique states
+          .toList();
+
+      _filteredDistricts = []; // Clear districts when country changes
+      _filteredCities = []; // Clear cities when country changes
+    });
+  }
+
+  void _onStateChanged(Geography? selected) {
+    setState(() {
+      _selectedState = selected;
+      _selectedDistrict = null;
+      _selectedCity = null;
+
+      // Filter unique cities for the selected state
+      final Set<int> uniqueDistrictIds = {};
+      _filteredDistricts = _allGeographies
+          .where((geo) =>
+      geo.stateId == selected?.stateId &&
+          uniqueDistrictIds.add(geo.districtId)) // Only add unique district
+          .toList();
+      _filteredCities = []; // Clear cities when state changes
+    });
+  }
+
+  void _onDistrictChanged(Geography? selected) {
+    setState(() {
+      _selectedDistrict = selected;
+      _selectedCity = null;
+
+      // Filter unique cities for the selected state
+      final Set<int> uniqueCityIds = {};
+      _filteredCities = _allGeographies
+          .where((geo) =>
+      geo.districtId == selected?.districtId &&
+          uniqueCityIds.add(geo.cityId)) // Only add unique cities
+          .toList();
+    });
+  }
+
+  Widget _buildDropdown({
+    required String label,
+    required Geography? selectedValue,
+    required List<Geography> items,
+    required String Function(Geography) displayText,
+    required ValueChanged<Geography?> onChanged,
+    double labelFontSize = 14.0,
+    double textFontSize = 14.0,
+  }) {
+    final uniqueItems = items.toSet().toList();
+    return DropdownButtonFormField<Geography>(
+      value: selectedValue,
+      style: TextStyle(fontSize: textFontSize),
+      items: [
+        DropdownMenuItem<Geography>(
+          value: null,
+          child: CustomText('Select $label'),
+        ),
+        ...uniqueItems.map(
+              (geo) => DropdownMenuItem<Geography>(
+            value: geo,
+            child: CustomText(displayText(geo)),
+          ),
+        ),
+      ],
+      onChanged: onChanged,
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: TextStyle(fontSize: labelFontSize),
+        border: const OutlineInputBorder(),
+      ),
+      validator: (value) => value == null ? 'Please select $label' : null,
+    );
+  }
+
+  void unableToGetAddress() async {
+    final address =
+        '${_selectedCity?.city ?? ''}, ${_selectedState?.state ?? ''}, ${_selectedState?.district ?? ''}, ${_selectedCountry?.country ?? ''}}';
+    debugPrint('Edit customer address 2 $address');
+    try {
+      List<Location> locations = await locationFromAddress(address);
+      debugPrint('Edit customer address locations size ${locations.length}');
+      if (locations.isNotEmpty) {
+        // Use the first matched location
+        Location addressLocation = locations.first;
+        debugPrint(
+            'Edit customer address latitude ${addressLocation.latitude}, longitude : ${addressLocation.longitude}');
+        LatLng initialPosition =
+        LatLng(addressLocation.latitude, addressLocation.longitude);
+        debugPrint(
+            'Edit customer initialPosition latitude ${initialPosition.latitude}, longitude : ${initialPosition.longitude}');
+
+        // Update marker and position
+        _currentPosition = initialPosition;
+        debugPrint(
+            'Edit customer _currentPosition latitude ${_currentPosition?.latitude}, longitude : ${_currentPosition?.longitude}');
+
+        _currentMarker = Marker(
+          markerId: const MarkerId('currentLocation'),
+          position: initialPosition,
+          draggable: true,
+          onTap: () => _onMarkerTapped(initialPosition),
+          onDragEnd: (newPosition) => _onMarkerDragEnd(newPosition),
+        );
+
+        await placemarkFromCoordinates(
+          initialPosition.latitude,
+          initialPosition.longitude,
+        ).timeout(
+          const Duration(seconds: 10), // Timeout duration
+          onTimeout: () {
+            throw TimeoutException("Geocoding timed out after 10 seconds.");
+          },
+        );
+
+        setState(() {
+          _currentMarker =
+              _currentMarker!.copyWith(positionParam: _currentPosition);
+          debugPrint("_currentMarker markerId ${_currentMarker?.markerId}");
+        });
+
+        debugPrint("_currentMarker ${_currentMarker?.position.longitude}");
+        _animateToPosition(initialPosition);
+
+        debugPrint("animateCamera.");
+      } else {
+        debugPrint("Fetching location empty.");
+      }
+    } catch (e) {
+      debugPrint("Error fetching location from address: $e");
+      unableToGetAddress2();
+      return;
+    }
+  }
+
+  void unableToGetAddress2() async {
+    final address = _pinCodeController.text.toString().trim();
+    debugPrint('Edit customer address 3 $address');
+    try {
+      List<Location> locations = await locationFromAddress(address);
+      debugPrint('Edit customer address locations size ${locations.length}');
+      if (locations.isNotEmpty) {
+        // Use the first matched location
+        Location addressLocation = locations.first;
+        debugPrint(
+            'Edit customer address latitude ${addressLocation.latitude}, longitude : ${addressLocation.longitude}');
+        LatLng initialPosition =
+        LatLng(addressLocation.latitude, addressLocation.longitude);
+        debugPrint(
+            'Edit customer initialPosition latitude ${initialPosition.latitude}, longitude : ${initialPosition.longitude}');
+
+        // Update marker and position
+        _currentPosition = initialPosition;
+        debugPrint(
+            'Edit customer _currentPosition latitude ${_currentPosition?.latitude}, longitude : ${_currentPosition?.longitude}');
+
+        _currentMarker = Marker(
+          markerId: const MarkerId('currentLocation'),
+          position: initialPosition,
+          draggable: true,
+          onTap: () => _onMarkerTapped(initialPosition),
+          onDragEnd: (newPosition) => _onMarkerDragEnd(newPosition),
+        );
+
+        await placemarkFromCoordinates(
+          initialPosition.latitude,
+          initialPosition.longitude,
+        ).timeout(
+          const Duration(seconds: 10), // Timeout duration
+          onTimeout: () {
+            throw TimeoutException("Geocoding timed out after 10 seconds.");
+          },
+        );
+
+        setState(() {
+          _currentMarker =
+              _currentMarker!.copyWith(positionParam: _currentPosition);
+          debugPrint("_currentMarker markerId ${_currentMarker?.markerId}");
+        });
+
+        debugPrint("_currentMarker ${_currentMarker?.position.longitude}");
+        _animateToPosition(initialPosition);
+
+        debugPrint("animateCamera.");
+      } else {
+        debugPrint("Fetching location empty.");
+      }
+    } catch (e) {
+      debugPrint("Error fetching location from address: $e");
+      addAddress();
+      return;
+    }
   }
 }

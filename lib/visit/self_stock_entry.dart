@@ -2,6 +2,7 @@ import 'package:avant/api/api_service.dart';
 import 'package:avant/common/toast.dart';
 import 'package:avant/views/rich_text.dart';
 import 'package:avant/visit/self_stock_request_search.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../model/login_model.dart';
@@ -388,7 +389,9 @@ class SelfStockEntryPageState extends State<SelfStockEntry> {
               setState(() {
                 _submitted = true;
               });
-              print('deliveryTradeId:${selectedDeliveryTradeId ?? 0}');
+              if (kDebugMode) {
+                print('deliveryTradeId:${selectedDeliveryTradeId ?? 0}');
+              }
               if (_formKey.currentState!.validate()) {
                 Navigator.push(
                   context,

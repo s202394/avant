@@ -44,34 +44,35 @@ class NewCustomerSchoolForm3 extends StatefulWidget {
   final List<BookSellers> bookseller;
 
   final bool isEdit;
+  final String validated;
   final FetchCustomerDetailsSchoolResponse? customerDetailsSchoolResponse;
 
-  const NewCustomerSchoolForm3(
-      {super.key,
-      required this.type,
-      required this.customerName,
-      required this.address,
-      required this.cityId,
-      required this.cityName,
-      required this.pinCode,
-      required this.phoneNumber,
-      required this.emailId,
-      required this.boardId,
-      required this.chainSchoolId,
-      required this.keyCustomer,
-      required this.customerStatus,
-      required this.startClassId,
-      required this.endClassId,
-      required this.samplingMonthId,
-      required this.decisionMonthId,
-      required this.medium,
-      required this.ranking,
-      required this.pan,
-      required this.gst,
-      required this.purchaseMode,
-      required this.bookseller,
-      required this.isEdit,
-      this.customerDetailsSchoolResponse});
+  const NewCustomerSchoolForm3({super.key,
+    required this.type,
+    required this.customerName,
+    required this.address,
+    required this.cityId,
+    required this.cityName,
+    required this.pinCode,
+    required this.phoneNumber,
+    required this.emailId,
+    required this.boardId,
+    required this.chainSchoolId,
+    required this.keyCustomer,
+    required this.customerStatus,
+    required this.startClassId,
+    required this.endClassId,
+    required this.samplingMonthId,
+    required this.decisionMonthId,
+    required this.medium,
+    required this.ranking,
+    required this.pan,
+    required this.gst,
+    required this.purchaseMode,
+    required this.bookseller,
+    required this.isEdit,
+    required this.validated,
+    this.customerDetailsSchoolResponse});
 
   @override
   NewCustomerSchoolForm3State createState() => NewCustomerSchoolForm3State();
@@ -82,18 +83,18 @@ class NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
   final _formKey = GlobalKey<FormState>();
 
   final TextEditingController _contactFirstNameController =
-      TextEditingController();
+  TextEditingController();
   final TextEditingController _contactLastNameController =
-      TextEditingController();
+  TextEditingController();
   final TextEditingController _phoneNumberController = TextEditingController();
   final TextEditingController _emailIdController = TextEditingController();
   final TextEditingController _dobController = TextEditingController();
   final TextEditingController _anniversaryController = TextEditingController();
   final TextEditingController _contactAddressController =
-      TextEditingController();
+  TextEditingController();
   final TextEditingController _contactCityController = TextEditingController();
   final TextEditingController _contactPinCodeController =
-      TextEditingController();
+  TextEditingController();
 
   final _contactFirstNameFieldKey = GlobalKey<FormFieldState>();
   final _contactLastNameFieldKey = GlobalKey<FormFieldState>();
@@ -167,13 +168,14 @@ class NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
   Future<CustomerEntryMasterResponse> initializePreferencesAndData() async {
     // Check if data exists in the database
     CustomerEntryMasterResponse? existingData =
-        await dbHelper.getCustomerEntryMasterResponse();
+    await dbHelper.getCustomerEntryMasterResponse();
 
     if (existingData != null && !isEmptyData(existingData)) {
       // Data exists in the database, return it
       if (kDebugMode) {
         print(
-            "CustomerEntryMaster data found in db: ${existingData.salutationMasterList}");
+            "CustomerEntryMaster data found in db: ${existingData
+                .salutationMasterList}");
       }
       return existingData;
     } else {
@@ -186,8 +188,8 @@ class NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
 
       try {
         CustomerEntryMasterResponse response =
-            await CustomerEntryMasterService()
-                .fetchCustomerEntryMaster(downHierarchy, token);
+        await CustomerEntryMasterService()
+            .fetchCustomerEntryMaster(downHierarchy, token);
         if (kDebugMode) {
           print(
               "CustomerEntryMaster data fetched from API and saved to db. $response");
@@ -281,7 +283,7 @@ class NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
       GeographyResponse geographyResponse = await geographyService
           .fetchGeographyData(_cityAccess, executiveId ?? 0, token);
       List<int> cityIds =
-          _cityAccess.split(',').map((id) => int.parse(id)).toList();
+      _cityAccess.split(',').map((id) => int.parse(id)).toList();
       setState(() {
         _filteredCities = geographyResponse.geographyList
             .where((geography) => cityIds.contains(geography.cityId))
@@ -302,31 +304,31 @@ class NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : FutureBuilder<CustomerEntryMasterResponse>(
-              future: futureData,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                } else if (snapshot.hasError) {
-                  return Center(child: Text('Error: ${snapshot.error}'));
-                } else if (snapshot.hasData) {
-                  // Once data is available, initialize the response
-                  customerEntryMasterResponse = snapshot.data!;
+        future: futureData,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
+          } else if (snapshot.hasData) {
+            // Once data is available, initialize the response
+            customerEntryMasterResponse = snapshot.data!;
 
-                  // If in edit mode, trigger checkForEdit only once
-                  if (widget.isEdit && !hasCheckedForEdit) {
-                    hasCheckedForEdit = true;
-                    Future.delayed(Duration.zero, () {
-                      checkForEdit(); // Call checkForEdit after the build method
-                    });
-                  }
+            // If in edit mode, trigger checkForEdit only once
+            if (widget.isEdit && !hasCheckedForEdit) {
+              hasCheckedForEdit = true;
+              Future.delayed(Duration.zero, () {
+                checkForEdit(); // Call checkForEdit after the build method
+              });
+            }
 
-                  // Return the form UI
-                  return buildForm(snapshot.data!);
-                } else {
-                  return const Center(child: Text('No data found'));
-                }
-              },
-            ),
+            // Return the form UI
+            return buildForm(snapshot.data!);
+          } else {
+            return const Center(child: Text('No data found'));
+          }
+        },
+      ),
     );
   }
 
@@ -396,7 +398,7 @@ class NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
 
                     // Controller for the TextField
                     final TextEditingController controller =
-                        TextEditingController(
+                    TextEditingController(
                       text: isEnabled
                           ? _classValues[classItem.classNumId] ?? ''
                           : '0',
@@ -465,72 +467,83 @@ class NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
                     );
                   },
                 ),
-                Container(
-                  width: double.infinity,
-                  height: 1,
-                  color: Colors.grey,
-                ),
-                const SizedBox(height: 10),
-                const CustomText(
-                  textAlign: TextAlign.center,
-                  'Primary Contact',
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-                const SizedBox(height: 10),
-                _buildTextField('Contact First Name',
-                    _contactFirstNameController, _contactFirstNameFieldKey),
-                _buildTextField('Contact Last Name', _contactLastNameController,
-                    _contactLastNameFieldKey),
-                buildDropdownField(
-                  label: 'Contact Designation',
-                  value: _selectedContactDesignation,
-                  items: contactDesignationMap.keys.toList(),
-                  onChanged: (value) {
-                    setState(() {
-                      _selectedContactDesignation = value;
-                      _selectedContactDesignationId =
-                          contactDesignationMap[value];
-                    });
-                  },
-                  fieldKey: _contactDesignationFieldKey,
-                ),
-                buildDropdownField(
-                  label: 'Salutation',
-                  value: _selectedSalutation,
-                  items: salutationMap.keys.toList(),
-                  onChanged: (value) {
-                    setState(() {
-                      _selectedSalutation = value;
-                      _selectedSalutationId = salutationMap[value];
-                    });
-                  },
-                  fieldKey: _salutationFieldKey,
-                ),
-                _buildTextField(
-                    'Mobile', _phoneNumberController, _phoneNumberFieldKey),
-                _buildTextField('Email', _emailIdController, _emailIdFieldKey),
-                _buildTextField('Date of Birth', _dobController, _dobFieldKey),
-                _buildTextField('Anniversary', _anniversaryController,
-                    _anniversaryFieldKey),
-                _buildTextField('Address', _contactAddressController,
-                    _contactAddressFieldKey,
-                    maxLines: 5),
-                _buildDropdownFieldCity(
-                    'City', _contactCityController, _contactCityFieldKey),
-                _buildTextField('Pin Code', _contactPinCodeController,
-                    _contactPinCodeFieldKey),
-                buildDropdownField(
-                  label: 'Data Source',
-                  value: _selectedDataSource,
-                  items: dataSourceMap.keys.toList(),
-                  onChanged: (value) {
-                    setState(() {
-                      _selectedDataSource = value;
-                      _selectedDataSourceId = dataSourceMap[value];
-                    });
-                  },
-                  fieldKey: _dataSourceFieldKey,
+                Visibility(
+                  visible: !widget.isEdit,
+                  child: Column(
+                    children: [
+                      Container(
+                        width: double.infinity,
+                        height: 1,
+                        color: Colors.grey,
+                      ),
+                      const SizedBox(height: 10),
+                      const CustomText(
+                        textAlign: TextAlign.center,
+                        'Primary Contact',
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      const SizedBox(height: 10),
+                      _buildTextField(
+                          'Contact First Name',
+                          _contactFirstNameController,
+                          _contactFirstNameFieldKey),
+                      _buildTextField('Contact Last Name',
+                          _contactLastNameController, _contactLastNameFieldKey),
+                      buildDropdownField(
+                        label: 'Contact Designation',
+                        value: _selectedContactDesignation,
+                        items: contactDesignationMap.keys.toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedContactDesignation = value;
+                            _selectedContactDesignationId =
+                            contactDesignationMap[value];
+                          });
+                        },
+                        fieldKey: _contactDesignationFieldKey,
+                      ),
+                      buildDropdownField(
+                        label: 'Salutation',
+                        value: _selectedSalutation,
+                        items: salutationMap.keys.toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedSalutation = value;
+                            _selectedSalutationId = salutationMap[value];
+                          });
+                        },
+                        fieldKey: _salutationFieldKey,
+                      ),
+                      _buildTextField('Mobile', _phoneNumberController,
+                          _phoneNumberFieldKey),
+                      _buildTextField(
+                          'Email', _emailIdController, _emailIdFieldKey),
+                      _buildTextField(
+                          'Date of Birth', _dobController, _dobFieldKey),
+                      _buildTextField('Anniversary', _anniversaryController,
+                          _anniversaryFieldKey),
+                      _buildTextField('Address', _contactAddressController,
+                          _contactAddressFieldKey,
+                          maxLines: 5),
+                      _buildDropdownFieldCity(
+                          'City', _contactCityController, _contactCityFieldKey),
+                      _buildTextField('Pin Code', _contactPinCodeController,
+                          _contactPinCodeFieldKey),
+                      buildDropdownField(
+                        label: 'Data Source',
+                        value: _selectedDataSource,
+                        items: dataSourceMap.keys.toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedDataSource = value;
+                            _selectedDataSourceId = dataSourceMap[value];
+                          });
+                        },
+                        fieldKey: _dataSourceFieldKey,
+                      ),
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 20),
                 GestureDetector(
@@ -539,7 +552,11 @@ class NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
                       if (kDebugMode) {
                         print("Add ${widget.type} data API");
                       }
-                      _submitForm(data.classesList);
+                      if (widget.isEdit) {
+                        _updateForm(data.classesList);
+                      } else {
+                        _submitForm(data.classesList);
+                      }
                     }
                   },
                   child: Container(
@@ -549,7 +566,9 @@ class NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
                       padding: const EdgeInsets.symmetric(
                           vertical: 8.0, horizontal: 16),
                       child: Text(
-                        'Add ${widget.type}',
+                        widget.isEdit
+                            ? 'Update ${widget.type}'
+                            : 'Add ${widget.type}',
                         textAlign: TextAlign.center,
                         style: const TextStyle(
                           color: Colors.white,
@@ -590,7 +609,7 @@ class NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
 
       // Get the quantity from _classValues or default to '0'
       String qty =
-          _classValues.containsKey(classId) ? _classValues[classId]! : '';
+      _classValues.containsKey(classId) ? _classValues[classId]! : '';
 
       // Check only if the field is enabled for the class
       if (_isClassInRange(classItem) && qty.isEmpty) {
@@ -646,7 +665,8 @@ class NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
         print('bookseller1Id:$bookseller1Id');
         print('bookseller2Id:$bookseller2Id');
       }
-      final responseData = await CreateNewCustomerService().createNewCustomerSchool(
+      final responseData = await CreateNewCustomerService()
+          .createNewCustomerSchool(
           widget.type,
           widget.customerName,
           "",
@@ -658,7 +678,8 @@ class NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
           widget.keyCustomer,
           widget.customerStatus,
           "",
-          "<CustomerExecutive_Data><CustomerExecutive><AccountTableExecutiveId>${executiveId ?? 0}</AccountTableExecutiveId></CustomerExecutive></CustomerExecutive_Data>",
+          "<CustomerExecutive_Data><CustomerExecutive><AccountTableExecutiveId>${executiveId ??
+              0}</AccountTableExecutiveId></CustomerExecutive></CustomerExecutive_Data>",
           "<CustomerComment/>",
           userId ?? 0,
           _contactFirstNameController.text,
@@ -707,7 +728,7 @@ class NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
             Navigator.pushAndRemoveUntil(
               context,
               MaterialPageRoute(builder: (context) => const HomePage()),
-              (Route<dynamic> route) => false,
+                  (Route<dynamic> route) => false,
             );
           }
         } else {
@@ -739,6 +760,145 @@ class NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
     }
   }
 
+  void _updateForm(List<Classes> classesList) async {
+    FocusScope.of(context).unfocus();
+
+    bool isAllClassQuantityEntered = true;
+
+    for (var classItem in classesList) {
+      int classId = classItem.classNumId;
+
+      // Get the quantity from _classValues or default to '0'
+      String qty =
+      _classValues.containsKey(classId) ? _classValues[classId]! : '';
+
+      // Check only if the field is enabled for the class
+      if (_isClassInRange(classItem) && qty.isEmpty) {
+        isAllClassQuantityEntered = false;
+        _toastMessage.showToastMessage(
+            'Please enter quantity for Class ${classItem.className}');
+        break;
+      }
+    }
+
+    if (!isAllClassQuantityEntered) {
+      return;
+    }
+
+    if (!await _checkInternetConnection()) return;
+
+    if (mounted) {
+      setState(() {
+        _isLoading = true;
+      });
+    }
+
+    try {
+      if (kDebugMode) {
+        print("${widget.type} _submitForm clicked");
+      }
+      Position position = await locationService.getCurrentLocation();
+      if (kDebugMode) {
+        print(
+            "Latitude: ${position.latitude}, Longitude: ${position.longitude}");
+      }
+      int bookseller1Id = 0;
+      int bookseller2Id = 0;
+      if (widget.purchaseMode == 'Bookseller') {
+        if (widget.bookseller.length == 1) {
+          bookseller1Id = widget.bookseller[0].action;
+        }
+        if (widget.bookseller.length == 2) {
+          bookseller1Id = widget.bookseller[0].action;
+          bookseller2Id = widget.bookseller[1].action;
+        }
+      }
+
+      String xmlClassName = _generateXmlFromClassValues(classesList);
+      if (kDebugMode) {
+        print(xmlClassName);
+        print('bookseller1Id:$bookseller1Id');
+        print('bookseller2Id:$bookseller2Id');
+      }
+      final responseData = await UpdateCustomerService().updateCustomerSchool(
+          0,
+          widget.type,
+          widget.customerName,
+          "",
+          widget.emailId,
+          widget.phoneNumber,
+          widget.address,
+          widget.cityId,
+          int.parse(widget.pinCode),
+          widget.keyCustomer,
+          widget.customerStatus,
+          "",
+          "<CustomerExecutive_Data><CustomerExecutive><AccountTableExecutiveId>${executiveId ??
+              0}</AccountTableExecutiveId></CustomerExecutive></CustomerExecutive_Data>",
+          "<CustomerComment/>",
+          userId ?? 0,
+          position.latitude,
+          position.longitude,
+          widget.ranking,
+          widget.boardId,
+          widget.chainSchoolId,
+          widget.endClassId,
+          widget.startClassId,
+          widget.medium,
+          widget.samplingMonthId,
+          widget.decisionMonthId,
+          widget.purchaseMode,
+          xmlClassName,
+          bookseller1Id,
+          bookseller2Id,
+          widget.gst,
+          widget.pan,
+          widget.validated,
+          token);
+
+      if (responseData.status == 'Success') {
+        String s = responseData.s;
+        if (kDebugMode) {
+          print(s);
+        }
+        if (s.isNotEmpty) {
+          _toastMessage.showInfoToastMessage(s);
+          if (mounted) {
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (context) => const HomePage()),
+                  (Route<dynamic> route) => false,
+            );
+          }
+        } else {
+          if (kDebugMode) {
+            print('Update ${widget.type} Error s empty');
+          }
+          _toastMessage.showToastMessage(
+              "An error occurred while update new ${widget.type}.");
+        }
+      } else {
+        if (kDebugMode) {
+          print('Update Customer Error ${responseData.status}');
+        }
+        _toastMessage.showToastMessage(
+            "An error occurred while updating ${widget.type}.");
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Update Customer Error $e');
+      }
+      _toastMessage
+          .showToastMessage("An error occurred while updating ${widget.type}.");
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
   String _generateXmlFromClassValues(List<Classes> classesList) {
     StringBuffer xmlBuffer = StringBuffer();
     xmlBuffer.write("<row_ClassName>");
@@ -749,7 +909,7 @@ class NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
 
       // Get the quantity from _classValues or default to '0'
       String qty =
-          _classValues.containsKey(classId) ? _classValues[classId]! : '0';
+      _classValues.containsKey(classId) ? _classValues[classId]! : '0';
 
       xmlBuffer.write("<ClassName>");
       xmlBuffer.write("<ClassId>$classId</ClassId>");
@@ -786,10 +946,11 @@ class NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
             child: CustomText('Select'),
           ),
           ...items.map(
-            (item) => DropdownMenuItem<String>(
-              value: item,
-              child: CustomText(item, fontSize: textFontSize),
-            ),
+                (item) =>
+                DropdownMenuItem<String>(
+                  value: item,
+                  child: CustomText(item, fontSize: textFontSize),
+                ),
           ),
         ],
         onChanged: (newValue) {
@@ -807,14 +968,13 @@ class NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
     );
   }
 
-  Widget _buildTextField(
-    String label,
-    TextEditingController controller,
-    GlobalKey<FormFieldState> fieldKey, {
-    int maxLines = 1,
-    double labelFontSize = 14.0,
-    double textFontSize = 14.0,
-  }) {
+  Widget _buildTextField(String label,
+      TextEditingController controller,
+      GlobalKey<FormFieldState> fieldKey, {
+        int maxLines = 1,
+        double labelFontSize = 14.0,
+        double textFontSize = 14.0,
+      }) {
     bool isDateField = label == "Date of Birth" || label == "Anniversary";
 
     // Calculate the maximum selectable date for Date of Birth
@@ -829,24 +989,24 @@ class NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
       child: InkWell(
         onTap: isDateField
             ? () async {
-                final DateTime? picked = await showDatePicker(
-                  context: context,
-                  initialDate: initialDate,
-                  firstDate: DateTime(1970, 1, 1),
-                  lastDate: maxDate,
-                  builder: (BuildContext context, Widget? child) {
-                    return Theme(
-                      data: ThemeData.light(),
-                      child: child!,
-                    );
-                  },
-                );
+          final DateTime? picked = await showDatePicker(
+            context: context,
+            initialDate: initialDate,
+            firstDate: DateTime(1970, 1, 1),
+            lastDate: maxDate,
+            builder: (BuildContext context, Widget? child) {
+              return Theme(
+                data: ThemeData.light(),
+                child: child!,
+              );
+            },
+          );
 
-                if (picked != null) {
-                  controller.text = DateFormat('dd MMM yyyy').format(picked);
-                  fieldKey.currentState?.validate();
-                }
-              }
+          if (picked != null) {
+            controller.text = DateFormat('dd MMM yyyy').format(picked);
+            fieldKey.currentState?.validate();
+          }
+        }
             : null,
         child: IgnorePointer(
           ignoring: isDateField,
@@ -937,13 +1097,12 @@ class NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
     }
   }
 
-  Widget _buildDropdownFieldCity(
-    String label,
-    TextEditingController controller,
-    GlobalKey<FormFieldState> fieldKey, {
-    double labelFontSize = 14.0,
-    double textFontSize = 14.0,
-  }) {
+  Widget _buildDropdownFieldCity(String label,
+      TextEditingController controller,
+      GlobalKey<FormFieldState> fieldKey, {
+        double labelFontSize = 14.0,
+        double textFontSize = 14.0,
+      }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: DropdownButtonFormField<Geography>(
@@ -955,10 +1114,11 @@ class NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
             child: CustomText('Select'),
           ),
           ..._filteredCities.map(
-            (geography) => DropdownMenuItem<Geography>(
-              value: geography,
-              child: CustomText(geography.city, fontSize: textFontSize),
-            ),
+                (geography) =>
+                DropdownMenuItem<Geography>(
+                  value: geography,
+                  child: CustomText(geography.city, fontSize: textFontSize),
+                ),
           ),
         ],
         onChanged: (Geography? value) {
