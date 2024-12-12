@@ -365,45 +365,42 @@ class NewCustomerSchoolForm2State extends State<NewCustomerSchoolForm2> {
             buildPurchaseModeField(data.purchaseModeList),
             Visibility(
               visible: (_selectedPurchaseMode == 'Book Seller' ||
-                      _selectedPurchaseMode == 'Bookseller') &&
-                  _submitted,
+                  _selectedPurchaseMode == 'Bookseller'),
               child: Column(
                 children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        "Bookseller Details",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16.0,
+                          decoration: TextDecoration.underline,
+                        ),
+                      ),
+                      ElevatedButton(
+                        onPressed: () => {_showBooksellerSearchModal()},
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.lightBlueAccent,
+                          textStyle: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        child: const CustomText(
+                          '+ Add Bookseller',
+                          fontSize: 14,
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
                   if (_isLoading) ...[
                     const CircularProgressIndicator(),
                   ] else if (_booksellers.isNotEmpty) ...[
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          "Bookseller Details",
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16.0,
-                            decoration: TextDecoration.underline,
-                          ),
-                        ),
-                        Visibility(
-                          visible: _booksellers.length == 1,
-                          child: ElevatedButton(
-                            onPressed: () => {_showBooksellerSearchModal()},
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.lightBlueAccent,
-                              textStyle: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            child: const CustomText(
-                              '+ Add Bookseller',
-                              fontSize: 14,
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
                     ListView.builder(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
@@ -413,39 +410,28 @@ class NewCustomerSchoolForm2State extends State<NewCustomerSchoolForm2> {
                         final isSelected =
                             _selectedBooksellers.contains(bookseller);
 
-                        return Container(
-                          margin: const EdgeInsets.symmetric(vertical: 4),
-                          decoration: BoxDecoration(
-                            border: Border.all(color: Colors.grey, width: 1.0),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: ListTile(
-                            leading: Checkbox(
-                              value: isSelected,
-                              onChanged: (value) {
-                                if (value == true) {
-                                  if (_selectedBooksellers.length < 2) {
-                                    setState(() {
-                                      _selectedBooksellers.add(bookseller);
-                                    });
-                                  } else {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text(
-                                            "You can select a maximum of 2 items."),
-                                      ),
-                                    );
-                                  }
-                                } else {
-                                  setState(() {
-                                    _selectedBooksellers.remove(bookseller);
-                                  });
-                                }
-                              },
+                        return GestureDetector(
+                          onTap: () => _toggleSelection(bookseller),
+                          child: Container(
+                            margin: const EdgeInsets.symmetric(vertical: 4),
+                            decoration: BoxDecoration(
+                              border: Border.all(
+                                color: isSelected ? Colors.blue : Colors.grey,
+                                width: 1.0,
+                              ),
+                              borderRadius: BorderRadius.circular(8),
                             ),
-                            title: Text(bookseller.bookSellerName),
-                            subtitle: Text(
-                                "${bookseller.address}\n${bookseller.city}\n${bookseller.state}, ${bookseller.country}"),
+                            child: ListTile(
+                              leading: Checkbox(
+                                value: isSelected,
+                                onChanged: (value) {
+                                  _toggleSelection(bookseller);
+                                },
+                              ),
+                              title: Text(bookseller.bookSellerName),
+                              subtitle: Text(
+                                  "${bookseller.address}\n${bookseller.city}\n${bookseller.state}, ${bookseller.country}"),
+                            ),
                           ),
                         );
                       },
@@ -482,6 +468,24 @@ class NewCustomerSchoolForm2State extends State<NewCustomerSchoolForm2> {
         ),
       ),
     );
+  }
+
+  void _toggleSelection(BookSellers bookseller) {
+    setState(() {
+      if (_selectedBooksellers.contains(bookseller)) {
+        _selectedBooksellers.remove(bookseller);
+      } else {
+        if (_selectedBooksellers.length < 2) {
+          _selectedBooksellers.add(bookseller);
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("You can select a maximum of 2 items."),
+            ),
+          );
+        }
+      }
+    });
   }
 
   Widget _buildTextField(
@@ -864,9 +868,9 @@ class NewCustomerSchoolForm2State extends State<NewCustomerSchoolForm2> {
           setState(() {
             _submitted = true;
           });
-          if (_formKey.currentState!.validate()) {
-            searchBookseller();
-          }
+          // if (_formKey.currentState!.validate()) {
+          searchBookseller();
+          // }
         },
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.lightBlueAccent,
@@ -920,9 +924,9 @@ class NewCustomerSchoolForm2State extends State<NewCustomerSchoolForm2> {
           labelText: label,
           labelStyle: TextStyle(fontSize: labelFontSize),
           border: const OutlineInputBorder(),
-          errorText: label == 'Code' && submitted && controller.text.isEmpty
+          /*errorText: label == 'Code' && submitted && controller.text.isEmpty
               ? 'Please enter $label'
-              : null,
+              : null,*/
           contentPadding: const EdgeInsets.symmetric(
             vertical: 12.0,
             horizontal: 12.0,
@@ -1004,7 +1008,14 @@ class NewCustomerSchoolForm2State extends State<NewCustomerSchoolForm2> {
         _isLoading = false;
         // If the response contains booksellers, append them to the existing list
         if (response.bookSellers != null) {
-          _booksellers.addAll(response.bookSellers!);
+          for (var newBookseller in response.bookSellers!) {
+            if (!_booksellers.any((existingBookseller) =>
+                existingBookseller.action == newBookseller.action &&
+                existingBookseller.bookSellerName ==
+                    newBookseller.bookSellerName)) {
+              _booksellers.add(newBookseller);
+            }
+          }
         }
       });
     } catch (e) {

@@ -70,4 +70,15 @@ class BookSellers {
       'Action': action,
     };
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is BookSellers &&
+          runtimeType == other.runtimeType &&
+          bookSellerName == other.bookSellerName &&
+          action == other.action;
+
+  @override
+  int get hashCode => action.hashCode;
 }
