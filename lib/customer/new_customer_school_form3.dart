@@ -18,6 +18,7 @@ import '../model/fetch_customer_details_model.dart';
 import '../model/search_bookseller_response.dart';
 import '../views/common_app_bar.dart';
 import '../views/custom_text.dart';
+import 'customer_contact_list.dart';
 
 class NewCustomerSchoolForm3 extends StatefulWidget {
   final String type;
@@ -47,32 +48,33 @@ class NewCustomerSchoolForm3 extends StatefulWidget {
   final String validated;
   final FetchCustomerDetailsSchoolResponse? customerDetailsSchoolResponse;
 
-  const NewCustomerSchoolForm3({super.key,
-    required this.type,
-    required this.customerName,
-    required this.address,
-    required this.cityId,
-    required this.cityName,
-    required this.pinCode,
-    required this.phoneNumber,
-    required this.emailId,
-    required this.boardId,
-    required this.chainSchoolId,
-    required this.keyCustomer,
-    required this.customerStatus,
-    required this.startClassId,
-    required this.endClassId,
-    required this.samplingMonthId,
-    required this.decisionMonthId,
-    required this.medium,
-    required this.ranking,
-    required this.pan,
-    required this.gst,
-    required this.purchaseMode,
-    required this.bookseller,
-    required this.isEdit,
-    required this.validated,
-    this.customerDetailsSchoolResponse});
+  const NewCustomerSchoolForm3(
+      {super.key,
+      required this.type,
+      required this.customerName,
+      required this.address,
+      required this.cityId,
+      required this.cityName,
+      required this.pinCode,
+      required this.phoneNumber,
+      required this.emailId,
+      required this.boardId,
+      required this.chainSchoolId,
+      required this.keyCustomer,
+      required this.customerStatus,
+      required this.startClassId,
+      required this.endClassId,
+      required this.samplingMonthId,
+      required this.decisionMonthId,
+      required this.medium,
+      required this.ranking,
+      required this.pan,
+      required this.gst,
+      required this.purchaseMode,
+      required this.bookseller,
+      required this.isEdit,
+      required this.validated,
+      this.customerDetailsSchoolResponse});
 
   @override
   NewCustomerSchoolForm3State createState() => NewCustomerSchoolForm3State();
@@ -83,18 +85,18 @@ class NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
   final _formKey = GlobalKey<FormState>();
 
   final TextEditingController _contactFirstNameController =
-  TextEditingController();
+      TextEditingController();
   final TextEditingController _contactLastNameController =
-  TextEditingController();
+      TextEditingController();
   final TextEditingController _phoneNumberController = TextEditingController();
   final TextEditingController _emailIdController = TextEditingController();
   final TextEditingController _dobController = TextEditingController();
   final TextEditingController _anniversaryController = TextEditingController();
   final TextEditingController _contactAddressController =
-  TextEditingController();
+      TextEditingController();
   final TextEditingController _contactCityController = TextEditingController();
   final TextEditingController _contactPinCodeController =
-  TextEditingController();
+      TextEditingController();
 
   final _contactFirstNameFieldKey = GlobalKey<FormFieldState>();
   final _contactLastNameFieldKey = GlobalKey<FormFieldState>();
@@ -168,14 +170,13 @@ class NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
   Future<CustomerEntryMasterResponse> initializePreferencesAndData() async {
     // Check if data exists in the database
     CustomerEntryMasterResponse? existingData =
-    await dbHelper.getCustomerEntryMasterResponse();
+        await dbHelper.getCustomerEntryMasterResponse();
 
     if (existingData != null && !isEmptyData(existingData)) {
       // Data exists in the database, return it
       if (kDebugMode) {
         print(
-            "CustomerEntryMaster data found in db: ${existingData
-                .salutationMasterList}");
+            "CustomerEntryMaster data found in db: ${existingData.salutationMasterList}");
       }
       return existingData;
     } else {
@@ -188,8 +189,8 @@ class NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
 
       try {
         CustomerEntryMasterResponse response =
-        await CustomerEntryMasterService()
-            .fetchCustomerEntryMaster(downHierarchy, token);
+            await CustomerEntryMasterService()
+                .fetchCustomerEntryMaster(downHierarchy, token);
         if (kDebugMode) {
           print(
               "CustomerEntryMaster data fetched from API and saved to db. $response");
@@ -283,7 +284,7 @@ class NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
       GeographyResponse geographyResponse = await geographyService
           .fetchGeographyData(_cityAccess, executiveId ?? 0, token);
       List<int> cityIds =
-      _cityAccess.split(',').map((id) => int.parse(id)).toList();
+          _cityAccess.split(',').map((id) => int.parse(id)).toList();
       setState(() {
         _filteredCities = geographyResponse.geographyList
             .where((geography) => cityIds.contains(geography.cityId))
@@ -304,31 +305,31 @@ class NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : FutureBuilder<CustomerEntryMasterResponse>(
-        future: futureData,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          } else if (snapshot.hasData) {
-            // Once data is available, initialize the response
-            customerEntryMasterResponse = snapshot.data!;
+              future: futureData,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                } else if (snapshot.hasError) {
+                  return Center(child: Text('Error: ${snapshot.error}'));
+                } else if (snapshot.hasData) {
+                  // Once data is available, initialize the response
+                  customerEntryMasterResponse = snapshot.data!;
 
-            // If in edit mode, trigger checkForEdit only once
-            if (widget.isEdit && !hasCheckedForEdit) {
-              hasCheckedForEdit = true;
-              Future.delayed(Duration.zero, () {
-                checkForEdit(); // Call checkForEdit after the build method
-              });
-            }
+                  // If in edit mode, trigger checkForEdit only once
+                  if (widget.isEdit && !hasCheckedForEdit) {
+                    hasCheckedForEdit = true;
+                    Future.delayed(Duration.zero, () {
+                      checkForEdit(); // Call checkForEdit after the build method
+                    });
+                  }
 
-            // Return the form UI
-            return buildForm(snapshot.data!);
-          } else {
-            return const Center(child: Text('No data found'));
-          }
-        },
-      ),
+                  // Return the form UI
+                  return buildForm(snapshot.data!);
+                } else {
+                  return const Center(child: Text('No data found'));
+                }
+              },
+            ),
     );
   }
 
@@ -398,7 +399,7 @@ class NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
 
                     // Controller for the TextField
                     final TextEditingController controller =
-                    TextEditingController(
+                        TextEditingController(
                       text: isEnabled
                           ? _classValues[classItem.classNumId] ?? ''
                           : '0',
@@ -467,9 +468,8 @@ class NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
                     );
                   },
                 ),
-                Visibility(
-                  visible: !widget.isEdit,
-                  child: Column(
+                if (!widget.isEdit)
+                  Column(
                     children: [
                       Container(
                         width: double.infinity,
@@ -498,7 +498,7 @@ class NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
                           setState(() {
                             _selectedContactDesignation = value;
                             _selectedContactDesignationId =
-                            contactDesignationMap[value];
+                                contactDesignationMap[value];
                           });
                         },
                         fieldKey: _contactDesignationFieldKey,
@@ -544,7 +544,30 @@ class NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
                       ),
                     ],
                   ),
-                ),
+                if (widget.isEdit)
+                  Visibility(
+                    visible: widget.isEdit,
+                    child: GestureDetector(
+                      onTap: () {
+                        goToContact();
+                      },
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          Text(
+                            "Teachers",
+                            style: TextStyle(
+                              fontSize: 30,
+                              color: Colors.blue,
+                              decoration: TextDecoration.underline,
+                              decorationColor: Colors.blue,
+                              decorationThickness: 2,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 const SizedBox(height: 20),
                 GestureDetector(
                   onTap: () {
@@ -609,7 +632,7 @@ class NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
 
       // Get the quantity from _classValues or default to '0'
       String qty =
-      _classValues.containsKey(classId) ? _classValues[classId]! : '';
+          _classValues.containsKey(classId) ? _classValues[classId]! : '';
 
       // Check only if the field is enabled for the class
       if (_isClassInRange(classItem) && qty.isEmpty) {
@@ -665,8 +688,7 @@ class NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
         print('bookseller1Id:$bookseller1Id');
         print('bookseller2Id:$bookseller2Id');
       }
-      final responseData = await CreateNewCustomerService()
-          .createNewCustomerSchool(
+      final responseData = await CreateNewCustomerService().createNewCustomerSchool(
           widget.type,
           widget.customerName,
           "",
@@ -678,8 +700,7 @@ class NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
           widget.keyCustomer,
           widget.customerStatus,
           "",
-          "<CustomerExecutive_Data><CustomerExecutive><AccountTableExecutiveId>${executiveId ??
-              0}</AccountTableExecutiveId></CustomerExecutive></CustomerExecutive_Data>",
+          "<CustomerExecutive_Data><CustomerExecutive><AccountTableExecutiveId>${executiveId ?? 0}</AccountTableExecutiveId></CustomerExecutive></CustomerExecutive_Data>",
           "<CustomerComment/>",
           userId ?? 0,
           _contactFirstNameController.text,
@@ -728,7 +749,7 @@ class NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
             Navigator.pushAndRemoveUntil(
               context,
               MaterialPageRoute(builder: (context) => const HomePage()),
-                  (Route<dynamic> route) => false,
+              (Route<dynamic> route) => false,
             );
           }
         } else {
@@ -770,7 +791,7 @@ class NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
 
       // Get the quantity from _classValues or default to '0'
       String qty =
-      _classValues.containsKey(classId) ? _classValues[classId]! : '';
+          _classValues.containsKey(classId) ? _classValues[classId]! : '';
 
       // Check only if the field is enabled for the class
       if (_isClassInRange(classItem) && qty.isEmpty) {
@@ -821,10 +842,10 @@ class NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
         print('bookseller2Id:$bookseller2Id');
       }
       final responseData = await UpdateCustomerService().updateCustomerSchool(
-          0,
+          widget.customerDetailsSchoolResponse?.schoolDetails?.schoolId ?? 0,
           widget.type,
           widget.customerName,
-          "",
+          widget.customerDetailsSchoolResponse?.schoolDetails?.refCode ?? '',
           widget.emailId,
           widget.phoneNumber,
           widget.address,
@@ -833,8 +854,7 @@ class NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
           widget.keyCustomer,
           widget.customerStatus,
           "",
-          "<CustomerExecutive_Data><CustomerExecutive><AccountTableExecutiveId>${executiveId ??
-              0}</AccountTableExecutiveId></CustomerExecutive></CustomerExecutive_Data>",
+          "<CustomerExecutive_Data><CustomerExecutive><AccountTableExecutiveId>${executiveId ?? 0}</AccountTableExecutiveId></CustomerExecutive></CustomerExecutive_Data>",
           "<CustomerComment/>",
           userId ?? 0,
           position.latitude,
@@ -867,7 +887,7 @@ class NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
             Navigator.pushAndRemoveUntil(
               context,
               MaterialPageRoute(builder: (context) => const HomePage()),
-                  (Route<dynamic> route) => false,
+              (Route<dynamic> route) => false,
             );
           }
         } else {
@@ -909,7 +929,7 @@ class NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
 
       // Get the quantity from _classValues or default to '0'
       String qty =
-      _classValues.containsKey(classId) ? _classValues[classId]! : '0';
+          _classValues.containsKey(classId) ? _classValues[classId]! : '0';
 
       xmlBuffer.write("<ClassName>");
       xmlBuffer.write("<ClassId>$classId</ClassId>");
@@ -946,11 +966,10 @@ class NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
             child: CustomText('Select'),
           ),
           ...items.map(
-                (item) =>
-                DropdownMenuItem<String>(
-                  value: item,
-                  child: CustomText(item, fontSize: textFontSize),
-                ),
+            (item) => DropdownMenuItem<String>(
+              value: item,
+              child: CustomText(item, fontSize: textFontSize),
+            ),
           ),
         ],
         onChanged: (newValue) {
@@ -968,13 +987,14 @@ class NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
     );
   }
 
-  Widget _buildTextField(String label,
-      TextEditingController controller,
-      GlobalKey<FormFieldState> fieldKey, {
-        int maxLines = 1,
-        double labelFontSize = 14.0,
-        double textFontSize = 14.0,
-      }) {
+  Widget _buildTextField(
+    String label,
+    TextEditingController controller,
+    GlobalKey<FormFieldState> fieldKey, {
+    int maxLines = 1,
+    double labelFontSize = 14.0,
+    double textFontSize = 14.0,
+  }) {
     bool isDateField = label == "Date of Birth" || label == "Anniversary";
 
     // Calculate the maximum selectable date for Date of Birth
@@ -989,24 +1009,24 @@ class NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
       child: InkWell(
         onTap: isDateField
             ? () async {
-          final DateTime? picked = await showDatePicker(
-            context: context,
-            initialDate: initialDate,
-            firstDate: DateTime(1970, 1, 1),
-            lastDate: maxDate,
-            builder: (BuildContext context, Widget? child) {
-              return Theme(
-                data: ThemeData.light(),
-                child: child!,
-              );
-            },
-          );
+                final DateTime? picked = await showDatePicker(
+                  context: context,
+                  initialDate: initialDate,
+                  firstDate: DateTime(1970, 1, 1),
+                  lastDate: maxDate,
+                  builder: (BuildContext context, Widget? child) {
+                    return Theme(
+                      data: ThemeData.light(),
+                      child: child!,
+                    );
+                  },
+                );
 
-          if (picked != null) {
-            controller.text = DateFormat('dd MMM yyyy').format(picked);
-            fieldKey.currentState?.validate();
-          }
-        }
+                if (picked != null) {
+                  controller.text = DateFormat('dd MMM yyyy').format(picked);
+                  fieldKey.currentState?.validate();
+                }
+              }
             : null,
         child: IgnorePointer(
           ignoring: isDateField,
@@ -1097,12 +1117,13 @@ class NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
     }
   }
 
-  Widget _buildDropdownFieldCity(String label,
-      TextEditingController controller,
-      GlobalKey<FormFieldState> fieldKey, {
-        double labelFontSize = 14.0,
-        double textFontSize = 14.0,
-      }) {
+  Widget _buildDropdownFieldCity(
+    String label,
+    TextEditingController controller,
+    GlobalKey<FormFieldState> fieldKey, {
+    double labelFontSize = 14.0,
+    double textFontSize = 14.0,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: DropdownButtonFormField<Geography>(
@@ -1114,11 +1135,10 @@ class NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
             child: CustomText('Select'),
           ),
           ..._filteredCities.map(
-                (geography) =>
-                DropdownMenuItem<Geography>(
-                  value: geography,
-                  child: CustomText(geography.city, fontSize: textFontSize),
-                ),
+            (geography) => DropdownMenuItem<Geography>(
+              value: geography,
+              child: CustomText(geography.city, fontSize: textFontSize),
+            ),
           ),
         ],
         onChanged: (Geography? value) {
@@ -1162,5 +1182,19 @@ class NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
       }
       setState(() {});
     }
+  }
+
+  void goToContact() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => CustomerContactList(
+            type: widget.type,
+            customerId:
+                widget.customerDetailsSchoolResponse?.schoolDetails?.schoolId ??
+                    0,
+            validated: widget.validated),
+      ),
+    );
   }
 }

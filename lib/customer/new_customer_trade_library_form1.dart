@@ -3,10 +3,11 @@ import 'dart:async';
 import 'package:avant/api/api_service.dart';
 import 'package:avant/common/common.dart';
 import 'package:avant/common/toast.dart';
+import 'package:avant/customer/customer_contact_list.dart';
 import 'package:avant/db/db_helper.dart';
 import 'package:avant/model/customer_entry_master_model.dart';
 import 'package:avant/model/geography_model.dart';
-import 'package:avant/new_customer/new_customer_trade_library_form2.dart';
+import 'package:avant/customer/new_customer_trade_library_form2.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -119,7 +120,7 @@ class NewCustomerTradeLibraryForm1State
   List<CustomerCategory> _selectedCustomerCategoryWithItems = [];
 
   late CustomerEntryMasterResponse customerEntryMasterResponse;
-  late CustomerDetails customerDetails;
+  CustomerDetails? customerDetails;
 
   @override
   void dispose() {
@@ -130,6 +131,9 @@ class NewCustomerTradeLibraryForm1State
     _emailIdController.dispose();
     _panController.dispose();
     _gstController.dispose();
+
+    mapController.dispose();
+
     super.dispose();
   }
 
@@ -653,6 +657,9 @@ class NewCustomerTradeLibraryForm1State
   }
 
   Widget buildForm(CustomerEntryMasterResponse data) {
+    if (widget.isEdit && customerDetails == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16.0),
       child: Form(
@@ -660,6 +667,12 @@ class NewCustomerTradeLibraryForm1State
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if (widget.isEdit && customerDetails != null)
+              CustomText(customerDetails?.msgWarning ?? '',
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.orange),
+            if (widget.isEdit) const SizedBox(height: 10),
             _buildTextField('${widget.type} Name', _customerNameController,
                 _customerNameFieldKey, _customerNameFocusNode),
             const SizedBox(height: 10),
@@ -794,6 +807,29 @@ class NewCustomerTradeLibraryForm1State
                   ),
                 ),
               ],
+            ),
+            Visibility(
+              visible: widget.isEdit,
+              child: GestureDetector(
+                onTap: () {
+                  goToContact();
+                },
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    Text(
+                      "Contact",
+                      style: TextStyle(
+                        fontSize: 30,
+                        color: Colors.blue,
+                        decoration: TextDecoration.underline,
+                        decorationColor: Colors.blue,
+                        decorationThickness: 2,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
             const SizedBox(height: 16.0),
             GestureDetector(
@@ -1413,10 +1449,10 @@ class NewCustomerTradeLibraryForm1State
       }
 
       final responseData = await UpdateCustomerService().updateCustomer(
-          customerDetails.customerId,
+          customerDetails?.customerId ?? 0,
           widget.type,
           _customerNameController.text.toString().trim(),
-          customerDetails.refCode,
+          customerDetails?.refCode ?? '',
           _emailIdController.text.toString().trim(),
           _phoneNumberController.text.toString().trim(),
           _addressController.text.toString().trim(),
@@ -1425,7 +1461,7 @@ class NewCustomerTradeLibraryForm1State
           (_selectedKeyCustomer ?? false) ? "Y" : "N",
           (_selectedCustomerStatus ?? false) ? "Active" : "Inactive",
           createDynamicXml(_selectedCustomerCategoryWithItems),
-          customerDetails.xmlAccountTableExecutiveId,
+          customerDetails?.xmlAccountTableExecutiveId ?? '',
           "<CustomerComment/>",
           userId ?? 0,
           position.latitude,
@@ -1499,5 +1535,15 @@ class NewCustomerTradeLibraryForm1State
       return false;
     }
     return true;
+  }
+
+  void goToContact() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => CustomerContactList(
+            type: widget.type, customerId: customerId, validated: validated),
+      ),
+    );
   }
 }

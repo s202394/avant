@@ -338,11 +338,11 @@ class ApprovalListFormState extends State<ApprovalListForm> {
 
       if (kDebugMode) {
         print(
-            'Approval ${widget.type} successful: ${response.returnMessage.msgText}');
+            'Approval ${widget.type} successful: ${response.returnMessage?.msgText ?? ''}');
       }
 
       if (response.status == 'Success') {
-        String message = response.returnMessage.msgText;
+        String message = response.returnMessage?.msgText ?? '';
         if (message.isNotEmpty) {
           _toastMessage.showInfoToastMessage(message);
           if (mounted) {

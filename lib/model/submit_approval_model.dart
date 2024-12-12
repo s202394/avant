@@ -1,15 +1,21 @@
-class SubmitRequestApprovalResponse{
+class SubmitRequestApprovalResponse {
   final String status;
-  final ReturnMessage returnMessage;
+  final ReturnMessage? returnMessage;
 
   SubmitRequestApprovalResponse({
     required this.status,
-    required this.returnMessage,
+    this.returnMessage,
   });
 
   factory SubmitRequestApprovalResponse.fromJson(Map<String, dynamic> json) {
-    var returnMessageData = json["ReturnMessage"][0];
-    final returnMessage = ReturnMessage.fromJson(returnMessageData);
+    // Check if 'ReturnMessage' exists and is a list with at least one element
+    ReturnMessage? returnMessage;
+    if (json['ReturnMessage'] != null &&
+        json['ReturnMessage'] is List &&
+        json['ReturnMessage'].isNotEmpty) {
+      final returnMessageData = json['ReturnMessage'][0];
+      returnMessage = ReturnMessage.fromJson(returnMessageData);
+    }
 
     return SubmitRequestApprovalResponse(
       status: json['Status'] ?? '',

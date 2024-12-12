@@ -1,6 +1,6 @@
 import 'package:avant/api/api_service.dart';
 import 'package:avant/model/customer_list_model.dart';
-import 'package:avant/new_customer/new_customer_school_form1.dart';
+import 'package:avant/customer/new_customer_school_form1.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -246,7 +246,7 @@ class CustomerListState extends State<CustomerList> {
           executiveId ?? 0, customerId, userId ?? 0, validated, "", token);
 
       if (responseData.status == 'Success') {
-        String message = responseData.returnMessage.msgText;
+        String message = responseData.returnMessage?.msgText ?? '';
 
         if (kDebugMode) {
           print(message);

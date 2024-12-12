@@ -207,10 +207,10 @@ class ApprovalDetailFormState extends State<ApprovalDetailForm> {
 
       if (kDebugMode) {
         print(
-            'Approval ${widget.type} successful: ${response.returnMessage.msgText}');
+            'Approval ${widget.type} successful: ${response.returnMessage?.msgText ?? ''}');
       }
       if (response.status == 'Success') {
-        String s = response.returnMessage.msgText;
+        String s = response.returnMessage?.msgText ?? '';
         if (s.isNotEmpty) {
           _toastMessage.showInfoToastMessage(s);
           if (mounted) {
@@ -1125,8 +1125,8 @@ class ApprovalDetailFormState extends State<ApprovalDetailForm> {
               userId ?? 0,
               token);
 
-      String msgType = responseData.returnMessage.msgType;
-      String msgText = responseData.returnMessage.msgText;
+      String msgType = responseData.returnMessage?.msgType ?? '';
+      String msgText = responseData.returnMessage?.msgText ?? '';
 
       if (responseData.status == 'Success') {
         if (msgType == 's' || msgType == 'e') {

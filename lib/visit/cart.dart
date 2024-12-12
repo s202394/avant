@@ -785,8 +785,8 @@ class CartState extends State<Cart> with TickerProviderStateMixin {
                 token);
 
         if (responseData.status == 'Success') {
-          String msgType = responseData.returnMessage.msgType;
-          String msgText = responseData.returnMessage.msgText;
+          String msgType = responseData.returnMessage?.msgType ?? '';
+          String msgText = responseData.returnMessage?.msgText ?? '';
           if (kDebugMode) {
             print(msgType);
           }

@@ -6,26 +6,27 @@ import 'package:avant/common/toast.dart';
 import 'package:avant/db/db_helper.dart';
 import 'package:avant/model/customer_entry_master_model.dart';
 import 'package:avant/model/geography_model.dart';
-import 'package:avant/new_customer/new_customer_school_form2.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:location/location.dart' as loc;
-import '../common/utils.dart';
-import '../model/fetch_customer_details_model.dart';
-import '../views/common_app_bar.dart';
-import '../views/custom_text.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:intl/intl.dart';
+import 'package:location/location.dart' as loc;
+import 'package:shared_preferences/shared_preferences.dart';
 
-class NewCustomerSchoolForm1 extends StatefulWidget {
+import '../common/utils.dart';
+import '../model/contact_detail_model.dart';
+import '../views/common_app_bar.dart';
+import '../views/custom_text.dart';
+
+class CustomerContactSchoolForm extends StatefulWidget {
   final String type;
   final bool isEdit;
-  final String action;
+  final String? action;
 
-  const NewCustomerSchoolForm1({
+  const CustomerContactSchoolForm({
     super.key,
     required this.type,
     this.isEdit = false,
@@ -33,10 +34,10 @@ class NewCustomerSchoolForm1 extends StatefulWidget {
   });
 
   @override
-  NewCustomerSchoolForm1State createState() => NewCustomerSchoolForm1State();
+  CustomerContactFormState createState() => CustomerContactFormState();
 }
 
-class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
+class CustomerContactFormState extends State<CustomerContactSchoolForm> {
   late Future<CustomerEntryMasterResponse> futureData;
 
   final _formKey = GlobalKey<FormState>();
@@ -45,31 +46,35 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
 
   DatabaseHelper dbHelper = DatabaseHelper();
 
-  final TextEditingController _customerNameController = TextEditingController();
-  final TextEditingController _addressController = TextEditingController();
-  final TextEditingController _cityController = TextEditingController();
-  final TextEditingController _pinCodeController = TextEditingController();
-  final TextEditingController _boardController = TextEditingController();
-  final TextEditingController _chainSchoolController = TextEditingController();
+  final TextEditingController _firstNameController = TextEditingController();
+  final TextEditingController _lastNameController = TextEditingController();
   final TextEditingController _phoneNumberController = TextEditingController();
   final TextEditingController _emailIdController = TextEditingController();
+  final TextEditingController _dobController = TextEditingController();
+  final TextEditingController _anniversaryController = TextEditingController();
+  final TextEditingController _addressController = TextEditingController();
+  final TextEditingController _pinCodeController = TextEditingController();
 
-  final _customerNameFieldKey = GlobalKey<FormFieldState>();
-  final _boardFieldKey = GlobalKey<FormFieldState>();
-  final _chainSchoolFieldKey = GlobalKey<FormFieldState>();
-  final _addressFieldKey = GlobalKey<FormFieldState>();
-  final _pinCodeFieldKey = GlobalKey<FormFieldState>();
-  final _phoneNumberFieldKey = GlobalKey<FormFieldState>();
-  final _emailIdFieldKey = GlobalKey<FormFieldState>();
-
-  final FocusNode _customerNameFocusNode = FocusNode();
+  final FocusNode _firstNameFocusNode = FocusNode();
+  final FocusNode _lastNameFocusNode = FocusNode();
   final FocusNode _addressFocusNode = FocusNode();
-  final FocusNode _cityFocusNode = FocusNode();
   final FocusNode _pinCodeFocusNode = FocusNode();
   final FocusNode _phoneNumberFocusNode = FocusNode();
   final FocusNode _emailIdFocusNode = FocusNode();
-  final FocusNode _chainSchoolFocusNode = FocusNode();
-  final FocusNode _boardFocusNode = FocusNode();
+  final FocusNode _dobFocusNode = FocusNode();
+  final FocusNode _anniversaryFocusNode = FocusNode();
+
+  final _firstNameFieldKey = GlobalKey<FormFieldState>();
+  final _lastNameFieldKey = GlobalKey<FormFieldState>();
+  final _phoneNumberFieldKey = GlobalKey<FormFieldState>();
+  final _emailIdFieldKey = GlobalKey<FormFieldState>();
+  final _dobFieldKey = GlobalKey<FormFieldState>();
+  final _anniversaryFieldKey = GlobalKey<FormFieldState>();
+  final _contactDesignationFieldKey = GlobalKey<FormFieldState>();
+  final _salutationFieldKey = GlobalKey<FormFieldState>();
+  final _addressFieldKey = GlobalKey<FormFieldState>();
+  final _pinCodeFieldKey = GlobalKey<FormFieldState>();
+  final _dataSourceFieldKey = GlobalKey<FormFieldState>();
 
   String _cityAccess = '';
 
@@ -85,10 +90,15 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
 
   List<Geography> _allGeographies = [];
 
-  BoardMaster? _selectedBoard;
-  ChainSchool? _selectedChainSchool;
-  bool? _selectedKeyCustomer;
-  bool? _selectedCustomerStatus;
+  bool? _selectedPrimaryContact;
+  bool? _selectedContactStatus;
+
+  String? _selectedContactDesignation;
+  int? _selectedContactDesignationId;
+  String? _selectedSalutation;
+  int? _selectedSalutationId;
+  String? _selectedDataSource;
+  int? _selectedDataSourceId;
 
   bool _isLoading = false;
 
@@ -109,18 +119,18 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
   int retryCount = 0;
 
   late CustomerEntryMasterResponse customerEntryMasterResponse;
-  late FetchCustomerDetailsSchoolResponse customerDetailsSchoolResponse;
+  late CustomerContactDetailsSchoolResponse contactDetailsResponse;
 
   @override
   void dispose() {
-    _customerNameController.dispose();
-    _boardController.dispose();
-    _chainSchoolController.dispose();
+    _firstNameController.dispose();
+    _lastNameController.dispose();
     _addressController.dispose();
-    _cityController.dispose();
     _pinCodeController.dispose();
     _phoneNumberController.dispose();
     _emailIdController.dispose();
+    _dobController.dispose();
+    _anniversaryController.dispose();
     super.dispose();
   }
 
@@ -194,7 +204,6 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
     Position position = await Geolocator.getCurrentPosition();
     setState(() {
       _currentPosition = LatLng(position.latitude, position.longitude);
-      // _addressController.text = "${position.latitude}, ${position.longitude}";
       _getUserLocation();
     });
   }
@@ -221,7 +230,7 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
         return; // Exit if the user does not grant location permissions
       }
     }
-    debugPrint('Customer address ${_addressController.text.toString()}');
+    debugPrint('Contact address ${_addressController.text.toString()}');
     // Handle edit mode and pre-filled address
     if (widget.isEdit && _addressController.text.toString().isNotEmpty) {
       editAddress();
@@ -242,9 +251,9 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
       if (!mounted) return; // Exit if widget is no longer mounted
 
       setState(() {
-        debugPrint('Customer address ${_addressController.text.toString()}');
+        debugPrint('Contact address ${_addressController.text.toString()}');
         debugPrint(
-            'Add customer address _currentPosition ${_currentPosition?.latitude} ${_currentPosition?.longitude}');
+            'Add contact address _currentPosition ${_currentPosition?.latitude} ${_currentPosition?.longitude}');
         _currentPosition = initialPosition;
         _currentMarker = Marker(
           markerId: const MarkerId('currentLocation'),
@@ -264,25 +273,25 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
 
   void editAddress() async {
     final address =
-        '${_customerNameController.text.toString().trim()}, ${_addressController.text.toString().trim()}, ${_pinCodeController.text.toString().trim()}';
-    debugPrint('Edit customer address $address');
+        '${_addressController.text.toString().trim()}, ${_pinCodeController.text.toString().trim()}';
+    debugPrint('Edit contact address $address');
     try {
       List<Location> locations = await locationFromAddress(address);
-      debugPrint('Edit customer address locations size ${locations.length}');
+      debugPrint('Edit contact address locations size ${locations.length}');
       if (locations.isNotEmpty) {
         // Use the first matched location
         Location addressLocation = locations.first;
         debugPrint(
-            'Edit customer address latitude ${addressLocation.latitude}, longitude : ${addressLocation.longitude}');
+            'Edit contact address latitude ${addressLocation.latitude}, longitude : ${addressLocation.longitude}');
         LatLng initialPosition =
             LatLng(addressLocation.latitude, addressLocation.longitude);
         debugPrint(
-            'Edit customer initialPosition latitude ${initialPosition.latitude}, longitude : ${initialPosition.longitude}');
+            'Edit contact initialPosition latitude ${initialPosition.latitude}, longitude : ${initialPosition.longitude}');
 
         // Update marker and position
         _currentPosition = initialPosition;
         debugPrint(
-            'Edit customer _currentPosition latitude ${_currentPosition?.latitude}, longitude : ${_currentPosition?.longitude}');
+            'Edit contact _currentPosition latitude ${_currentPosition?.latitude}, longitude : ${_currentPosition?.longitude}');
 
         _currentMarker = Marker(
           markerId: const MarkerId('currentLocation'),
@@ -528,7 +537,7 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
     try {
       GeographyService geographyService = GeographyService();
       GeographyResponse geographyResponse =
-      await geographyService.fetchGeographyData(
+          await geographyService.fetchGeographyData(
         _cityAccess,
         executiveId,
         token,
@@ -537,8 +546,8 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
         List<Geography> geographyList = geographyResponse.geographyList;
         _filteredCountries = geographyList
             .where((g) =>
-        geographyList.indexWhere((e) => e.countryId == g.countryId) ==
-            geographyList.indexOf(g))
+                geographyList.indexWhere((e) => e.countryId == g.countryId) ==
+                geographyList.indexOf(g))
             .toList();
 
         _filteredCities = geographyResponse.geographyList.toList();
@@ -610,7 +619,7 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
   Widget build(BuildContext context) {
     final type = widget.isEdit ? 'Edit' : 'New';
     return Scaffold(
-      appBar: CommonAppBar(title: '$type Customer - ${widget.type}'),
+      appBar: CommonAppBar(title: '$type Contact - ${widget.type}'),
       body: _isLoading
           ? const Center(
               child:
@@ -645,6 +654,18 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
   }
 
   Widget buildForm(CustomerEntryMasterResponse data) {
+    Map<String, int> contactDesignationMap = {
+      for (var item in data.contactDesignationList)
+        item.contactDesignationName: item.contactDesignationId,
+    };
+    Map<String, int> salutationMap = {
+      for (var item in data.salutationMasterList)
+        item.salutationName: item.salutationId,
+    };
+    Map<String, int> dataSourceMap = {
+      for (var item in data.dataSourceList)
+        item.dataSourceName: item.dataSourceId,
+    };
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16.0),
       child: Form(
@@ -652,8 +673,101 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildTextField('${widget.type} Name', _customerNameController,
-                _customerNameFieldKey, _customerNameFocusNode),
+            const CustomText('Primary Contact:'),
+            Row(
+              children: [
+                Expanded(
+                  child: RadioListTile<bool>(
+                    title: const CustomText('Yes'),
+                    value: true,
+                    groupValue: _selectedPrimaryContact,
+                    onChanged: (newValue) {
+                      setState(() {
+                        _selectedPrimaryContact = newValue;
+                      });
+                    },
+                  ),
+                ),
+                Expanded(
+                  child: RadioListTile<bool>(
+                    title: const CustomText('No'),
+                    value: false,
+                    groupValue: _selectedPrimaryContact,
+                    onChanged: (newValue) {
+                      setState(() {
+                        _selectedPrimaryContact = newValue;
+                      });
+                    },
+                  ),
+                ),
+              ],
+            ),
+            const CustomText('Customer Status:'),
+            Row(
+              children: [
+                Expanded(
+                  child: RadioListTile<bool>(
+                    title: const CustomText('Active'),
+                    value: true,
+                    groupValue: _selectedContactStatus,
+                    onChanged: (newValue) {
+                      setState(() {
+                        _selectedContactStatus = newValue;
+                      });
+                    },
+                  ),
+                ),
+                Expanded(
+                  child: RadioListTile<bool>(
+                    title: const CustomText('Inactive'),
+                    value: false,
+                    groupValue: _selectedContactStatus,
+                    onChanged: (newValue) {
+                      setState(() {
+                        _selectedContactStatus = newValue;
+                      });
+                    },
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16.0),
+            buildDropdownField(
+              label: 'Salutation',
+              value: _selectedSalutation,
+              items: salutationMap.keys.toList(),
+              onChanged: (value) {
+                setState(() {
+                  _selectedSalutation = value;
+                  _selectedSalutationId = salutationMap[value];
+                });
+              },
+              fieldKey: _salutationFieldKey,
+            ),
+            _buildTextField('First Name', _firstNameController,
+                _firstNameFieldKey, _firstNameFocusNode),
+            _buildTextField('Last Name', _lastNameController, _lastNameFieldKey,
+                _lastNameFocusNode),
+            buildDropdownField(
+              label: 'Designation',
+              value: _selectedContactDesignation,
+              items: contactDesignationMap.keys.toList(),
+              onChanged: (value) {
+                setState(() {
+                  _selectedContactDesignation = value;
+                  _selectedContactDesignationId = contactDesignationMap[value];
+                });
+              },
+              fieldKey: _contactDesignationFieldKey,
+            ),
+            _buildTextField('Email', _emailIdController, _emailIdFieldKey,
+                _emailIdFocusNode),
+            _buildTextField('Mobile Number', _phoneNumberController,
+                _phoneNumberFieldKey, _phoneNumberFocusNode),
+            _buildTextField(
+                'Date of Birth', _dobController, _dobFieldKey, _dobFocusNode),
+            _buildTextField('Anniversary', _anniversaryController,
+                _anniversaryFieldKey, _anniversaryFocusNode),
             const SizedBox(height: 10),
             _buildMapContainer(),
             const SizedBox(height: 10),
@@ -699,78 +813,19 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
             const SizedBox(height: 8),
             _buildTextField('Pin Code', _pinCodeController, _pinCodeFieldKey,
                 _pinCodeFocusNode),
-            _buildTextField('Phone Number', _phoneNumberController,
-                _phoneNumberFieldKey, _phoneNumberFocusNode),
-            _buildTextField('Email Id', _emailIdController, _emailIdFieldKey,
-                _emailIdFocusNode),
-            _buildDropdownFieldBoard('Board', _boardController, _boardFieldKey,
-                data.boardMasterList, _boardFocusNode),
-            _buildDropdownFieldChainSchool(
-                'Chain School',
-                _chainSchoolController,
-                _chainSchoolFieldKey,
-                data.chainSchoolList,
-                _chainSchoolFocusNode),
-            const SizedBox(height: 16.0),
-            const CustomText('Key Customer:'),
-            Row(
-              children: [
-                Expanded(
-                  child: RadioListTile<bool>(
-                    title: const CustomText('Yes'),
-                    value: true,
-                    groupValue: _selectedKeyCustomer,
-                    onChanged: (newValue) {
-                      setState(() {
-                        _selectedKeyCustomer = newValue;
-                      });
-                    },
-                  ),
-                ),
-                Expanded(
-                  child: RadioListTile<bool>(
-                    title: const CustomText('No'),
-                    value: false,
-                    groupValue: _selectedKeyCustomer,
-                    onChanged: (newValue) {
-                      setState(() {
-                        _selectedKeyCustomer = newValue;
-                      });
-                    },
-                  ),
-                ),
-              ],
+            buildDropdownField(
+              label: 'Data Source',
+              value: _selectedDataSource,
+              items: dataSourceMap.keys.toList(),
+              onChanged: (value) {
+                setState(() {
+                  _selectedDataSource = value;
+                  _selectedDataSourceId = dataSourceMap[value];
+                });
+              },
+              fieldKey: _dataSourceFieldKey,
             ),
-            const CustomText('Customer Status:'),
-            Row(
-              children: [
-                Expanded(
-                  child: RadioListTile<bool>(
-                    title: const CustomText('Active'),
-                    value: true,
-                    groupValue: _selectedCustomerStatus,
-                    onChanged: (newValue) {
-                      setState(() {
-                        _selectedCustomerStatus = newValue;
-                      });
-                    },
-                  ),
-                ),
-                Expanded(
-                  child: RadioListTile<bool>(
-                    title: const CustomText('Inactive'),
-                    value: false,
-                    groupValue: _selectedCustomerStatus,
-                    onChanged: (newValue) {
-                      setState(() {
-                        _selectedCustomerStatus = newValue;
-                      });
-                    },
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16.0),
+            const SizedBox(height: 8),
             GestureDetector(
               onTap: () {
                 _submitForm();
@@ -781,7 +836,7 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
                 child: const Padding(
                   padding: EdgeInsets.symmetric(vertical: 8.0, horizontal: 16),
                   child: Text(
-                    'Next',
+                    'Submit',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       color: Colors.white,
@@ -802,46 +857,21 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
     FocusScope.of(context).unfocus();
 
     if (_formKey.currentState!.validate()) {
-      if (_selectedKeyCustomer == null) {
-        _toastMessage.showToastMessage("Please select Key Customer");
-      } else if (_selectedCustomerStatus == null) {
-        _toastMessage.showToastMessage("Please select Customer Status");
+      if (_selectedPrimaryContact == null) {
+        _toastMessage.showToastMessage("Please select Primary Contact");
+      } else if (_selectedContactStatus == null) {
+        _toastMessage.showToastMessage("Please select Contact Status");
       } else {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => NewCustomerSchoolForm2(
-              type: widget.type,
-              customerName: _customerNameController.text,
-              address: _addressController.text,
-              cityId: _selectedCity?.cityId ?? 0,
-              cityName: _selectedCity?.city ?? '',
-              pinCode: _pinCodeController.text,
-              phoneNumber: _phoneNumberController.text,
-              emailId: _emailIdController.text,
-              boardId: _selectedBoard?.boardId ?? 0,
-              chainSchoolId: _selectedChainSchool?.chainSchoolId ?? 0,
-              keyCustomer: (_selectedKeyCustomer ?? false) ? "Y" : "N",
-              customerStatus:
-                  (_selectedCustomerStatus ?? false) ? "Active" : "Inactive",
-              isEdit: widget.isEdit,
-              validated: validated,
-              customerDetailsSchoolResponse: customerDetailsSchoolResponse,
-            ),
-          ),
-        );
+        submitContact();
       }
     } else {
       // Focus on the first field with an error
       List<FocusNode> focusNodes = [
-        _customerNameFocusNode,
-        _addressFocusNode,
-        _cityFocusNode,
-        _pinCodeFocusNode,
-        _phoneNumberFocusNode,
+        _lastNameFocusNode,
         _emailIdFocusNode,
-        _boardFocusNode,
-        _chainSchoolFocusNode,
+        _phoneNumberFocusNode,
+        _addressFocusNode,
+        _pinCodeFocusNode,
       ];
 
       for (FocusNode focusNode in focusNodes) {
@@ -878,112 +908,138 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
     TextEditingController controller,
     GlobalKey<FormFieldState> fieldKey,
     FocusNode focusNode, {
-    bool enabled = true,
     int maxLines = 1,
     double labelFontSize = 14.0,
     double textFontSize = 14.0,
   }) {
+    bool isDateField = label == "Date of Birth" || label == "Anniversary";
+    // Calculate the maximum selectable date for Date of Birth
+    DateTime maxDate = label == "Date of Birth"
+        ? DateTime.now().subtract(const Duration(days: 365 * 18))
+        : DateTime.now();
+
+    DateTime initialDate = label == "Date of Birth" ? maxDate : DateTime.now();
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: ConstrainedBox(
-        constraints: BoxConstraints(
-          minWidth: label == 'Address' ? 100.0 : 0.0,
-        ),
-        child: TextFormField(
-          key: fieldKey,
-          controller: controller,
-          focusNode: focusNode,
-          style: TextStyle(fontSize: textFontSize),
-          decoration: InputDecoration(
+      child: InkWell(
+        onTap: isDateField
+            ? () async {
+                final DateTime? picked = await showDatePicker(
+                  context: context,
+                  initialDate: initialDate,
+                  firstDate: DateTime(1970, 1, 1),
+                  lastDate: maxDate,
+                  builder: (BuildContext context, Widget? child) {
+                    return Theme(
+                      data: ThemeData.light(),
+                      child: child!,
+                    );
+                  },
+                );
+
+                if (picked != null) {
+                  controller.text = DateFormat('dd MMM yyyy').format(picked);
+                  fieldKey.currentState?.validate();
+                }
+              }
+            : null,
+        child: IgnorePointer(
+          ignoring: isDateField,
+          child: TextFormField(
+            key: fieldKey,
+            style: TextStyle(fontSize: textFontSize),
+            controller: controller,
+            keyboardType: (label == 'Mobile' || label == 'Pin Code')
+                ? TextInputType.phone
+                : TextInputType.text,
+            inputFormatters: _getInputFormatters(label),
+            decoration: InputDecoration(
               labelText: label,
               labelStyle: TextStyle(fontSize: labelFontSize),
               border: const OutlineInputBorder(),
-              alignLabelWithHint: true),
-          enabled: enabled,
-          maxLines: maxLines,
-          validator: (value) {
-            if (label == 'Email Id') {
-              if (value == null || value.isEmpty) {
-                return null;
+              alignLabelWithHint: true,
+              suffixIcon: isDateField ? const Icon(Icons.calendar_month) : null,
+            ),
+            textAlign: TextAlign.start,
+            maxLines: maxLines,
+            validator: (value) {
+              if ((value == null || value.isEmpty) &&
+                  (label == 'Last Name' ||
+                      (_addressController.text.isNotEmpty &&
+                          label == 'Pin Code'))) {
+                return 'Please enter $label';
               }
-              if (!Validator.isValidEmail(value)) {
+              if (label == 'Mobile Number' &&
+                  value != null &&
+                  value.isNotEmpty &&
+                  !Validator.isValidMobile(value)) {
                 return 'Please enter valid $label';
               }
-            }
-            if (value == null || value.isEmpty) {
-              return 'Please enter $label';
-            }
-            if (label == 'Pin Code' && value.length < 6) {
-              return 'Please enter valid $label';
-            }
-            if (label == 'Phone Number' && !Validator.isValidMobile(value)) {
-              return 'Please enter valid $label';
-            }
-            return null;
-          },
-          onChanged: (value) {
-            if (value.isNotEmpty) {
-              setState(() {
+              if (label == 'Email' &&
+                  value != null &&
+                  value.isNotEmpty &&
+                  !Validator.isValidEmail(value)) {
+                return 'Please enter valid $label';
+              }
+              if (label == 'Pin Code' &&
+                  _addressController.text.isNotEmpty &&
+                  value != null &&
+                  value.isNotEmpty &&
+                  value.length < 6) {
+                return 'Please enter valid $label';
+              }
+              return null;
+            },
+            onChanged: (value) {
+              if (value.isNotEmpty) {
                 fieldKey.currentState?.validate();
-              });
-            }
-          },
-          textAlign: TextAlign.start,
-          keyboardType: (label == 'Phone Number' || label == 'Pin Code')
-              ? TextInputType.phone
-              : TextInputType.text,
-          inputFormatters: _getInputFormatters(label),
+              }
+            },
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildDropdownFieldBoard(
-    String label,
-    TextEditingController controller,
-    GlobalKey<FormFieldState> fieldKey,
-    List<BoardMaster> boardList,
-    FocusNode focusNode, {
+  Widget buildDropdownField({
+    required String label,
+    required String? value,
+    required List<String> items,
+    required ValueChanged<String?> onChanged,
+    required GlobalKey<FormFieldState> fieldKey,
     double labelFontSize = 14.0,
     double textFontSize = 14.0,
   }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: DropdownButtonFormField<BoardMaster>(
+      child: DropdownButtonFormField<String>(
         key: fieldKey,
-        value: _selectedBoard,
-        focusNode: focusNode,
-        style: TextStyle(fontSize: textFontSize),
-        items: [
-          const DropdownMenuItem<BoardMaster>(
-            value: null,
-            child: CustomText('Select'),
-          ),
-          ...boardList.map(
-            (board) => DropdownMenuItem<BoardMaster>(
-              value: board,
-              child: CustomText(board.boardName, fontSize: textFontSize),
-            ),
-          ),
-        ],
-        onChanged: (BoardMaster? value) {
-          setState(() {
-            _selectedBoard = value;
-
-            // Update the text controller with the selected category name
-            controller.text = value?.boardName ?? '';
-
-            // Validate the field
-            fieldKey.currentState?.validate();
-          });
-        },
+        value: value,
         decoration: InputDecoration(
           labelText: label,
           labelStyle: TextStyle(fontSize: labelFontSize),
           border: const OutlineInputBorder(),
         ),
-        validator: (value) {
-          if (value == null || value.boardName.isEmpty) {
+        items: [
+          const DropdownMenuItem<String>(
+            value: null,
+            child: CustomText('Select'),
+          ),
+          ...items.map(
+            (item) => DropdownMenuItem<String>(
+              value: item,
+              child: CustomText(item, fontSize: textFontSize),
+            ),
+          ),
+        ],
+        onChanged: (newValue) {
+          onChanged(newValue);
+          fieldKey.currentState?.validate();
+        },
+        validator: (newValue) {
+          if ((newValue == null || newValue.isEmpty) &&
+              (label == 'Designation')) {
             return 'Please select $label';
           }
           return null;
@@ -992,148 +1048,124 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
     );
   }
 
-  Widget _buildDropdownFieldChainSchool(
-    String label,
-    TextEditingController controller,
-    GlobalKey<FormFieldState> fieldKey,
-    List<ChainSchool> chainSchoolList,
-    FocusNode focusNode, {
-    double labelFontSize = 14.0,
-    double textFontSize = 14.0,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: DropdownButtonFormField<ChainSchool>(
-        key: fieldKey,
-        value: _selectedChainSchool,
-        focusNode: focusNode,
-        style: TextStyle(fontSize: textFontSize),
-        items: [
-          const DropdownMenuItem<ChainSchool>(
-            value: null,
-            child: CustomText('Select'),
-          ),
-          ...chainSchoolList.map(
-            (chainSchool) => DropdownMenuItem<ChainSchool>(
-              value: chainSchool,
-              child: CustomText(chainSchool.chainSchoolName,
-                  fontSize: textFontSize),
-            ),
-          ),
-        ],
-        onChanged: (ChainSchool? value) {
-          setState(() {
-            _selectedChainSchool = value;
-
-            // Update the text controller with the selected category name
-            controller.text = value?.chainSchoolName ?? '';
-
-            // Validate the field
-            fieldKey.currentState?.validate();
-          });
-        },
-        decoration: InputDecoration(
-          labelText: label,
-          labelStyle: TextStyle(fontSize: labelFontSize),
-          border: const OutlineInputBorder(),
-        ),
-      ),
-    );
-  }
-
   Future<void> checkForEdit() async {
     try {
-      int customerId = extractNumericPart(widget.action);
-      validated = extractStringPart(widget.action);
+      int contactId = extractNumericPart(widget.action ?? '');
+      validated = extractStringPart(widget.action ?? '');
 
-      FetchCustomerDetailsService service = FetchCustomerDetailsService();
-      customerDetailsSchoolResponse = await service.fetchCustomerDetails(
-          customerId,
-          validated,
-          widget.type,
-          token,
-          (json) => FetchCustomerDetailsSchoolResponse.fromJson(json));
+      CustomerListService service = CustomerListService();
+      contactDetailsResponse = await service.contactDetailsSchool(
+          widget.type, contactId, validated, token);
 
-      _populateCustomerDetails(customerDetailsSchoolResponse.schoolDetails);
+      _populateCustomerDetails(contactDetailsResponse.contactDetails);
     } catch (e) {
       debugPrint('Error in checkForEdit: $e');
     }
   }
 
-  void _populateCustomerDetails(SchoolDetails? details) {
+  void _populateCustomerDetails(SchoolContactDetails? details) {
     if (details == null) return;
-    debugPrint('boardId : ${details.boardId}');
-    debugPrint('chainSchoolId : ${details.chainSchoolId}');
-    _customerNameController.text = details.schoolName;
-    _addressController.text = details.address;
-    _pinCodeController.text = details.pinCode;
-    _phoneNumberController.text = details.mobile;
-    _emailIdController.text = details.emailId;
+    _firstNameController.text = details.firstName;
+    _lastNameController.text = details.lastName;
+    _addressController.text = details.resAddress;
+    _pinCodeController.text = details.resPincode;
+    _phoneNumberController.text = details.contactMobile;
+    _emailIdController.text = details.contactEmailId;
+    _dobController.text = details.birthDay;
+    _anniversaryController.text = details.anniversary;
 
-    _selectedKeyCustomer = details.keyCustomer == 'Y';
-    _selectedCustomerStatus = details.customerStatus == 'Active';
+    _selectedPrimaryContact = details.primaryContact == 'Y';
+    _selectedContactStatus = details.contactStatus == 'Active';
 
     debugPrint(
-        'boardMasterList size : ${customerEntryMasterResponse.boardMasterList.length}');
-    if (customerEntryMasterResponse.boardMasterList.isNotEmpty) {
-      final board = customerEntryMasterResponse.boardMasterList.firstWhere(
-        (b) => b.boardId == details.boardId,
+        'salutationMasterList size : ${customerEntryMasterResponse.salutationMasterList.length}');
+    if (customerEntryMasterResponse.salutationMasterList.isNotEmpty) {
+      final salutation =
+          customerEntryMasterResponse.salutationMasterList.firstWhere(
+        (b) => b.salutationId == details.salutationId,
         orElse: () {
-          debugPrint('Edit Board ID ${details.boardId} not found.');
-          return BoardMaster(boardId: 0, boardName: '');
+          debugPrint('Edit SalutationId ID ${details.salutationId} not found.');
+          return SalutationMaster(salutationId: 0, salutationName: '');
         },
       );
-      if (board.boardId > 0) {
-        debugPrint('board.boardName ${board.boardName}');
+      if (salutation.salutationId > 0) {
+        debugPrint('salutationName ${salutation.salutationName}');
         setState(() {
-          _selectedBoard = board;
-          _boardController.text = board.boardName;
+          _selectedSalutation = salutation.salutationName;
+          _selectedSalutationId = salutation.salutationId;
         });
       } else {
-        debugPrint('Edit board 0');
+        debugPrint('Edit salutation 0');
       }
     }
 
     debugPrint(
-        'chainSchoolList size : ${customerEntryMasterResponse.chainSchoolList.length}');
-    if (customerEntryMasterResponse.chainSchoolList.isNotEmpty) {
-      final chainSchool =
-          customerEntryMasterResponse.chainSchoolList.firstWhere(
-        (s) => s.chainSchoolId == details.chainSchoolId,
+        'contactDesignationList size : ${customerEntryMasterResponse.contactDesignationList.length}');
+    if (customerEntryMasterResponse.contactDesignationList.isNotEmpty) {
+      final contactDesignation =
+          customerEntryMasterResponse.contactDesignationList.firstWhere(
+        (b) => b.contactDesignationId == details.contactDesignationId,
         orElse: () {
           debugPrint(
-              'Edit Chain School ID ${details.chainSchoolId} not found.');
-          return ChainSchool(chainSchoolId: 0, chainSchoolName: '');
+              'Edit Designation ID ${details.contactDesignationId} not found.');
+          return ContactDesignation(
+              contactDesignationId: 0, contactDesignationName: '');
         },
       );
-      if (chainSchool.chainSchoolId > 0) {
+      if (contactDesignation.contactDesignationId > 0) {
+        debugPrint(
+            'contactDesignationName ${contactDesignation.contactDesignationName}');
         setState(() {
-          _selectedChainSchool = chainSchool;
-          _chainSchoolController.text = chainSchool.chainSchoolName;
+          _selectedContactDesignation =
+              contactDesignation.contactDesignationName;
+          _selectedContactDesignationId =
+              contactDesignation.contactDesignationId;
         });
       } else {
-        debugPrint('Edit Chain school 0');
+        debugPrint('Edit contactDesignation 0');
       }
     }
 
-    debugPrint('details.countryId : ${details.countryId}');
-    debugPrint('details.stateId : ${details.stateId}');
-    debugPrint('details.districtId : ${details.districtId}');
-    debugPrint('details.cityId : ${details.cityId}');
+    debugPrint(
+        'dataSourceList size : ${customerEntryMasterResponse.dataSourceList.length}');
+    if (customerEntryMasterResponse.dataSourceList.isNotEmpty) {
+      final dataSource = customerEntryMasterResponse.dataSourceList.firstWhere(
+        (b) => b.dataSourceId == details.dataSourceId,
+        orElse: () {
+          debugPrint(
+              'Edit Data Source ID ${details.contactDesignationId} not found.');
+          return DataSource(dataSourceId: 0, dataSourceName: '');
+        },
+      );
+      if (dataSource.dataSourceId > 0) {
+        debugPrint('dataSource ${dataSource.dataSourceName}');
+        setState(() {
+          _selectedDataSource = dataSource.dataSourceName;
+          _selectedDataSourceId = dataSource.dataSourceId;
+        });
+      } else {
+        debugPrint('Edit dataSource 0');
+      }
+    }
 
-    final selectedCountry = _findCountryById(details.countryId);
+    debugPrint('details.countryId : ${details.resCountry}');
+    debugPrint('details.stateId : ${details.resState}');
+    debugPrint('details.districtId : ${details.resDistrict}');
+    debugPrint('details.cityId : ${details.resCity}');
+
+    final selectedCountry = _findCountryById(details.resCountry);
     if (selectedCountry.countryId == 0) {
       debugPrint('selectedCountry 0');
     } else {
       _onCountryChanged(selectedCountry);
 
-      final selectedState = _findStateById(details.stateId);
+      final selectedState = _findStateById(details.resState);
       if (selectedState.stateId == 0) {
         debugPrint('selectedState 0');
       } else {
         _onStateChanged(selectedState);
 
-        final selectedDistrict = _findDistrictById(details.districtId);
+        final selectedDistrict = _findDistrictById(details.resDistrict);
         if (selectedDistrict.districtId == 0) {
           debugPrint('selectedDistrict 0');
         } else {
@@ -1141,12 +1173,12 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
 
           if (_filteredCities.isNotEmpty) {
             _selectedCity = _filteredCities.firstWhere(
-                  (geo) => geo.cityId == details.cityId,
+              (geo) => geo.cityId == details.resCity,
               orElse: () => _filteredCities.first,
             );
           }
 
-          final selectedCity = _findCityById(details.cityId);
+          final selectedCity = _findCityById(details.resCity);
           if (selectedCity.cityId == 0) {
             debugPrint('selectedCity 0');
           } else {
@@ -1161,7 +1193,7 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
 
   Geography _findCityById(int? cityId) {
     return _filteredCities.firstWhere(
-          (city) => city.cityId == cityId,
+      (city) => city.cityId == cityId,
       orElse: () => Geography(
         countryId: 0,
         country: '',
@@ -1177,7 +1209,7 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
 
   Geography _findCountryById(int? countryId) {
     return _allGeographies.firstWhere(
-          (city) => city.countryId == countryId,
+      (city) => city.countryId == countryId,
       orElse: () => Geography(
         countryId: 0,
         country: '',
@@ -1193,7 +1225,7 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
 
   Geography _findStateById(int? stateId) {
     return _filteredStates.firstWhere(
-          (city) => city.stateId == stateId,
+      (city) => city.stateId == stateId,
       orElse: () => Geography(
         countryId: 0,
         country: '',
@@ -1209,7 +1241,7 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
 
   Geography _findDistrictById(int? districtId) {
     return _filteredDistricts.firstWhere(
-          (city) => city.districtId == districtId,
+      (city) => city.districtId == districtId,
       orElse: () => Geography(
         countryId: 0,
         country: '',
@@ -1227,9 +1259,9 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
     // Get unique countries
     _filteredCountries = _allGeographies
         .where((geo) =>
-    _allGeographies
-        .indexWhere((item) => item.countryId == geo.countryId) ==
-        _allGeographies.indexOf(geo))
+            _allGeographies
+                .indexWhere((item) => item.countryId == geo.countryId) ==
+            _allGeographies.indexOf(geo))
         .toList();
   }
 
@@ -1244,8 +1276,8 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
       final Set<int> uniqueStateIds = {};
       _filteredStates = _allGeographies
           .where((geo) =>
-      geo.countryId == selected?.countryId &&
-          uniqueStateIds.add(geo.stateId)) // Only add unique states
+              geo.countryId == selected?.countryId &&
+              uniqueStateIds.add(geo.stateId)) // Only add unique states
           .toList();
 
       _filteredDistricts = []; // Clear districts when country changes
@@ -1263,8 +1295,8 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
       final Set<int> uniqueDistrictIds = {};
       _filteredDistricts = _allGeographies
           .where((geo) =>
-      geo.stateId == selected?.stateId &&
-          uniqueDistrictIds.add(geo.districtId)) // Only add unique district
+              geo.stateId == selected?.stateId &&
+              uniqueDistrictIds.add(geo.districtId)) // Only add unique district
           .toList();
       _filteredCities = []; // Clear cities when state changes
     });
@@ -1279,8 +1311,8 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
       final Set<int> uniqueCityIds = {};
       _filteredCities = _allGeographies
           .where((geo) =>
-      geo.districtId == selected?.districtId &&
-          uniqueCityIds.add(geo.cityId)) // Only add unique cities
+              geo.districtId == selected?.districtId &&
+              uniqueCityIds.add(geo.cityId)) // Only add unique cities
           .toList();
     });
   }
@@ -1304,7 +1336,7 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
           child: CustomText('Select $label'),
         ),
         ...uniqueItems.map(
-              (geo) => DropdownMenuItem<Geography>(
+          (geo) => DropdownMenuItem<Geography>(
             value: geo,
             child: CustomText(displayText(geo)),
           ),
@@ -1333,7 +1365,7 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
         debugPrint(
             'Edit customer address latitude ${addressLocation.latitude}, longitude : ${addressLocation.longitude}');
         LatLng initialPosition =
-        LatLng(addressLocation.latitude, addressLocation.longitude);
+            LatLng(addressLocation.latitude, addressLocation.longitude);
         debugPrint(
             'Edit customer initialPosition latitude ${initialPosition.latitude}, longitude : ${initialPosition.longitude}');
 
@@ -1392,7 +1424,7 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
         debugPrint(
             'Edit customer address latitude ${addressLocation.latitude}, longitude : ${addressLocation.longitude}');
         LatLng initialPosition =
-        LatLng(addressLocation.latitude, addressLocation.longitude);
+            LatLng(addressLocation.latitude, addressLocation.longitude);
         debugPrint(
             'Edit customer initialPosition latitude ${initialPosition.latitude}, longitude : ${initialPosition.longitude}');
 
@@ -1438,4 +1470,6 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
       return;
     }
   }
+
+  void submitContact() {}
 }

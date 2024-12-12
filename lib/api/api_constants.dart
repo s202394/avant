@@ -33,6 +33,7 @@ const String selfStockRequestTradeUrl = '${baseUrl}selfstockRequesttradeAPI';
 const String customerListUrl = '${baseUrl}CustomerListAPI';
 const String customerContactListUrl = '${baseUrl}FetchCustomerContactList';
 const String fetchCustomerDetailsUrl = '${baseUrl}FetchCustomerDetails';
+const String fetchCustomerContactDetailsUrl = '${baseUrl}FetchCustomerContactDetails';
 const String deleteCustomerUrl = '${baseUrl}DeleteCustomerAPI';
 const String deleteCustomerContactUrl = '${baseUrl}DeleteCustomerContactAPI';
 

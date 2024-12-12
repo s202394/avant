@@ -27,7 +27,7 @@ import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:workmanager/workmanager.dart';
 
-import 'new_customer/customer_list.dart';
+import 'customer/customer_list.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});

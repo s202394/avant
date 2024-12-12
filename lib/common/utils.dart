@@ -1,5 +1,14 @@
 int extractNumericPart(String input) {
-  return int.parse(input.replaceAll(RegExp(r'[^0-9]'), ''));
+  // Remove all non-numeric characters
+  String numericPart = input.replaceAll(RegExp(r'[^0-9]'), '');
+
+  // Check if the resulting string is empty
+  if (numericPart.isEmpty) {
+    return 0; // Default value when no numeric part is found
+  }
+
+  // Parse and return the number
+  return int.parse(numericPart);
 }
 
 String extractStringPart(String input) {
