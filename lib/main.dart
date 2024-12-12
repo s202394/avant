@@ -8,6 +8,9 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:workmanager/workmanager.dart';
 
+import 'api/api_service.dart';
+import 'common/common.dart';
+import 'dialog/custom_alert_dialog.dart';
 import 'model/login_model.dart';
 
 void main() {
@@ -48,11 +51,17 @@ class SplashScreenState extends State<SplashScreen> {
   late SharedPreferences prefs;
 
   bool _isAlreadyLogin = false;
+  String emailOrPhone = '';
+  String password = '';
+  String token = '';
 
   _loadData() async {
     prefs = await SharedPreferences.getInstance();
     setState(() {
       _isAlreadyLogin = prefs.getBool('is_already_login') ?? false;
+      emailOrPhone=  prefs.getString('username')??'';
+      password= prefs.getString('password')??'';
+      token= prefs.getString('token')??'';
     });
   }
 
@@ -62,13 +71,11 @@ class SplashScreenState extends State<SplashScreen> {
 
     _loadData();
     Timer(const Duration(seconds: 3), () {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) =>
-              _isAlreadyLogin ? const HomePage() : const LoginPage(),
-        ),
-      );
+      if(_isAlreadyLogin){
+        _loginUser(emailOrPhone,password);
+      }else{
+        _navigateToHomePage();
+      }
     });
   }
 
@@ -87,6 +94,65 @@ class SplashScreenState extends State<SplashScreen> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+
+  Future<void> _loginUser(String emailOrPhone, String password) async {
+    final String ipAddress = await getIpAddress();
+    final String deviceInfo = await getDeviceInfo();
+    final String deviceId = await getDeviceId();
+
+    if (kDebugMode) {
+      print(
+          'Login details ipAddress : $ipAddress , deviceInfo : $deviceInfo , deviceId : $deviceId');
+    }
+
+    final responseData = await LoginService().login(
+        emailOrPhone, password, ipAddress, deviceId, deviceInfo, token);
+    final loginResponse = await LoginResponse.fromJson(responseData);
+    if (loginResponse.executiveData.loginBlocked == 'N') {
+      final String? userId = prefs.getString('userId');
+
+      if (kDebugMode) {
+        print('Login successful! User ID: $userId');
+      }
+      _saveData(emailOrPhone, password, true);
+    } else {
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return SingleAlertDialog(
+              title: "Alert",
+              content: "You are not allowed to login. Please contact to admin.",
+              onOk: () {
+                // Handle ok action
+                Navigator.of(context).pop();
+              },
+            );
+          },
+        );
+      }
+    }
+  }
+
+  Future<void> _saveData(
+      String emailOrPhone, String password, bool value) async {
+    prefs.setString('username', emailOrPhone);
+    prefs.setString('password', password);
+    prefs.setBool('is_already_login', value);
+
+    _navigateToHomePage();
+  }
+
+  void _navigateToHomePage() {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) =>
+        _isAlreadyLogin ? const HomePage() : const LoginPage(),
       ),
     );
   }
