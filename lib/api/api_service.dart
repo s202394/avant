@@ -109,11 +109,42 @@ class LoginService {
         }
         throw Exception('Failed to log in: ${responseData['Status']}');
       }
+    } else if (response.statusCode == 401) {
+      // Token is invalid or expired, refresh the token and retry
+      return await refreshAndRetryLogin(
+          email, password, ipAddress, deviceId, deviceInfo);
     } else {
       if (kDebugMode) {
         print('login failure!! responseData: ${response.statusCode}');
       }
       throw Exception('Failed to log in: ${response.reasonPhrase}');
+    }
+  }
+
+  Future<Map<String, dynamic>> refreshAndRetryLogin(
+    String email,
+    String password,
+    String ipAddress,
+    String deviceId,
+    String deviceInfo,
+  ) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String username = prefs.getString('token_username') ?? '';
+    String password = prefs.getString('password') ?? '';
+
+    if (username.isNotEmpty && password.isNotEmpty) {
+      await TokenService().token(username, password);
+      String? newToken = prefs.getString('token');
+
+      if (newToken != null && newToken.isNotEmpty) {
+        return await login(
+            email, password, ipAddress, deviceId, deviceInfo, newToken);
+      } else {
+        throw Exception('Failed to retrieve new token');
+      }
+    } else {
+      throw Exception(
+          'Username or password is not stored in SharedPreferences');
     }
   }
 
@@ -143,7 +174,7 @@ class LoginService {
       }
     } else if (response.statusCode == 401) {
       // Token is invalid or expired, refresh the token and retry
-      return await refreshAndRetryLogin(userId);
+      return await refreshAndRetryLogout(userId);
     } else {
       if (kDebugMode) {
         print('logout failure!! responseData: ${response.statusCode}');
@@ -152,7 +183,7 @@ class LoginService {
     }
   }
 
-  Future<Map<String, dynamic>> refreshAndRetryLogin(int userId) async {
+  Future<Map<String, dynamic>> refreshAndRetryLogout(int userId) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String username = prefs.getString('token_username') ?? '';
     String password = prefs.getString('password') ?? '';

@@ -406,6 +406,8 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
           if (kDebugMode) {
             print(address);
           }
+
+          _formKey.currentState!.validate();
         });
       } else {
         debugPrint('Place mark empty');
@@ -528,7 +530,7 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
     try {
       GeographyService geographyService = GeographyService();
       GeographyResponse geographyResponse =
-      await geographyService.fetchGeographyData(
+          await geographyService.fetchGeographyData(
         _cityAccess,
         executiveId,
         token,
@@ -537,8 +539,8 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
         List<Geography> geographyList = geographyResponse.geographyList;
         _filteredCountries = geographyList
             .where((g) =>
-        geographyList.indexWhere((e) => e.countryId == g.countryId) ==
-            geographyList.indexOf(g))
+                geographyList.indexWhere((e) => e.countryId == g.countryId) ==
+                geographyList.indexOf(g))
             .toList();
 
         _filteredCities = geographyResponse.geographyList.toList();
@@ -693,6 +695,7 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
               onChanged: (selected) {
                 setState(() {
                   _selectedCity = selected;
+                  _formKey.currentState!.validate();
                 });
               },
             ),
@@ -826,7 +829,8 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
                   (_selectedCustomerStatus ?? false) ? "Active" : "Inactive",
               isEdit: widget.isEdit,
               validated: validated,
-              customerDetailsSchoolResponse: customerDetailsSchoolResponse,
+              customerDetailsSchoolResponse:
+                  widget.isEdit ? customerDetailsSchoolResponse : null,
             ),
           ),
         );
@@ -1141,7 +1145,7 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
 
           if (_filteredCities.isNotEmpty) {
             _selectedCity = _filteredCities.firstWhere(
-                  (geo) => geo.cityId == details.cityId,
+              (geo) => geo.cityId == details.cityId,
               orElse: () => _filteredCities.first,
             );
           }
@@ -1161,7 +1165,7 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
 
   Geography _findCityById(int? cityId) {
     return _filteredCities.firstWhere(
-          (city) => city.cityId == cityId,
+      (city) => city.cityId == cityId,
       orElse: () => Geography(
         countryId: 0,
         country: '',
@@ -1177,7 +1181,7 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
 
   Geography _findCountryById(int? countryId) {
     return _allGeographies.firstWhere(
-          (city) => city.countryId == countryId,
+      (city) => city.countryId == countryId,
       orElse: () => Geography(
         countryId: 0,
         country: '',
@@ -1193,7 +1197,7 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
 
   Geography _findStateById(int? stateId) {
     return _filteredStates.firstWhere(
-          (city) => city.stateId == stateId,
+      (city) => city.stateId == stateId,
       orElse: () => Geography(
         countryId: 0,
         country: '',
@@ -1209,7 +1213,7 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
 
   Geography _findDistrictById(int? districtId) {
     return _filteredDistricts.firstWhere(
-          (city) => city.districtId == districtId,
+      (city) => city.districtId == districtId,
       orElse: () => Geography(
         countryId: 0,
         country: '',
@@ -1227,9 +1231,9 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
     // Get unique countries
     _filteredCountries = _allGeographies
         .where((geo) =>
-    _allGeographies
-        .indexWhere((item) => item.countryId == geo.countryId) ==
-        _allGeographies.indexOf(geo))
+            _allGeographies
+                .indexWhere((item) => item.countryId == geo.countryId) ==
+            _allGeographies.indexOf(geo))
         .toList();
   }
 
@@ -1244,12 +1248,14 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
       final Set<int> uniqueStateIds = {};
       _filteredStates = _allGeographies
           .where((geo) =>
-      geo.countryId == selected?.countryId &&
-          uniqueStateIds.add(geo.stateId)) // Only add unique states
+              geo.countryId == selected?.countryId &&
+              uniqueStateIds.add(geo.stateId)) // Only add unique states
           .toList();
 
       _filteredDistricts = []; // Clear districts when country changes
       _filteredCities = []; // Clear cities when country changes
+
+      _formKey.currentState!.validate();
     });
   }
 
@@ -1263,10 +1269,12 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
       final Set<int> uniqueDistrictIds = {};
       _filteredDistricts = _allGeographies
           .where((geo) =>
-      geo.stateId == selected?.stateId &&
-          uniqueDistrictIds.add(geo.districtId)) // Only add unique district
+              geo.stateId == selected?.stateId &&
+              uniqueDistrictIds.add(geo.districtId)) // Only add unique district
           .toList();
       _filteredCities = []; // Clear cities when state changes
+
+      _formKey.currentState!.validate();
     });
   }
 
@@ -1279,9 +1287,11 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
       final Set<int> uniqueCityIds = {};
       _filteredCities = _allGeographies
           .where((geo) =>
-      geo.districtId == selected?.districtId &&
-          uniqueCityIds.add(geo.cityId)) // Only add unique cities
+              geo.districtId == selected?.districtId &&
+              uniqueCityIds.add(geo.cityId)) // Only add unique cities
           .toList();
+
+      _formKey.currentState!.validate();
     });
   }
 
@@ -1304,7 +1314,7 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
           child: CustomText('Select $label'),
         ),
         ...uniqueItems.map(
-              (geo) => DropdownMenuItem<Geography>(
+          (geo) => DropdownMenuItem<Geography>(
             value: geo,
             child: CustomText(displayText(geo)),
           ),
@@ -1333,7 +1343,7 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
         debugPrint(
             'Edit customer address latitude ${addressLocation.latitude}, longitude : ${addressLocation.longitude}');
         LatLng initialPosition =
-        LatLng(addressLocation.latitude, addressLocation.longitude);
+            LatLng(addressLocation.latitude, addressLocation.longitude);
         debugPrint(
             'Edit customer initialPosition latitude ${initialPosition.latitude}, longitude : ${initialPosition.longitude}');
 
@@ -1392,7 +1402,7 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
         debugPrint(
             'Edit customer address latitude ${addressLocation.latitude}, longitude : ${addressLocation.longitude}');
         LatLng initialPosition =
-        LatLng(addressLocation.latitude, addressLocation.longitude);
+            LatLng(addressLocation.latitude, addressLocation.longitude);
         debugPrint(
             'Edit customer initialPosition latitude ${initialPosition.latitude}, longitude : ${initialPosition.longitude}');
 

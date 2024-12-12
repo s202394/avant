@@ -839,7 +839,7 @@ class CustomerContactFormState extends State<CustomerContactForm> {
 
     if (_formKey.currentState!.validate()) {
       if (_selectedPrimaryContact == null) {
-        _toastMessage.showToastMessage("Please select Primary Contact");
+        _toastMessage.showToastMessage("Please enter Primary Contact");
       } else if (_selectedContactStatus == null) {
         _toastMessage.showToastMessage("Please select Contact Status");
       } else {

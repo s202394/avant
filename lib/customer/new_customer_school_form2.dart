@@ -123,6 +123,8 @@ class NewCustomerSchoolForm2State extends State<NewCustomerSchoolForm2> {
 
   bool hasCheckedForEdit = false;
 
+  final List<BookSellers> _selectedBooksellers = [];
+
   late CustomerEntryMasterResponse customerEntryMasterResponse;
 
   @override
@@ -361,10 +363,9 @@ class NewCustomerSchoolForm2State extends State<NewCustomerSchoolForm2> {
             _buildTextField(
                 'GST Number', gstController, _gstFieldKey, _gstFocusNode),
             buildPurchaseModeField(data.purchaseModeList),
-            const SizedBox(height: 20),
             Visibility(
               visible: (_selectedPurchaseMode == 'Book Seller' ||
-                      _selectedPurchaseMode == 'Bookseller') &
+                      _selectedPurchaseMode == 'Bookseller') &&
                   _submitted,
               child: Column(
                 children: [
@@ -382,17 +383,17 @@ class NewCustomerSchoolForm2State extends State<NewCustomerSchoolForm2> {
                             decoration: TextDecoration.underline,
                           ),
                         ),
-                        ElevatedButton(
-                          onPressed: () => {_showBooksellerSearchModal()},
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.lightBlueAccent,
-                            textStyle: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
+                        Visibility(
+                          visible: _booksellers.length == 1,
+                          child: ElevatedButton(
+                            onPressed: () => {_showBooksellerSearchModal()},
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.lightBlueAccent,
+                              textStyle: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
-                          ),
-                          child: Visibility(
-                            visible: _booksellers.length == 1,
                             child: const CustomText(
                               '+ Add Bookseller',
                               fontSize: 14,
@@ -409,18 +410,42 @@ class NewCustomerSchoolForm2State extends State<NewCustomerSchoolForm2> {
                       itemCount: _booksellers.length,
                       itemBuilder: (context, index) {
                         final bookseller = _booksellers[index];
+                        final isSelected =
+                            _selectedBooksellers.contains(bookseller);
+
                         return Container(
                           margin: const EdgeInsets.symmetric(vertical: 4),
-                          // For spacing between items
                           decoration: BoxDecoration(
                             border: Border.all(color: Colors.grey, width: 1.0),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: ListTile(
+                            leading: Checkbox(
+                              value: isSelected,
+                              onChanged: (value) {
+                                if (value == true) {
+                                  if (_selectedBooksellers.length < 2) {
+                                    setState(() {
+                                      _selectedBooksellers.add(bookseller);
+                                    });
+                                  } else {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                            "You can select a maximum of 2 items."),
+                                      ),
+                                    );
+                                  }
+                                } else {
+                                  setState(() {
+                                    _selectedBooksellers.remove(bookseller);
+                                  });
+                                }
+                              },
+                            ),
                             title: Text(bookseller.bookSellerName),
                             subtitle: Text(
                                 "${bookseller.address}\n${bookseller.city}\n${bookseller.state}, ${bookseller.country}"),
-                            // Add any other details you want to display
                           ),
                         );
                       },
@@ -783,8 +808,12 @@ class NewCustomerSchoolForm2State extends State<NewCustomerSchoolForm2> {
       _toastMessage.showToastMessage("Please select Purchase Mode");
     } else if ((_selectedPurchaseMode == 'Book Seller' ||
             _selectedPurchaseMode == 'Bookseller') &&
-        _booksellers.isEmpty) {
-      _showBooksellerSearchModal();
+        _selectedBooksellers.isEmpty) {
+      if (_booksellers.isEmpty) {
+        _showBooksellerSearchModal();
+      } else {
+        _toastMessage.showInfoToastMessage("Please select bookseller");
+      }
     } else {
       nextPage();
     }
@@ -1012,7 +1041,7 @@ class NewCustomerSchoolForm2State extends State<NewCustomerSchoolForm2> {
             pan: panController.text,
             gst: gstController.text,
             purchaseMode: _selectedPurchaseMode ?? '',
-            bookseller: _booksellers,
+            bookseller: _selectedBooksellers,
             isEdit: widget.isEdit,
             validated: widget.validated,
             customerDetailsSchoolResponse:
