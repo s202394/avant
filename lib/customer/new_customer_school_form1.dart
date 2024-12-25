@@ -13,6 +13,7 @@ import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:location/location.dart' as loc;
+import '../common/location.dart';
 import '../common/utils.dart';
 import '../model/fetch_customer_details_model.dart';
 import '../views/common_app_bar.dart';
@@ -91,6 +92,7 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
   bool? _selectedCustomerStatus;
 
   bool _isLoading = false;
+  bool _isSubmitted = false;
 
   late SharedPreferences prefs;
   late String token;
@@ -110,6 +112,7 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
 
   late CustomerEntryMasterResponse customerEntryMasterResponse;
   late FetchCustomerDetailsSchoolResponse customerDetailsSchoolResponse;
+  SchoolDetails? schoolDetails;
 
   @override
   void dispose() {
@@ -160,7 +163,7 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
   }
 
   Future<void> _initializeMandatorySettings() async {
-    mandatorySetting = await dbHelper.getTeacherMobileEmailMandatory();
+    mandatorySetting = await dbHelper.getSchoolMobileEmailMandatory();
 
     prefs = await SharedPreferences.getInstance();
     setState(() {
@@ -232,7 +235,7 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
 
   void addAddress() async {
     loc.Location location = loc.Location();
-    debugPrint('Add customer address}');
+    debugPrint('Add customer address');
     // Get current user location
     try {
       loc.LocationData locationData = await location.getLocation();
@@ -255,6 +258,7 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
         );
         _updateAddressFromPosition(initialPosition);
       });
+      _formKey.currentState!.validate();
     } catch (e) {
       if (kDebugMode) {
         print("Error fetching user location: $e");
@@ -317,6 +321,7 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
       } else {
         debugPrint("Fetching location empty.");
       }
+      _formKey.currentState!.validate();
     } catch (e) {
       debugPrint("Error fetching location from address: $e");
       addAddress();
@@ -367,51 +372,10 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
         },
       );
 
-      if (placemarks.isNotEmpty) {
-        Placemark place = placemarks[0];
-        debugPrint('place : ${place.name}');
-        // Dynamically building the address
-        String address = '';
-
-        // Check and add each component if available
-        if (place.name != null && place.name!.isNotEmpty) {
-          address += '${place.name!}, ';
-        }
-        /* if (place.street != null && place.street!.isNotEmpty) {
-          address += '${place.street!}, ';
-        }*/
-        if (place.locality != null && place.locality!.isNotEmpty) {
-          address += '${place.locality!}, ';
-        }
-        if (place.administrativeArea != null &&
-            place.administrativeArea!.isNotEmpty) {
-          address += '${place.administrativeArea!}, ';
-        }
-        if (place.postalCode != null && place.postalCode!.isNotEmpty) {
-          address += '${place.postalCode!}, ';
-        }
-        if (place.country != null && place.country!.isNotEmpty) {
-          address += place.country!;
-        }
-
-        // Remove trailing comma if it exists
-        if (address.endsWith(', ')) {
-          address = address.substring(0, address.length - 2);
-        }
-
-        // Update the address field in the UI
-        setState(() {
-          _addressController.text = address;
-          _currentMarker = _currentMarker!.copyWith(positionParam: position);
-          if (kDebugMode) {
-            print(address);
-          }
-
-          _formKey.currentState!.validate();
-        });
-      } else {
-        debugPrint('Place mark empty');
-      }
+      setState(() {
+        _currentMarker = _currentMarker!.copyWith(positionParam: position);
+      });
+      getAddress(placemarks, position);
     } catch (e) {
       if (kDebugMode) {
         print("Error retrieving address: $e");
@@ -420,6 +384,18 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
         _addressController.text = "Unable to retrieve address";
       });
     }
+  }
+
+  void getAddress(List<Placemark> placemarks, LatLng position) {
+    String address = buildAddress(placemarks);
+
+    // Update the address field in the UI
+    setState(() {
+      _addressController.text = address;
+      if (kDebugMode) {
+        print(address);
+      }
+    });
   }
 
   Widget _buildMapContainer() {
@@ -471,14 +447,7 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
       position.latitude,
       position.longitude,
     );
-    if (placemarks.isNotEmpty) {
-      Placemark place = placemarks[0];
-      String address =
-          '${place.name}, ${place.administrativeArea}, ${place.street}, ${place.locality}, ${place.country}';
-      setState(() {
-        _addressController.text = address;
-      });
-    }
+    getAddress(placemarks, position);
   }
 
   void _fetchData() async {
@@ -654,6 +623,18 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if (widget.isEdit &&
+                schoolDetails != null &&
+                (schoolDetails?.msgWarning ?? '') != 'N')
+              Column(
+                children: [
+                  CustomText(schoolDetails?.msgWarning ?? '',
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.orange),
+                  const SizedBox(height: 10),
+                ],
+              ),
             _buildTextField('${widget.type} Name', _customerNameController,
                 _customerNameFieldKey, _customerNameFocusNode),
             const SizedBox(height: 10),
@@ -695,7 +676,6 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
               onChanged: (selected) {
                 setState(() {
                   _selectedCity = selected;
-                  _formKey.currentState!.validate();
                 });
               },
             ),
@@ -804,6 +784,8 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
   void _submitForm() {
     FocusScope.of(context).unfocus();
 
+    _isSubmitted = true;
+
     if (_formKey.currentState!.validate()) {
       if (_selectedKeyCustomer == null) {
         _toastMessage.showToastMessage("Please select Key Customer");
@@ -906,22 +888,24 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
           enabled: enabled,
           maxLines: maxLines,
           validator: (value) {
-            if (label == 'Email Id') {
-              if (value == null || value.isEmpty) {
-                return null;
+            if (_isSubmitted) {
+              if (label == 'Email Id') {
+                if (value == null || value.isEmpty) {
+                  return null;
+                }
+                if (!Validator.isValidEmail(value)) {
+                  return 'Please enter valid $label';
+                }
               }
-              if (!Validator.isValidEmail(value)) {
+              if (value == null || value.isEmpty) {
+                return 'Please enter $label';
+              }
+              if (label == 'Pin Code' && value.length < 6) {
                 return 'Please enter valid $label';
               }
-            }
-            if (value == null || value.isEmpty) {
-              return 'Please enter $label';
-            }
-            if (label == 'Pin Code' && value.length < 6) {
-              return 'Please enter valid $label';
-            }
-            if (label == 'Phone Number' && !Validator.isValidMobile(value)) {
-              return 'Please enter valid $label';
+              if (label == 'Phone Number' && !Validator.isValidMobile(value)) {
+                return 'Please enter valid $label';
+              }
             }
             return null;
           },
@@ -987,7 +971,7 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
           border: const OutlineInputBorder(),
         ),
         validator: (value) {
-          if (value == null || value.boardName.isEmpty) {
+          if (_isSubmitted && (value == null || value.boardName.isEmpty)) {
             return 'Please select $label';
           }
           return null;
@@ -1066,6 +1050,7 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
 
   void _populateCustomerDetails(SchoolDetails? details) {
     if (details == null) return;
+    schoolDetails = details;
     debugPrint('boardId : ${details.boardId}');
     debugPrint('chainSchoolId : ${details.chainSchoolId}');
     _customerNameController.text = details.schoolName;
@@ -1159,6 +1144,8 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
         }
       }
     }
+
+    _formKey.currentState!.validate();
 
     editAddress();
   }
@@ -1254,8 +1241,6 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
 
       _filteredDistricts = []; // Clear districts when country changes
       _filteredCities = []; // Clear cities when country changes
-
-      _formKey.currentState!.validate();
     });
   }
 
@@ -1273,8 +1258,6 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
               uniqueDistrictIds.add(geo.districtId)) // Only add unique district
           .toList();
       _filteredCities = []; // Clear cities when state changes
-
-      _formKey.currentState!.validate();
     });
   }
 
@@ -1290,8 +1273,6 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
               geo.districtId == selected?.districtId &&
               uniqueCityIds.add(geo.cityId)) // Only add unique cities
           .toList();
-
-      _formKey.currentState!.validate();
     });
   }
 
@@ -1326,7 +1307,8 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
         labelStyle: TextStyle(fontSize: labelFontSize),
         border: const OutlineInputBorder(),
       ),
-      validator: (value) => value == null ? 'Please select $label' : null,
+      validator: (value) =>
+          value == null && _isSubmitted ? 'Please select $label' : null,
     );
   }
 

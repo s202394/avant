@@ -3631,6 +3631,160 @@ class CustomerListService {
           'Username or password is not stored in SharedPreferences');
     }
   }
+
+  Future<EntryResponse> insertOrUpdateCustomerContact(
+      String customerType,
+      String primaryContact,
+      int salutationId,
+      int contactDesignationId,
+      String firstName,
+      String lastName,
+      String contactEmailId,
+      String contactMobile,
+      String contactStatus,
+      int enteredBy,
+      int customerId,
+      String validated,
+      String resAddress,
+      int resCity,
+      String resPinCode,
+      String birthday,
+      String anniversary,
+      int customerContactId,
+      String xmlSubjectClassDM,
+      int dataSourceId,
+      String token) async {
+    final body = jsonEncode(<String, dynamic>{
+      'CustomerType': customerType,
+      'PrimaryContact': primaryContact,
+      'SalutationId': salutationId,
+      'ContactDesignationId': contactDesignationId,
+      'FirstName': firstName,
+      'LastName': lastName,
+      'ContactEmailId': contactEmailId,
+      'ContactMobile': contactMobile,
+      'ContactStatus': contactStatus,
+      'EnteredBy': enteredBy,
+      'CustomerId': customerId,
+      'Validated': validated,
+      'resAddress': resAddress,
+      'resCity': resCity,
+      'resPincode': resPinCode,
+      'BirthDay': birthday,
+      'Anniversary': anniversary,
+      if (customerType == 'School') 'DataSourceId': dataSourceId,
+      if (customerContactId > 0) 'CustomerContactId': customerContactId,
+      if (customerType == 'School') 'xmlSubjectClassDM': xmlSubjectClassDM,
+    });
+
+    final response = await http.post(
+      Uri.parse(contactEntryUpdateUrl),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+        'Authorization': 'Bearer $token',
+      },
+      body: body,
+    );
+    if (kDebugMode) {
+      print("Request Body: $body");
+
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}');
+      print('Response url: ${response.request?.url}');
+    }
+    if (response.statusCode == 200) {
+      final jsonResponse = json.decode(response.body);
+      return EntryResponse.fromJson(jsonResponse);
+    } else if (response.statusCode == 401) {
+      // Token is invalid or expired, refresh the token and retry
+      return await refreshAndRetryInsertOrUpdateCustomerContact(
+        customerType,
+        primaryContact,
+        salutationId,
+        contactDesignationId,
+        firstName,
+        lastName,
+        contactEmailId,
+        contactMobile,
+        contactStatus,
+        enteredBy,
+        customerId,
+        validated,
+        resAddress,
+        resCity,
+        resPinCode,
+        birthday,
+        anniversary,
+        customerContactId,
+        xmlSubjectClassDM,
+        dataSourceId,
+      );
+    } else {
+      throw Exception('Failed to update customer');
+    }
+  }
+
+  Future<EntryResponse> refreshAndRetryInsertOrUpdateCustomerContact(
+    String customerType,
+    String primaryContact,
+    int salutationId,
+    int contactDesignationId,
+    String firstName,
+    String lastName,
+    String contactEmailId,
+    String contactMobile,
+    String contactStatus,
+    int enteredBy,
+    int customerId,
+    String validated,
+    String resAddress,
+    int resCity,
+    String resPinCode,
+    String birthday,
+    String anniversary,
+    int customerContactId,
+    String xmlSubjectClassDM,
+    int dataSourceId,
+  ) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String username = prefs.getString('token_username') ?? '';
+    String password = prefs.getString('password') ?? '';
+
+    if (username.isNotEmpty && password.isNotEmpty) {
+      await TokenService().token(username, password);
+      String? newToken = prefs.getString('token');
+
+      if (newToken != null && newToken.isNotEmpty) {
+        return await insertOrUpdateCustomerContact(
+            customerType,
+            primaryContact,
+            salutationId,
+            contactDesignationId,
+            firstName,
+            lastName,
+            contactEmailId,
+            contactMobile,
+            contactStatus,
+            enteredBy,
+            customerId,
+            validated,
+            resAddress,
+            resCity,
+            resPinCode,
+            birthday,
+            anniversary,
+            customerContactId,
+            xmlSubjectClassDM,
+            dataSourceId,
+            newToken);
+      } else {
+        throw Exception('Failed to retrieve new token');
+      }
+    } else {
+      throw Exception(
+          'Username or password is not stored in SharedPreferences');
+    }
+  }
 }
 
 class FetchCustomerDetailsService {

@@ -152,7 +152,6 @@ class SchoolContactDetails {
   final int contactDesignationId;
   final String contactEmailId;
   final String contactMobile;
-  final String customerContactId;
   final String resAddress;
   final int resCountry;
   final int resState;
@@ -160,9 +159,9 @@ class SchoolContactDetails {
   final int resCity;
   final String resPincode;
   final String schoolContactId;
-  final int classNumId;
-  final int decisionId;
-  final int subjectId;
+  final String classNumId;
+  final String decisionId;
+  final String subjectId;
   final String birthDay;
   final String anniversary;
 
@@ -176,7 +175,6 @@ class SchoolContactDetails {
     required this.contactDesignationId,
     required this.contactEmailId,
     required this.contactMobile,
-    required this.customerContactId,
     required this.resAddress,
     required this.resCountry,
     required this.resState,
@@ -202,7 +200,6 @@ class SchoolContactDetails {
       contactDesignationId: json['ContactDesignationId'] ?? 0,
       contactEmailId: json['ContactEmailId'] ?? '',
       contactMobile: json['ContactMobile'] ?? '',
-      customerContactId: json['CustomerContactId'] ?? '',
       resAddress: json['resAddress'] ?? '',
       resCountry: json['resCountry'] ?? 0,
       resState: json['resState'] ?? 0,
@@ -210,9 +207,9 @@ class SchoolContactDetails {
       resCity: json['resCity'] ?? 0,
       resPincode: json['resPincode'] ?? '',
       schoolContactId: json['SchoolContactId'] ?? '',
-      classNumId: json['ClassNumId'] ?? 0,
-      decisionId: json['DecisionId'] ?? 0,
-      subjectId: json['SubjectId'] ?? 0,
+      classNumId: json['ClassNumId'] ?? '',
+      decisionId: json['DecisionId'] ?? '',
+      subjectId: json['SubjectId'] ?? '',
       birthDay: json['BirthDay'] ?? '',
       anniversary: json['Anniversary'] ?? '',
     );
@@ -228,7 +225,6 @@ class SchoolContactDetails {
       'ContactDesignationId': contactDesignationId,
       'ContactEmailId': contactEmailId,
       'ContactMobile': contactMobile,
-      'CustomerContactId': customerContactId,
       'resAddress': resAddress,
       'resCountry': resCountry,
       'resState': resState,

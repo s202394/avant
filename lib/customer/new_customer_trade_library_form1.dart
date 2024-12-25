@@ -16,6 +16,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:location/location.dart' as loc;
+import '../common/location.dart';
 import '../common/utils.dart';
 import '../home.dart';
 import '../model/fetch_customer_details_model.dart';
@@ -336,6 +337,15 @@ class NewCustomerTradeLibraryForm1State
     }
   }
 
+  // Relocate the map to the center
+  Future<void> _relocateMapToCenter(LatLng position) async {
+    if (isMapControllerInitialized) {
+      await mapController.animateCamera(
+        CameraUpdate.newLatLng(position),
+      );
+    }
+  }
+
   void _animateToPosition(LatLng position) {
     debugPrint("isMapControllerInitialized: $isMapControllerInitialized");
     if (isMapControllerInitialized) {
@@ -358,7 +368,8 @@ class NewCustomerTradeLibraryForm1State
 
   // Update the address when the marker is tapped
   Future<void> _onMarkerTapped(LatLng position) async {
-    _updateAddressFromPosition(position);
+    _relocateMapToCenter(position);
+    await _updateAddressFromPosition(position);
   }
 
   // Update the address when the marker is dragged
@@ -379,49 +390,10 @@ class NewCustomerTradeLibraryForm1State
         },
       );
 
-      if (placemarks.isNotEmpty) {
-        Placemark place = placemarks[0];
-        debugPrint('place : ${place.name}');
-        // Dynamically building the address
-        String address = '';
-
-        // Check and add each component if available
-        if (place.name != null && place.name!.isNotEmpty) {
-          address += '${place.name!}, ';
-        }
-        /* if (place.street != null && place.street!.isNotEmpty) {
-          address += '${place.street!}, ';
-        }*/
-        if (place.locality != null && place.locality!.isNotEmpty) {
-          address += '${place.locality!}, ';
-        }
-        if (place.administrativeArea != null &&
-            place.administrativeArea!.isNotEmpty) {
-          address += '${place.administrativeArea!}, ';
-        }
-        if (place.postalCode != null && place.postalCode!.isNotEmpty) {
-          address += '${place.postalCode!}, ';
-        }
-        if (place.country != null && place.country!.isNotEmpty) {
-          address += place.country!;
-        }
-
-        // Remove trailing comma if it exists
-        if (address.endsWith(', ')) {
-          address = address.substring(0, address.length - 2);
-        }
-
-        // Update the address field in the UI
-        setState(() {
-          _addressController.text = address;
-          _currentMarker = _currentMarker!.copyWith(positionParam: position);
-          if (kDebugMode) {
-            print(address);
-          }
-        });
-      } else {
-        debugPrint('Place mark empty');
-      }
+      setState(() {
+        _currentMarker = _currentMarker!.copyWith(positionParam: position);
+      });
+      getAddress(placemarks, position);
     } catch (e) {
       if (kDebugMode) {
         print("Error retrieving address: $e");
@@ -430,6 +402,18 @@ class NewCustomerTradeLibraryForm1State
         _addressController.text = "Unable to retrieve address";
       });
     }
+  }
+
+  void getAddress(List<Placemark> placemarks, LatLng position) {
+    String address = buildAddress(placemarks);
+
+    // Update the address field in the UI
+    setState(() {
+      _addressController.text = address;
+      if (kDebugMode) {
+        print(address);
+      }
+    });
   }
 
   Widget _buildMapContainer() {
@@ -481,14 +465,7 @@ class NewCustomerTradeLibraryForm1State
       position.latitude,
       position.longitude,
     );
-    if (placemarks.isNotEmpty) {
-      Placemark place = placemarks[0];
-      String address =
-          '${place.name}, ${place.administrativeArea}, ${place.street}, ${place.locality}, ${place.country}';
-      setState(() {
-        _addressController.text = address;
-      });
-    }
+    getAddress(placemarks, position);
   }
 
   void _fetchData() async {
@@ -624,9 +601,7 @@ class NewCustomerTradeLibraryForm1State
     return Scaffold(
       appBar: CommonAppBar(title: '$type Customer - ${widget.type}'),
       body: _isLoading
-          ? const Center(
-              child:
-                  CircularProgressIndicator()) // Show loader if data is still loading
+          ? const Center(child: CircularProgressIndicator())
           : FutureBuilder<CustomerEntryMasterResponse>(
               future: futureData,
               builder: (context, snapshot) {
@@ -635,18 +610,15 @@ class NewCustomerTradeLibraryForm1State
                 } else if (snapshot.hasError) {
                   return Center(child: Text('Error: ${snapshot.error}'));
                 } else if (snapshot.hasData) {
-                  // Once data is available, initialize the response
                   customerEntryMasterResponse = snapshot.data!;
 
-                  // If in edit mode, trigger checkForEdit only once
                   if (widget.isEdit && !hasCheckedForEdit) {
                     hasCheckedForEdit = true;
                     Future.delayed(Duration.zero, () {
-                      checkForEdit(); // Call checkForEdit after the build method
+                      checkForEdit();
                     });
                   }
 
-                  // Return the form UI
                   return buildForm(snapshot.data!);
                 } else {
                   return const Center(child: Text('No data found'));
@@ -667,12 +639,18 @@ class NewCustomerTradeLibraryForm1State
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (widget.isEdit && customerDetails != null)
-              CustomText(customerDetails?.msgWarning ?? '',
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.orange),
-            if (widget.isEdit) const SizedBox(height: 10),
+            if (widget.isEdit &&
+                customerDetails != null &&
+                (customerDetails?.msgWarning ?? '') != 'N')
+              Column(
+                children: [
+                  CustomText(customerDetails?.msgWarning ?? '',
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.orange),
+                  const SizedBox(height: 10),
+                ],
+              ),
             _buildTextField('${widget.type} Name', _customerNameController,
                 _customerNameFieldKey, _customerNameFocusNode),
             const SizedBox(height: 10),

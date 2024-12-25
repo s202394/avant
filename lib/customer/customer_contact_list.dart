@@ -66,6 +66,7 @@ class CustomerContactListState extends State<CustomerContactList> {
   }
 
   Future<void> _fetchContactData() async {
+    debugPrint("_fetchContactData called");
     if (isLoading || !hasMore) return;
 
     setState(() {
@@ -95,7 +96,7 @@ class CustomerContactListState extends State<CustomerContactList> {
       });
     } catch (e) {
       setState(() {
-        _hasError = true; // Set error state
+        _hasError = true;
       });
       debugPrint('Error fetching data: $e');
     } finally {
@@ -134,33 +135,39 @@ class CustomerContactListState extends State<CustomerContactList> {
 
     return Scaffold(
       appBar: const CommonAppBar(title: 'List Of Contacts'),
-      body: NotificationListener<ScrollNotification>(
-        onNotification: (scrollInfo) {
-          if (scrollInfo.metrics.pixels == scrollInfo.metrics.maxScrollExtent &&
-              hasMore &&
-              !isLoading) {
-            _fetchContactData();
-          }
-          return true;
-        },
+      body: RefreshIndicator(
+        onRefresh: _refreshContactData,
         child: contactList.isEmpty && !isLoading
             ? const Center(
                 child: Text('No contact found.'),
               )
-            : ListView.builder(
-                itemCount: contactList.length + (hasMore ? 1 : 0),
-                itemBuilder: (context, index) {
-                  if (index == contactList.length) {
-                    return const Center(
-                      child: Padding(
-                        padding: EdgeInsets.all(8.0),
-                        child: CircularProgressIndicator(),
-                      ),
-                    );
+            : NotificationListener<ScrollNotification>(
+                onNotification: (scrollInfo) {
+                  if (scrollInfo.metrics.pixels ==
+                          scrollInfo.metrics.maxScrollExtent &&
+                      hasMore &&
+                      !isLoading) {
+                    _fetchContactData();
                   }
-                  var contact = contactList[index];
-                  return _buildContactTile(contact);
+                  return true;
                 },
+                child: ListView.builder(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  // Ensures ListView is scrollable
+                  itemCount: contactList.length + (hasMore ? 1 : 0),
+                  itemBuilder: (context, index) {
+                    if (index == contactList.length) {
+                      return const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: CircularProgressIndicator(),
+                        ),
+                      );
+                    }
+                    var contact = contactList[index];
+                    return _buildContactTile(contact);
+                  },
+                ),
               ),
       ),
       floatingActionButton: FloatingActionButton(
@@ -171,6 +178,15 @@ class CustomerContactListState extends State<CustomerContactList> {
         child: const Icon(Icons.add, color: Colors.white),
       ),
     );
+  }
+
+  Future<void> _refreshContactData() async {
+    setState(() {
+      pageNumber = 1;
+      contactList.clear();
+      hasMore = true;
+    });
+    await _fetchContactData();
   }
 
   Widget _buildContactTile(ContactList contact) {
@@ -212,10 +228,20 @@ class CustomerContactListState extends State<CustomerContactList> {
               ),
               const SizedBox(width: 10),
               InkWell(
-                onTap: () {
+                onTap: (contact.primaryContact.toLowerCase() == 'yes' &&
+                    contact.validationStatus.toLowerCase() == 'yes')
+                    ? null
+                    : () {
                   deleteCustomerDialog(contact);
                 },
-                child: const Icon(Icons.delete, size: 30, color: Colors.red),
+                child: Icon(
+                  Icons.delete,
+                  size: 30,
+                  color: (contact.primaryContact.toLowerCase() == 'yes' &&
+                      contact.validationStatus.toLowerCase() == 'yes')
+                      ? Colors.grey
+                      : Colors.red,
+                ),
               ),
             ],
           ),
@@ -255,7 +281,7 @@ class CustomerContactListState extends State<CustomerContactList> {
           token);
 
       if (responseData.status == 'Success') {
-        String msgType = responseData.returnMessage?.msgText ?? '';
+        String msgType = responseData.returnMessage?.msgType ?? '';
         String message = responseData.returnMessage?.msgText ??
             'An error occurred while deleting the contact.';
 
@@ -264,8 +290,7 @@ class CustomerContactListState extends State<CustomerContactList> {
         }
 
         // Show a success toast
-        toastMessage.showInfoToastMessage(message);
-        if (msgType.isNotEmpty && msgType == 'w') {
+        if (msgType.isNotEmpty && msgType == 's') {
           // Remove the customer from the local list and refresh the UI
           setState(() {
             contactList.remove(contact);
@@ -276,6 +301,8 @@ class CustomerContactListState extends State<CustomerContactList> {
               _fetchContactData();
             }
           });
+        } else if (msgType.isNotEmpty && msgType == 'w') {
+          toastMessage.showWarnToastMessage(message);
         }
       } else {
         toastMessage
@@ -329,18 +356,35 @@ class CustomerContactListState extends State<CustomerContactList> {
     );
   }
 
-  void navigateToContactForm({required bool isEdit, ContactList? customer}) {
+  void navigateToContactForm(
+      {required bool isEdit, ContactList? customer}) async {
     final form = widget.type == 'School'
         ? CustomerContactSchoolForm(
             type: widget.type,
+            customerId: widget.customerId,
             isEdit: isEdit,
             action: isEdit ? customer?.edit : '')
         : CustomerContactForm(
             type: widget.type,
+            customerId: widget.customerId,
             isEdit: isEdit,
             action: isEdit ? customer?.edit : '');
+    final shouldRefresh = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => form),
+    );
 
-    Navigator.push(context, MaterialPageRoute(builder: (context) => form));
+    if (shouldRefresh == true) {
+      setState(() {
+        contactList.clear();
+        if (contactList.isEmpty) {
+          // Optionally, reset pagination and re-fetch data if list becomes empty
+          pageNumber = 1;
+          hasMore = true;
+          _fetchContactData();
+        }
+      });
+    }
   }
 
   void addContact() {

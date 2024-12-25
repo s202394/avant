@@ -878,6 +878,7 @@ class NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
 
       if (responseData.status == 'Success') {
         String s = responseData.s;
+        String w = responseData.w;
         if (kDebugMode) {
           print(s);
         }
@@ -890,6 +891,8 @@ class NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
               (Route<dynamic> route) => false,
             );
           }
+        } else if (w.isNotEmpty) {
+          _toastMessage.showWarnToastMessage(w);
         } else {
           if (kDebugMode) {
             print('Update ${widget.type} Error s empty');

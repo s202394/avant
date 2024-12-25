@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:avant/api/api_service.dart';
 import 'package:avant/common/common.dart';
 import 'package:avant/common/toast.dart';
+import 'package:avant/customer/dynamic_form_page.dart';
 import 'package:avant/db/db_helper.dart';
 import 'package:avant/model/customer_entry_master_model.dart';
 import 'package:avant/model/geography_model.dart';
@@ -16,19 +17,23 @@ import 'package:intl/intl.dart';
 import 'package:location/location.dart' as loc;
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../common/location.dart';
 import '../common/utils.dart';
 import '../model/contact_detail_model.dart';
+import '../model/login_model.dart';
 import '../views/common_app_bar.dart';
 import '../views/custom_text.dart';
 
 class CustomerContactSchoolForm extends StatefulWidget {
   final String type;
+  final int customerId;
   final bool isEdit;
   final String? action;
 
   const CustomerContactSchoolForm({
     super.key,
     required this.type,
+    required this.customerId,
     this.isEdit = false,
     this.action = '',
   });
@@ -78,6 +83,8 @@ class CustomerContactFormState extends State<CustomerContactSchoolForm> {
 
   String _cityAccess = '';
 
+  late int? userId;
+
   Geography? _selectedCountry;
   Geography? _selectedState;
   Geography? _selectedDistrict;
@@ -101,6 +108,7 @@ class CustomerContactFormState extends State<CustomerContactSchoolForm> {
   int? _selectedDataSourceId;
 
   bool _isLoading = false;
+  bool _isSubmitted = false;
 
   late SharedPreferences prefs;
   late String token;
@@ -108,7 +116,9 @@ class CustomerContactFormState extends State<CustomerContactSchoolForm> {
 
   String validated = '';
 
-  String? mandatorySetting;
+  int contactId = 0;
+
+  String? mandatorySettingEmailMobile;
 
   bool hasCheckedForEdit = false;
 
@@ -120,6 +130,11 @@ class CustomerContactFormState extends State<CustomerContactSchoolForm> {
 
   late CustomerEntryMasterResponse customerEntryMasterResponse;
   late CustomerContactDetailsSchoolResponse contactDetailsResponse;
+
+  List<FormRowData> selectedRows = [];
+
+  final GlobalKey<DynamicFormWidgetState> _dynamicFormKey =
+      GlobalKey<DynamicFormWidgetState>();
 
   @override
   void dispose() {
@@ -170,9 +185,12 @@ class CustomerContactFormState extends State<CustomerContactSchoolForm> {
   }
 
   Future<void> _initializeMandatorySettings() async {
-    mandatorySetting = await dbHelper.getTeacherMobileEmailMandatory();
+    mandatorySettingEmailMobile =
+        await dbHelper.getTeacherMobileEmailMandatory();
+    debugPrint('mandatorySettingEmailMobile:$mandatorySettingEmailMobile');
 
     prefs = await SharedPreferences.getInstance();
+    userId = await getUserId();
     setState(() {
       token = prefs.getString('token') ?? '';
       executiveId = prefs.getInt('executiveId') ?? 0;
@@ -202,10 +220,12 @@ class CustomerContactFormState extends State<CustomerContactSchoolForm> {
     }
 
     Position position = await Geolocator.getCurrentPosition();
-    setState(() {
-      _currentPosition = LatLng(position.latitude, position.longitude);
-      _getUserLocation();
-    });
+    if (mounted) {
+      setState(() {
+        _currentPosition = LatLng(position.latitude, position.longitude);
+        _getUserLocation();
+      });
+    }
   }
 
   Future<void> _getUserLocation() async {
@@ -241,7 +261,7 @@ class CustomerContactFormState extends State<CustomerContactSchoolForm> {
 
   void addAddress() async {
     loc.Location location = loc.Location();
-    debugPrint('Add customer address}');
+    debugPrint('Add customer address');
     // Get current user location
     try {
       loc.LocationData locationData = await location.getLocation();
@@ -376,55 +396,16 @@ class CustomerContactFormState extends State<CustomerContactSchoolForm> {
         },
       );
 
-      if (placemarks.isNotEmpty) {
-        Placemark place = placemarks[0];
-        debugPrint('place : ${place.name}');
-        // Dynamically building the address
-        String address = '';
-
-        // Check and add each component if available
-        if (place.name != null && place.name!.isNotEmpty) {
-          address += '${place.name!}, ';
-        }
-        /* if (place.street != null && place.street!.isNotEmpty) {
-          address += '${place.street!}, ';
-        }*/
-        if (place.locality != null && place.locality!.isNotEmpty) {
-          address += '${place.locality!}, ';
-        }
-        if (place.administrativeArea != null &&
-            place.administrativeArea!.isNotEmpty) {
-          address += '${place.administrativeArea!}, ';
-        }
-        if (place.postalCode != null && place.postalCode!.isNotEmpty) {
-          address += '${place.postalCode!}, ';
-        }
-        if (place.country != null && place.country!.isNotEmpty) {
-          address += place.country!;
-        }
-
-        // Remove trailing comma if it exists
-        if (address.endsWith(', ')) {
-          address = address.substring(0, address.length - 2);
-        }
-
-        // Update the address field in the UI
-        setState(() {
-          _addressController.text = address;
-          _currentMarker = _currentMarker!.copyWith(positionParam: position);
-          if (kDebugMode) {
-            print(address);
-          }
-        });
-      } else {
-        debugPrint('Place mark empty');
-      }
+      setState(() {
+        _currentMarker = _currentMarker!.copyWith(positionParam: position);
+      });
+      getAddress(placemarks, position);
     } catch (e) {
       if (kDebugMode) {
         print("Error retrieving address: $e");
       }
       setState(() {
-        _addressController.text = "Unable to retrieve address";
+        _addressController.text = '';
       });
     }
   }
@@ -478,14 +459,19 @@ class CustomerContactFormState extends State<CustomerContactSchoolForm> {
       position.latitude,
       position.longitude,
     );
-    if (placemarks.isNotEmpty) {
-      Placemark place = placemarks[0];
-      String address =
-          '${place.name}, ${place.administrativeArea}, ${place.street}, ${place.locality}, ${place.country}';
-      setState(() {
-        _addressController.text = address;
-      });
-    }
+    getAddress(placemarks, position);
+  }
+
+  void getAddress(List<Placemark> placemarks, LatLng position) {
+    String address = buildAddress(placemarks);
+
+    // Update the address field in the UI
+    setState(() {
+      _addressController.text = address;
+      if (kDebugMode) {
+        print(address);
+      }
+    });
   }
 
   void _fetchData() async {
@@ -666,202 +652,284 @@ class CustomerContactFormState extends State<CustomerContactSchoolForm> {
       for (var item in data.dataSourceList)
         item.dataSourceName: item.dataSourceId,
     };
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16.0),
-      child: Form(
-        key: _formKey,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const CustomText('Primary Contact:'),
-            Row(
-              children: [
-                Expanded(
-                  child: RadioListTile<bool>(
-                    title: const CustomText('Yes'),
-                    value: true,
-                    groupValue: _selectedPrimaryContact,
-                    onChanged: (newValue) {
+    return Column(
+      children: [
+        // Scrollable area
+        Expanded(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16.0),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const CustomText('Primary Contact:'),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: RadioListTile<bool>(
+                          title: const CustomText('Yes'),
+                          value: true,
+                          groupValue: _selectedPrimaryContact,
+                          onChanged: (newValue) {
+                            setState(() {
+                              _selectedPrimaryContact = newValue;
+                            });
+                          },
+                        ),
+                      ),
+                      Expanded(
+                        child: RadioListTile<bool>(
+                          title: const CustomText('No'),
+                          value: false,
+                          groupValue: _selectedPrimaryContact,
+                          onChanged: (newValue) {
+                            setState(() {
+                              _selectedPrimaryContact = newValue;
+                            });
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                  const CustomText('Contact Status:'),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: RadioListTile<bool>(
+                          title: const CustomText('Active'),
+                          value: true,
+                          groupValue: _selectedContactStatus,
+                          onChanged: (newValue) {
+                            setState(() {
+                              _selectedContactStatus = newValue;
+                            });
+                          },
+                        ),
+                      ),
+                      Expanded(
+                        child: RadioListTile<bool>(
+                          title: const CustomText('Inactive'),
+                          value: false,
+                          groupValue: _selectedContactStatus,
+                          onChanged: (newValue) {
+                            setState(() {
+                              _selectedContactStatus = newValue;
+                            });
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16.0),
+                  buildDropdownField(
+                    label: 'Salutation',
+                    value: _selectedSalutation,
+                    items: salutationMap.keys.toList(),
+                    onChanged: (value) {
                       setState(() {
-                        _selectedPrimaryContact = newValue;
+                        _selectedSalutation = value;
+                        _selectedSalutationId = salutationMap[value];
                       });
                     },
+                    fieldKey: _salutationFieldKey,
                   ),
-                ),
-                Expanded(
-                  child: RadioListTile<bool>(
-                    title: const CustomText('No'),
-                    value: false,
-                    groupValue: _selectedPrimaryContact,
-                    onChanged: (newValue) {
+                  _buildTextField('First Name', _firstNameController,
+                      _firstNameFieldKey, _firstNameFocusNode),
+                  _buildTextField('Last Name', _lastNameController,
+                      _lastNameFieldKey, _lastNameFocusNode),
+                  buildDropdownField(
+                    label: 'Designation',
+                    value: _selectedContactDesignation,
+                    items: contactDesignationMap.keys.toList(),
+                    onChanged: (value) {
                       setState(() {
-                        _selectedPrimaryContact = newValue;
+                        _selectedContactDesignation = value;
+                        _selectedContactDesignationId =
+                            contactDesignationMap[value];
                       });
                     },
+                    fieldKey: _contactDesignationFieldKey,
                   ),
-                ),
-              ],
-            ),
-            const CustomText('Customer Status:'),
-            Row(
-              children: [
-                Expanded(
-                  child: RadioListTile<bool>(
-                    title: const CustomText('Active'),
-                    value: true,
-                    groupValue: _selectedContactStatus,
-                    onChanged: (newValue) {
+                  _buildTextField('Email', _emailIdController, _emailIdFieldKey,
+                      _emailIdFocusNode),
+                  _buildTextField('Mobile Number', _phoneNumberController,
+                      _phoneNumberFieldKey, _phoneNumberFocusNode),
+                  _buildTextField('Date of Birth', _dobController, _dobFieldKey,
+                      _dobFocusNode),
+                  _buildTextField('Anniversary', _anniversaryController,
+                      _anniversaryFieldKey, _anniversaryFocusNode),
+                  const SizedBox(height: 10),
+                  _buildMapContainer(),
+                  const SizedBox(height: 10),
+                  _buildTextField('Address', _addressController,
+                      _addressFieldKey, _addressFocusNode,
+                      maxLines: 5),
+                  const SizedBox(height: 8),
+                  _buildDropdown(
+                    label: 'Country',
+                    selectedValue: _selectedCountry,
+                    items: _filteredCountries,
+                    displayText: (geo) => geo.country,
+                    onChanged: _onCountryChanged,
+                  ),
+                  const SizedBox(height: 16),
+                  _buildDropdown(
+                    label: 'State',
+                    selectedValue: _selectedState,
+                    items: _filteredStates,
+                    displayText: (geo) => geo.state,
+                    onChanged: _onStateChanged,
+                  ),
+                  const SizedBox(height: 16),
+                  _buildDropdown(
+                    label: 'District',
+                    selectedValue: _selectedDistrict,
+                    items: _filteredDistricts,
+                    displayText: (geo) => geo.district,
+                    onChanged: _onDistrictChanged,
+                  ),
+                  const SizedBox(height: 16),
+                  _buildDropdown(
+                    label: 'City',
+                    selectedValue: _selectedCity,
+                    items: _filteredCities,
+                    displayText: (geo) => geo.city,
+                    onChanged: (selected) {
                       setState(() {
-                        _selectedContactStatus = newValue;
+                        _selectedCity = selected;
                       });
+                      validate();
                     },
                   ),
-                ),
-                Expanded(
-                  child: RadioListTile<bool>(
-                    title: const CustomText('Inactive'),
-                    value: false,
-                    groupValue: _selectedContactStatus,
-                    onChanged: (newValue) {
+                  const SizedBox(height: 8),
+                  _buildTextField('Pin Code', _pinCodeController,
+                      _pinCodeFieldKey, _pinCodeFocusNode),
+                  buildDropdownField(
+                    label: 'Data Source',
+                    value: _selectedDataSource,
+                    items: dataSourceMap.keys.toList(),
+                    onChanged: (value) {
                       setState(() {
-                        _selectedContactStatus = newValue;
+                        _selectedDataSource = value;
+                        _selectedDataSourceId = dataSourceMap[value];
                       });
                     },
+                    fieldKey: _dataSourceFieldKey,
                   ),
-                ),
-              ],
+                  const SizedBox(height: 8),
+                  DynamicFormWidget(
+                    key: _dynamicFormKey,
+                    subjectList: data.subjectList,
+                    classesList: data.classesList,
+                    onSubmit: (rows) {
+                      // Update the selected rows when dynamic form changes
+                      setState(() {
+                        selectedRows = rows;
+                      });
+                    },
+                    initialRows: selectedRows.isEmpty ? [] : selectedRows,
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(height: 16.0),
-            buildDropdownField(
-              label: 'Salutation',
-              value: _selectedSalutation,
-              items: salutationMap.keys.toList(),
-              onChanged: (value) {
-                setState(() {
-                  _selectedSalutation = value;
-                  _selectedSalutationId = salutationMap[value];
-                });
-              },
-              fieldKey: _salutationFieldKey,
-            ),
-            _buildTextField('First Name', _firstNameController,
-                _firstNameFieldKey, _firstNameFocusNode),
-            _buildTextField('Last Name', _lastNameController, _lastNameFieldKey,
-                _lastNameFocusNode),
-            buildDropdownField(
-              label: 'Designation',
-              value: _selectedContactDesignation,
-              items: contactDesignationMap.keys.toList(),
-              onChanged: (value) {
-                setState(() {
-                  _selectedContactDesignation = value;
-                  _selectedContactDesignationId = contactDesignationMap[value];
-                });
-              },
-              fieldKey: _contactDesignationFieldKey,
-            ),
-            _buildTextField('Email', _emailIdController, _emailIdFieldKey,
-                _emailIdFocusNode),
-            _buildTextField('Mobile Number', _phoneNumberController,
-                _phoneNumberFieldKey, _phoneNumberFocusNode),
-            _buildTextField(
-                'Date of Birth', _dobController, _dobFieldKey, _dobFocusNode),
-            _buildTextField('Anniversary', _anniversaryController,
-                _anniversaryFieldKey, _anniversaryFocusNode),
-            const SizedBox(height: 10),
-            _buildMapContainer(),
-            const SizedBox(height: 10),
-            _buildTextField('Address', _addressController, _addressFieldKey,
-                _addressFocusNode,
-                maxLines: 5),
-            const SizedBox(height: 8),
-            _buildDropdown(
-              label: 'Country',
-              selectedValue: _selectedCountry,
-              items: _filteredCountries,
-              displayText: (geo) => geo.country,
-              onChanged: _onCountryChanged,
-            ),
-            const SizedBox(height: 16),
-            _buildDropdown(
-              label: 'State',
-              selectedValue: _selectedState,
-              items: _filteredStates,
-              displayText: (geo) => geo.state,
-              onChanged: _onStateChanged,
-            ),
-            const SizedBox(height: 16),
-            _buildDropdown(
-              label: 'District',
-              selectedValue: _selectedDistrict,
-              items: _filteredDistricts,
-              displayText: (geo) => geo.district,
-              onChanged: _onDistrictChanged,
-            ),
-            const SizedBox(height: 16),
-            _buildDropdown(
-              label: 'City',
-              selectedValue: _selectedCity,
-              items: _filteredCities,
-              displayText: (geo) => geo.city,
-              onChanged: (selected) {
-                setState(() {
-                  _selectedCity = selected;
-                });
-              },
-            ),
-            const SizedBox(height: 8),
-            _buildTextField('Pin Code', _pinCodeController, _pinCodeFieldKey,
-                _pinCodeFocusNode),
-            buildDropdownField(
-              label: 'Data Source',
-              value: _selectedDataSource,
-              items: dataSourceMap.keys.toList(),
-              onChanged: (value) {
-                setState(() {
-                  _selectedDataSource = value;
-                  _selectedDataSourceId = dataSourceMap[value];
-                });
-              },
-              fieldKey: _dataSourceFieldKey,
-            ),
-            const SizedBox(height: 8),
-            GestureDetector(
+          ),
+        ),
+        GestureDetector(
+          onTap: () {
+            _submitForm();
+          },
+          child: Container(
+            height: 50,
+            width: double.infinity,
+            color: Colors.blue,
+            child: GestureDetector(
               onTap: () {
                 _submitForm();
               },
-              child: Container(
-                width: double.infinity,
-                color: Colors.blue,
-                child: const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 8.0, horizontal: 16),
-                  child: Text(
-                    'Submit',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
+              child: const Center(
+                child: Text(
+                  'Submit',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
+                      fontSize: 16),
                 ),
               ),
             ),
-          ],
+          ),
         ),
-      ),
+      ],
     );
+  }
+
+  void validate() {
+    if (_isSubmitted) {
+      _formKey.currentState!.validate();
+    }
   }
 
   void _submitForm() {
     FocusScope.of(context).unfocus();
+    _isSubmitted = true;
 
     if (_formKey.currentState!.validate()) {
       if (_selectedPrimaryContact == null) {
         _toastMessage.showToastMessage("Please enter Primary Contact");
       } else if (_selectedContactStatus == null) {
         _toastMessage.showToastMessage("Please select Contact Status");
+      } else if (selectedRows.isEmpty) {
+        submitContact();
       } else {
+        debugPrint("_submitForm clicked ${selectedRows.length}");
+        for (int i = 0; i < selectedRows.length; i++) {
+          FormRowData row = selectedRows[i];
+
+          // Check if at least one field in the row is filled
+          bool isAnyFieldFilled = row.subjectId != null ||
+              (row.selectedClasses != null &&
+                  row.selectedClasses!.isNotEmpty) ||
+              row.decisionMaker != null;
+
+          // If any field is filled, all fields are mandatory
+          if (isAnyFieldFilled) {
+            if (row.subjectId == null ||
+                row.selectedClasses == null ||
+                row.selectedClasses!.isEmpty ||
+                row.decisionMaker == null) {
+              debugPrint("Row ${i + 1} has unselected fields.");
+
+              // Show an alert dialog for missing fields
+              showDialog(
+                context: context,
+                builder: (context) {
+                  return AlertDialog(
+                    title: const Text("Missing Selection"),
+                    content:
+                        Text("Please select all fields for S.NO ${i + 1}."),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        child: const Text("OK"),
+                      ),
+                    ],
+                  );
+                },
+              );
+              return; // Stop further execution
+            }
+
+            // Log the valid row's values
+            debugPrint("Row ${i + 1}: Subject=${row.subjectId}, "
+                "Classes=${row.selectedClasses!.map((cls) => cls.className).join(", ")}, "
+                "Decision Maker=${row.decisionMaker}");
+          }
+        }
+
+        // If all rows are valid, you can proceed with further actions
+        debugPrint("All rows are valid. Proceeding with form submission.");
+
         submitContact();
       }
     } else {
@@ -884,7 +952,7 @@ class CustomerContactFormState extends State<CustomerContactSchoolForm> {
   }
 
   List<TextInputFormatter> _getInputFormatters(String label) {
-    if (label == 'Phone Number' || label == 'Mobile') {
+    if (label == 'Mobile Number') {
       return [
         LengthLimitingTextInputFormatter(10),
         FilteringTextInputFormatter.digitsOnly,
@@ -894,7 +962,7 @@ class CustomerContactFormState extends State<CustomerContactSchoolForm> {
         LengthLimitingTextInputFormatter(6),
         FilteringTextInputFormatter.digitsOnly,
       ];
-    } else if (label == 'Email Id') {
+    } else if (label == 'Email') {
       return [
         FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9@._-]')),
       ];
@@ -950,7 +1018,7 @@ class CustomerContactFormState extends State<CustomerContactSchoolForm> {
             key: fieldKey,
             style: TextStyle(fontSize: textFontSize),
             controller: controller,
-            keyboardType: (label == 'Mobile' || label == 'Pin Code')
+            keyboardType: (label == 'Mobile Number' || label == 'Pin Code')
                 ? TextInputType.phone
                 : TextInputType.text,
             inputFormatters: _getInputFormatters(label),
@@ -964,30 +1032,23 @@ class CustomerContactFormState extends State<CustomerContactSchoolForm> {
             textAlign: TextAlign.start,
             maxLines: maxLines,
             validator: (value) {
-              if ((value == null || value.isEmpty) &&
-                  (label == 'Last Name' ||
-                      (_addressController.text.isNotEmpty &&
-                          label == 'Pin Code'))) {
-                return 'Please enter $label';
-              }
-              if (label == 'Mobile Number' &&
-                  value != null &&
-                  value.isNotEmpty &&
-                  !Validator.isValidMobile(value)) {
-                return 'Please enter valid $label';
-              }
-              if (label == 'Email' &&
-                  value != null &&
-                  value.isNotEmpty &&
-                  !Validator.isValidEmail(value)) {
-                return 'Please enter valid $label';
-              }
-              if (label == 'Pin Code' &&
-                  _addressController.text.isNotEmpty &&
-                  value != null &&
-                  value.isNotEmpty &&
-                  value.length < 6) {
-                return 'Please enter valid $label';
+              if (_isSubmitted) {
+                if ((value == null || value.isEmpty) &&
+                    (label == 'Last Name' ||
+                        (_addressController.text.isNotEmpty &&
+                            label == 'Pin Code'))) {
+                  return 'Please enter $label';
+                } else if (label == 'Mobile Number') {
+                  return _validatePhoneNumber(value);
+                } else if (label == 'Email') {
+                  return _validateEmail(value);
+                } else if (label == 'Pin Code' &&
+                    _addressController.text.isNotEmpty &&
+                    value != null &&
+                    value.isNotEmpty &&
+                    value.length < 6) {
+                  return 'Please enter valid $label';
+                }
               }
               return null;
             },
@@ -1038,7 +1099,8 @@ class CustomerContactFormState extends State<CustomerContactSchoolForm> {
           fieldKey.currentState?.validate();
         },
         validator: (newValue) {
-          if ((newValue == null || newValue.isEmpty) &&
+          if (_isSubmitted &&
+              (newValue == null || newValue.isEmpty) &&
               (label == 'Designation')) {
             return 'Please select $label';
           }
@@ -1050,7 +1112,7 @@ class CustomerContactFormState extends State<CustomerContactSchoolForm> {
 
   Future<void> checkForEdit() async {
     try {
-      int contactId = extractNumericPart(widget.action ?? '');
+      contactId = extractNumericPart(widget.action ?? '');
       validated = extractStringPart(widget.action ?? '');
 
       CustomerListService service = CustomerListService();
@@ -1073,35 +1135,97 @@ class CustomerContactFormState extends State<CustomerContactSchoolForm> {
     _emailIdController.text = details.contactEmailId;
     _dobController.text = details.birthDay;
     _anniversaryController.text = details.anniversary;
-
     _selectedPrimaryContact = details.primaryContact == 'Y';
     _selectedContactStatus = details.contactStatus == 'Active';
-
-    debugPrint(
-        'salutationMasterList size : ${customerEntryMasterResponse.salutationMasterList.length}');
-    if (customerEntryMasterResponse.salutationMasterList.isNotEmpty) {
-      final salutation =
-          customerEntryMasterResponse.salutationMasterList.firstWhere(
-        (b) => b.salutationId == details.salutationId,
-        orElse: () {
-          debugPrint('Edit SalutationId ID ${details.salutationId} not found.');
-          return SalutationMaster(salutationId: 0, salutationName: '');
-        },
-      );
-      if (salutation.salutationId > 0) {
-        debugPrint('salutationName ${salutation.salutationName}');
-        setState(() {
-          _selectedSalutation = salutation.salutationName;
-          _selectedSalutationId = salutation.salutationId;
-        });
-      } else {
-        debugPrint('Edit salutation 0');
+    try {
+      // Ensure all lists are of the same length
+      if (details.classNumId.isEmpty &&
+          details.decisionId.isEmpty &&
+          details.subjectId.isEmpty) {
+        throw Exception("0 lengths of ClassNumId, DecisionId, or SubjectId.");
       }
+      // Parse ClassNumId, DecisionId, and SubjectId from the response
+      List<String> classNumIds = details.classNumId.split(',');
+      List<String> decisionIds = details.decisionId.split(',');
+      List<String> subjectIds = details.subjectId.split(',');
+
+      // Ensure all lists are of the same length
+      if (classNumIds.isEmpty && decisionIds.isEmpty && subjectIds.isEmpty) {
+        throw Exception("0 lengths of ClassNumId, DecisionId, or SubjectId.");
+      }
+      if (classNumIds.length != decisionIds.length ||
+          classNumIds.length != subjectIds.length) {
+        throw Exception(
+            "Mismatched lengths of ClassNumId, DecisionId, or SubjectId.");
+      }
+
+      // Dynamically create rows based on parsed data
+      List<FormRowData> newRows = [];
+      for (int i = 0; i < classNumIds.length; i++) {
+        List<String> classes = classNumIds[i].split('~');
+        String decision = decisionIds[i];
+        String subject = subjectIds[i];
+
+        // Map class names to classNumId
+        List<Classes> selectedClasses = classes.map((cls) {
+          // Find the class object that matches the class name
+          final classObj = customerEntryMasterResponse.classesList.firstWhere(
+            (classItem) => classItem.classNumId == int.parse(cls),
+            orElse: () => Classes(classNumId: 0, className: ''),
+          );
+
+          return classObj;
+        }).toList();
+
+        // Create the row with mapped class details
+        newRows.add(FormRowData(
+          subjectId: int.tryParse(subject),
+          selectedClasses: selectedClasses,
+          decisionMaker: decision == 'Y' ? 'Yes' : 'No',
+        ));
+      }
+      setState(() {
+        selectedRows = newRows;
+        debugPrint('selectedRows : $selectedRows');
+        debugPrint('selectedRows size : ${selectedRows.length}');
+      });
+
+      _dynamicFormKey.currentState?.updateRows(newRows);
+    } catch (e) {
+      debugPrint('Error in classNumId: $e');
     }
 
+    try {
+      debugPrint(
+          'salutationMasterList size : ${customerEntryMasterResponse.salutationMasterList.length}');
+      if (details.salutationId > 0 &&
+          customerEntryMasterResponse.salutationMasterList.isNotEmpty) {
+        final salutation =
+            customerEntryMasterResponse.salutationMasterList.firstWhere(
+          (b) => b.salutationId == details.salutationId,
+          orElse: () {
+            debugPrint(
+                'Edit SalutationId ID ${details.salutationId} not found.');
+            return SalutationMaster(salutationId: 0, salutationName: '');
+          },
+        );
+        if (salutation.salutationId > 0) {
+          debugPrint('salutationName ${salutation.salutationName}');
+          setState(() {
+            _selectedSalutation = salutation.salutationName;
+            _selectedSalutationId = salutation.salutationId;
+          });
+        } else {
+          debugPrint('Edit salutation 0');
+        }
+      }
+    } catch (e) {
+      debugPrint('Error in salutationId: $e');
+    }
     debugPrint(
         'contactDesignationList size : ${customerEntryMasterResponse.contactDesignationList.length}');
-    if (customerEntryMasterResponse.contactDesignationList.isNotEmpty) {
+    if (details.contactDesignationId > 0 &&
+        customerEntryMasterResponse.contactDesignationList.isNotEmpty) {
       final contactDesignation =
           customerEntryMasterResponse.contactDesignationList.firstWhere(
         (b) => b.contactDesignationId == details.contactDesignationId,
@@ -1128,12 +1252,12 @@ class CustomerContactFormState extends State<CustomerContactSchoolForm> {
 
     debugPrint(
         'dataSourceList size : ${customerEntryMasterResponse.dataSourceList.length}');
-    if (customerEntryMasterResponse.dataSourceList.isNotEmpty) {
+    if (details.dataSourceId > 0 &&
+        customerEntryMasterResponse.dataSourceList.isNotEmpty) {
       final dataSource = customerEntryMasterResponse.dataSourceList.firstWhere(
         (b) => b.dataSourceId == details.dataSourceId,
         orElse: () {
-          debugPrint(
-              'Edit Data Source ID ${details.contactDesignationId} not found.');
+          debugPrint('Edit Data Source ID ${details.dataSourceId} not found.');
           return DataSource(dataSourceId: 0, dataSourceName: '');
         },
       );
@@ -1148,47 +1272,48 @@ class CustomerContactFormState extends State<CustomerContactSchoolForm> {
       }
     }
 
-    debugPrint('details.countryId : ${details.resCountry}');
-    debugPrint('details.stateId : ${details.resState}');
-    debugPrint('details.districtId : ${details.resDistrict}');
-    debugPrint('details.cityId : ${details.resCity}');
-
-    final selectedCountry = _findCountryById(details.resCountry);
-    if (selectedCountry.countryId == 0) {
-      debugPrint('selectedCountry 0');
-    } else {
-      _onCountryChanged(selectedCountry);
-
-      final selectedState = _findStateById(details.resState);
-      if (selectedState.stateId == 0) {
-        debugPrint('selectedState 0');
+    if (details.resCountry > 0) {
+      final selectedCountry = _findCountryById(details.resCountry);
+      if (selectedCountry.countryId == 0) {
+        debugPrint('selectedCountry 0');
       } else {
-        _onStateChanged(selectedState);
+        _onCountryChanged(selectedCountry);
 
-        final selectedDistrict = _findDistrictById(details.resDistrict);
-        if (selectedDistrict.districtId == 0) {
-          debugPrint('selectedDistrict 0');
+        final selectedState = _findStateById(details.resState);
+        if (selectedState.stateId == 0) {
+          debugPrint('selectedState 0');
         } else {
-          _onDistrictChanged(selectedDistrict);
+          _onStateChanged(selectedState);
 
-          if (_filteredCities.isNotEmpty) {
-            _selectedCity = _filteredCities.firstWhere(
-              (geo) => geo.cityId == details.resCity,
-              orElse: () => _filteredCities.first,
-            );
-          }
-
-          final selectedCity = _findCityById(details.resCity);
-          if (selectedCity.cityId == 0) {
-            debugPrint('selectedCity 0');
+          final selectedDistrict = _findDistrictById(details.resDistrict);
+          if (selectedDistrict.districtId == 0) {
+            debugPrint('selectedDistrict 0');
           } else {
-            _selectedCity = selectedCity;
+            _onDistrictChanged(selectedDistrict);
+
+            if (_filteredCities.isNotEmpty) {
+              _selectedCity = _filteredCities.firstWhere(
+                (geo) => geo.cityId == details.resCity,
+                orElse: () => _filteredCities.first,
+              );
+            }
+
+            final selectedCity = _findCityById(details.resCity);
+            if (selectedCity.cityId == 0) {
+              debugPrint('selectedCity 0');
+            } else {
+              _selectedCity = selectedCity;
+            }
           }
         }
       }
     }
 
-    editAddress();
+    _formKey.currentState!.validate();
+
+    if (details.resAddress.isNotEmpty) {
+      editAddress();
+    }
   }
 
   Geography _findCityById(int? cityId) {
@@ -1283,6 +1408,7 @@ class CustomerContactFormState extends State<CustomerContactSchoolForm> {
       _filteredDistricts = []; // Clear districts when country changes
       _filteredCities = []; // Clear cities when country changes
     });
+    validate();
   }
 
   void _onStateChanged(Geography? selected) {
@@ -1300,6 +1426,7 @@ class CustomerContactFormState extends State<CustomerContactSchoolForm> {
           .toList();
       _filteredCities = []; // Clear cities when state changes
     });
+    validate();
   }
 
   void _onDistrictChanged(Geography? selected) {
@@ -1315,6 +1442,7 @@ class CustomerContactFormState extends State<CustomerContactSchoolForm> {
               uniqueCityIds.add(geo.cityId)) // Only add unique cities
           .toList();
     });
+    validate();
   }
 
   Widget _buildDropdown({
@@ -1348,31 +1476,34 @@ class CustomerContactFormState extends State<CustomerContactSchoolForm> {
         labelStyle: TextStyle(fontSize: labelFontSize),
         border: const OutlineInputBorder(),
       ),
-      validator: (value) => value == null ? 'Please select $label' : null,
+      validator: (value) =>
+          _addressController.text.isNotEmpty && _isSubmitted && value == null
+              ? 'Please select $label'
+              : null,
     );
   }
 
   void unableToGetAddress() async {
     final address =
         '${_selectedCity?.city ?? ''}, ${_selectedState?.state ?? ''}, ${_selectedState?.district ?? ''}, ${_selectedCountry?.country ?? ''}}';
-    debugPrint('Edit customer address 2 $address');
+    debugPrint('Edit contact address 2 $address');
     try {
       List<Location> locations = await locationFromAddress(address);
-      debugPrint('Edit customer address locations size ${locations.length}');
+      debugPrint('Edit contact address locations size ${locations.length}');
       if (locations.isNotEmpty) {
         // Use the first matched location
         Location addressLocation = locations.first;
         debugPrint(
-            'Edit customer address latitude ${addressLocation.latitude}, longitude : ${addressLocation.longitude}');
+            'Edit contact address latitude ${addressLocation.latitude}, longitude : ${addressLocation.longitude}');
         LatLng initialPosition =
             LatLng(addressLocation.latitude, addressLocation.longitude);
         debugPrint(
-            'Edit customer initialPosition latitude ${initialPosition.latitude}, longitude : ${initialPosition.longitude}');
+            'Edit contact initialPosition latitude ${initialPosition.latitude}, longitude : ${initialPosition.longitude}');
 
         // Update marker and position
         _currentPosition = initialPosition;
         debugPrint(
-            'Edit customer _currentPosition latitude ${_currentPosition?.latitude}, longitude : ${_currentPosition?.longitude}');
+            'Edit contact _currentPosition latitude ${_currentPosition?.latitude}, longitude : ${_currentPosition?.longitude}');
 
         _currentMarker = Marker(
           markerId: const MarkerId('currentLocation'),
@@ -1386,7 +1517,7 @@ class CustomerContactFormState extends State<CustomerContactSchoolForm> {
           initialPosition.latitude,
           initialPosition.longitude,
         ).timeout(
-          const Duration(seconds: 10), // Timeout duration
+          const Duration(seconds: 10),
           onTimeout: () {
             throw TimeoutException("Geocoding timed out after 10 seconds.");
           },
@@ -1414,24 +1545,24 @@ class CustomerContactFormState extends State<CustomerContactSchoolForm> {
 
   void unableToGetAddress2() async {
     final address = _pinCodeController.text.toString().trim();
-    debugPrint('Edit customer address 3 $address');
+    debugPrint('Edit contact address 3 $address');
     try {
       List<Location> locations = await locationFromAddress(address);
-      debugPrint('Edit customer address locations size ${locations.length}');
+      debugPrint('Edit contact address locations size ${locations.length}');
       if (locations.isNotEmpty) {
         // Use the first matched location
         Location addressLocation = locations.first;
         debugPrint(
-            'Edit customer address latitude ${addressLocation.latitude}, longitude : ${addressLocation.longitude}');
+            'Edit contact address latitude ${addressLocation.latitude}, longitude : ${addressLocation.longitude}');
         LatLng initialPosition =
             LatLng(addressLocation.latitude, addressLocation.longitude);
         debugPrint(
-            'Edit customer initialPosition latitude ${initialPosition.latitude}, longitude : ${initialPosition.longitude}');
+            'Edit contact initialPosition latitude ${initialPosition.latitude}, longitude : ${initialPosition.longitude}');
 
         // Update marker and position
         _currentPosition = initialPosition;
         debugPrint(
-            'Edit customer _currentPosition latitude ${_currentPosition?.latitude}, longitude : ${_currentPosition?.longitude}');
+            'Edit contact _currentPosition latitude ${_currentPosition?.latitude}, longitude : ${_currentPosition?.longitude}');
 
         _currentMarker = Marker(
           markerId: const MarkerId('currentLocation'),
@@ -1471,5 +1602,155 @@ class CustomerContactFormState extends State<CustomerContactSchoolForm> {
     }
   }
 
-  void submitContact() {}
+  String? _validatePhoneNumber(String? value) {
+    if (mandatorySettingEmailMobile == 'M' ||
+        mandatorySettingEmailMobile == 'B') {
+      if (value == null || value.isEmpty) {
+        return 'Please enter Phone Number';
+      }
+      if (!Validator.isValidMobile(value)) {
+        return 'Please enter valid Phone Number';
+      }
+    }
+    return null;
+  }
+
+  String? _validateEmail(String? value) {
+    if (mandatorySettingEmailMobile == 'E' ||
+        mandatorySettingEmailMobile == 'B') {
+      if (value == null || value.isEmpty) {
+        return 'Please enter Email Id';
+      }
+      if (!Validator.isValidEmail(value)) {
+        return 'Please enter valid Email Id';
+      }
+    }
+    if (mandatorySettingEmailMobile == 'A') {
+      // Require at least one of Phone Number or Email
+      if ((value == null || value.isEmpty) &&
+          (_phoneNumberController.text.isEmpty)) {
+        return 'Please enter at least one of Mobile Number or Email';
+      }
+    }
+    return null;
+  }
+
+  void submitContact() async {
+    FocusScope.of(context).unfocus();
+
+    if (!await _checkInternetConnection()) return;
+
+    if (mounted) {
+      setState(() {
+        _isLoading = true;
+      });
+    }
+    final type = widget.isEdit ? 'Editing' : 'Adding';
+    try {
+      debugPrint('contactId : $contactId');
+      final responseData = await CustomerListService()
+          .insertOrUpdateCustomerContact(
+              widget.type,
+              (_selectedPrimaryContact == true) ? 'Y' : 'N',
+              _selectedSalutationId ?? 0,
+              _selectedContactDesignationId ?? 0,
+              _firstNameController.text.toString().trim(),
+              _lastNameController.text.toString().trim(),
+              _emailIdController.text.toString().trim(),
+              _phoneNumberController.text.toString().trim(),
+              _selectedContactStatus == true ? 'Active' : 'Inactive',
+              userId ?? 0,
+              widget.customerId,
+              validated,
+              _addressController.text.toString().trim(),
+              _selectedCity?.cityId ?? 0,
+              _pinCodeController.text.toString().trim(),
+              _dobController.text.toString().trim(),
+              _anniversaryController.text.toString().trim(),
+              contactId,
+              generateXml(),
+              _selectedDataSourceId ?? 0,
+              token);
+
+      if (responseData.status == 'Success') {
+        String s = responseData.s;
+        String w = responseData.w;
+        debugPrint('s:$s');
+        debugPrint('w:$w');
+        if (w.isNotEmpty) {
+          debugPrint('$type Contact: $w');
+          _toastMessage.showWarnToastMessage(w);
+        } else if (s.isNotEmpty) {
+          debugPrint('$type Contact: $s');
+          _toastMessage.showInfoToastMessage(s);
+          if (mounted) {
+            Navigator.of(context).pop(true);
+          }
+        } else {
+          if (kDebugMode) {
+            print('${widget.type} contact error s or w is empty');
+          }
+          _toastMessage.showToastMessage(
+              "An error occurred while ${type.toLowerCase()} ${widget.type.toLowerCase()} contact.");
+        }
+      } else {
+        if (kDebugMode) {
+          print(
+              'Update contact error ${type.toLowerCase()} ${responseData.status}');
+        }
+        _toastMessage.showToastMessage(
+            "An error occurred while ${type.toLowerCase()} ${widget.type}.");
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('$type Contact Error $e');
+      }
+      _toastMessage.showToastMessage(
+          "An error occurred while ${type.toLowerCase()} ${widget.type.toLowerCase()}.");
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  String generateXml() {
+    if (selectedRows.isEmpty) {
+      return "";
+    }
+    StringBuffer xml = StringBuffer();
+
+    xml.write('<dataRow_CCD>');
+    for (var row in selectedRows) {
+      if (row.subjectId != null &&
+          row.selectedClasses != null &&
+          row.decisionMaker != null) {
+        for (var selectedClass in row.selectedClasses!) {
+          xml.write('<data_CCD>');
+          xml.write('<SubjectId>${row.subjectId}</SubjectId>');
+          xml.write('<ClassNumId>${selectedClass.classNumId}</ClassNumId>');
+
+          // Transform decisionMaker to "Y" for "Yes" and "N" for "No"
+          String decisionValue = row.decisionMaker == "Yes" ? "Y" : "N";
+          xml.write('<DecisionId>${decisionValue}</DecisionId>');
+
+          xml.write('</data_CCD>');
+        }
+      }
+    }
+    xml.write('</dataRow_CCD>');
+
+    return xml.toString();
+  }
+
+  Future<bool> _checkInternetConnection() async {
+    if (!await checkInternetConnection()) {
+      _toastMessage.showToastMessage(
+          "No internet connection. Please check your connection and try again.");
+      return false;
+    }
+    return true;
+  }
 }

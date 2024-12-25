@@ -6,6 +6,7 @@ import 'package:avant/common/toast.dart';
 import 'package:avant/db/db_helper.dart';
 import 'package:avant/model/customer_entry_master_model.dart';
 import 'package:avant/model/geography_model.dart';
+import 'package:avant/model/login_model.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -16,6 +17,7 @@ import 'package:intl/intl.dart';
 import 'package:location/location.dart' as loc;
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../common/location.dart';
 import '../common/utils.dart';
 import '../model/contact_detail_model.dart';
 import '../views/common_app_bar.dart';
@@ -23,12 +25,14 @@ import '../views/custom_text.dart';
 
 class CustomerContactForm extends StatefulWidget {
   final String type;
+  final int customerId;
   final bool isEdit;
   final String? action;
 
   const CustomerContactForm({
     super.key,
     required this.type,
+    required this.customerId,
     this.isEdit = false,
     this.action = '',
   });
@@ -98,14 +102,19 @@ class CustomerContactFormState extends State<CustomerContactForm> {
   int? _selectedSalutationId;
 
   bool _isLoading = false;
+  bool _isSubmitted = false;
 
   late SharedPreferences prefs;
   late String token;
   late int executiveId;
+  late int? userId;
 
-  String validated = '';
+  int contactId = 0;
 
-  String? mandatorySetting;
+  String validated = 'A';
+
+  String? mandatorySettingEmailMobile;
+  String? profileCode;
 
   bool hasCheckedForEdit = false;
 
@@ -167,9 +176,12 @@ class CustomerContactFormState extends State<CustomerContactForm> {
   }
 
   Future<void> _initializeMandatorySettings() async {
-    mandatorySetting = await dbHelper.getTeacherMobileEmailMandatory();
+    mandatorySettingEmailMobile =
+        await dbHelper.getTeacherMobileEmailMandatory();
 
     prefs = await SharedPreferences.getInstance();
+    userId = await getUserId();
+    profileCode = await getProfileCode() ?? '';
     setState(() {
       token = prefs.getString('token') ?? '';
       executiveId = prefs.getInt('executiveId') ?? 0;
@@ -198,11 +210,17 @@ class CustomerContactFormState extends State<CustomerContactForm> {
       return;
     }
 
-    Position position = await Geolocator.getCurrentPosition();
-    setState(() {
-      _currentPosition = LatLng(position.latitude, position.longitude);
-      _getUserLocation();
-    });
+    try {
+      Position position = await Geolocator.getCurrentPosition();
+      if (mounted) {
+        setState(() {
+          _currentPosition = LatLng(position.latitude, position.longitude);
+          _getUserLocation();
+        });
+      }
+    } catch (e) {
+      debugPrint('Error getting location: $e');
+    }
   }
 
   Future<void> _getUserLocation() async {
@@ -238,7 +256,7 @@ class CustomerContactFormState extends State<CustomerContactForm> {
 
   void addAddress() async {
     loc.Location location = loc.Location();
-    debugPrint('Add customer address}');
+    debugPrint('Add contact address');
     // Get current user location
     try {
       loc.LocationData locationData = await location.getLocation();
@@ -373,49 +391,10 @@ class CustomerContactFormState extends State<CustomerContactForm> {
         },
       );
 
-      if (placemarks.isNotEmpty) {
-        Placemark place = placemarks[0];
-        debugPrint('place : ${place.name}');
-        // Dynamically building the address
-        String address = '';
-
-        // Check and add each component if available
-        if (place.name != null && place.name!.isNotEmpty) {
-          address += '${place.name!}, ';
-        }
-        /* if (place.street != null && place.street!.isNotEmpty) {
-          address += '${place.street!}, ';
-        }*/
-        if (place.locality != null && place.locality!.isNotEmpty) {
-          address += '${place.locality!}, ';
-        }
-        if (place.administrativeArea != null &&
-            place.administrativeArea!.isNotEmpty) {
-          address += '${place.administrativeArea!}, ';
-        }
-        if (place.postalCode != null && place.postalCode!.isNotEmpty) {
-          address += '${place.postalCode!}, ';
-        }
-        if (place.country != null && place.country!.isNotEmpty) {
-          address += place.country!;
-        }
-
-        // Remove trailing comma if it exists
-        if (address.endsWith(', ')) {
-          address = address.substring(0, address.length - 2);
-        }
-
-        // Update the address field in the UI
-        setState(() {
-          _addressController.text = address;
-          _currentMarker = _currentMarker!.copyWith(positionParam: position);
-          if (kDebugMode) {
-            print(address);
-          }
-        });
-      } else {
-        debugPrint('Place mark empty');
-      }
+      setState(() {
+        _currentMarker = _currentMarker!.copyWith(positionParam: position);
+      });
+      getAddress(placemarks, position);
     } catch (e) {
       if (kDebugMode) {
         print("Error retrieving address: $e");
@@ -424,6 +403,18 @@ class CustomerContactFormState extends State<CustomerContactForm> {
         _addressController.text = "Unable to retrieve address";
       });
     }
+  }
+
+  void getAddress(List<Placemark> placemarks, LatLng position) {
+    String address = buildAddress(placemarks);
+
+    // Update the address field in the UI
+    setState(() {
+      _addressController.text = address;
+      if (kDebugMode) {
+        print(address);
+      }
+    });
   }
 
   Widget _buildMapContainer() {
@@ -475,14 +466,7 @@ class CustomerContactFormState extends State<CustomerContactForm> {
       position.latitude,
       position.longitude,
     );
-    if (placemarks.isNotEmpty) {
-      Placemark place = placemarks[0];
-      String address =
-          '${place.name}, ${place.administrativeArea}, ${place.street}, ${place.locality}, ${place.country}';
-      setState(() {
-        _addressController.text = address;
-      });
-    }
+    getAddress(placemarks, position);
   }
 
   void _fetchData() async {
@@ -801,6 +785,7 @@ class CustomerContactFormState extends State<CustomerContactForm> {
                 setState(() {
                   _selectedCity = selected;
                 });
+                _formKey.currentState!.validate();
               },
             ),
             const SizedBox(height: 8),
@@ -837,6 +822,8 @@ class CustomerContactFormState extends State<CustomerContactForm> {
   void _submitForm() {
     FocusScope.of(context).unfocus();
 
+    _isSubmitted = true;
+
     if (_formKey.currentState!.validate()) {
       if (_selectedPrimaryContact == null) {
         _toastMessage.showToastMessage("Please enter Primary Contact");
@@ -865,7 +852,7 @@ class CustomerContactFormState extends State<CustomerContactForm> {
   }
 
   List<TextInputFormatter> _getInputFormatters(String label) {
-    if (label == 'Phone Number' || label == 'Mobile') {
+    if (label == 'Phone Number' || label == 'Mobile Number') {
       return [
         LengthLimitingTextInputFormatter(10),
         FilteringTextInputFormatter.digitsOnly,
@@ -900,7 +887,18 @@ class CustomerContactFormState extends State<CustomerContactForm> {
         : DateTime.now();
 
     DateTime initialDate = label == "Date of Birth" ? maxDate : DateTime.now();
-
+    TextInputType inputType = TextInputType.text;
+    TextCapitalization textCapitalization = TextCapitalization.none;
+    if (label == 'Mobile Number' || label == 'Pin Code') {
+      inputType = TextInputType.number;
+    }
+    if (label == 'Email') {
+      inputType = TextInputType.emailAddress;
+    }
+    if (label == 'First Name' || label == 'Last Name') {
+      inputType = TextInputType.name;
+      textCapitalization = TextCapitalization.words;
+    }
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: InkWell(
@@ -931,9 +929,8 @@ class CustomerContactFormState extends State<CustomerContactForm> {
             key: fieldKey,
             style: TextStyle(fontSize: textFontSize),
             controller: controller,
-            keyboardType: (label == 'Mobile' || label == 'Pin Code')
-                ? TextInputType.phone
-                : TextInputType.text,
+            keyboardType: inputType,
+            textCapitalization: textCapitalization,
             inputFormatters: _getInputFormatters(label),
             decoration: InputDecoration(
               labelText: label,
@@ -950,20 +947,11 @@ class CustomerContactFormState extends State<CustomerContactForm> {
                       (_addressController.text.isNotEmpty &&
                           label == 'Pin Code'))) {
                 return 'Please enter $label';
-              }
-              if (label == 'Mobile Number' &&
-                  value != null &&
-                  value.isNotEmpty &&
-                  !Validator.isValidMobile(value)) {
-                return 'Please enter valid $label';
-              }
-              if (label == 'Email' &&
-                  value != null &&
-                  value.isNotEmpty &&
-                  !Validator.isValidEmail(value)) {
-                return 'Please enter valid $label';
-              }
-              if (label == 'Pin Code' &&
+              } else if (label == 'Mobile Number') {
+                return _validatePhoneNumber(value);
+              } else if (label == 'Email') {
+                return _validateEmail(value);
+              } else if (label == 'Pin Code' &&
                   _addressController.text.isNotEmpty &&
                   value != null &&
                   value.isNotEmpty &&
@@ -1019,7 +1007,8 @@ class CustomerContactFormState extends State<CustomerContactForm> {
           fieldKey.currentState?.validate();
         },
         validator: (newValue) {
-          if ((newValue == null || newValue.isEmpty) &&
+          if (_isSubmitted &&
+              (newValue == null || newValue.isEmpty) &&
               (label == 'Designation')) {
             return 'Please select $label';
           }
@@ -1031,7 +1020,7 @@ class CustomerContactFormState extends State<CustomerContactForm> {
 
   Future<void> checkForEdit() async {
     try {
-      int contactId = extractNumericPart(widget.action ?? '');
+      contactId = extractNumericPart(widget.action ?? '');
       validated = extractStringPart(widget.action ?? '');
 
       CustomerListService service = CustomerListService();
@@ -1059,11 +1048,10 @@ class CustomerContactFormState extends State<CustomerContactForm> {
       _anniversaryController.text = details.anniversary;
     }
 
-    _selectedPrimaryContact = details.primaryContact == 'Y';
+    _selectedPrimaryContact =
+        details.primaryContact == 'Yes' || details.primaryContact == 'Y';
     _selectedContactStatus = details.contactStatus == 'Active';
 
-    debugPrint(
-        'salutationMasterList size : ${customerEntryMasterResponse.salutationMasterList.length}');
     if (customerEntryMasterResponse.salutationMasterList.isNotEmpty) {
       final salutation =
           customerEntryMasterResponse.salutationMasterList.firstWhere(
@@ -1084,8 +1072,6 @@ class CustomerContactFormState extends State<CustomerContactForm> {
       }
     }
 
-    debugPrint(
-        'contactDesignationList size : ${customerEntryMasterResponse.contactDesignationList.length}');
     if (customerEntryMasterResponse.contactDesignationList.isNotEmpty) {
       final contactDesignation =
           customerEntryMasterResponse.contactDesignationList.firstWhere(
@@ -1110,12 +1096,6 @@ class CustomerContactFormState extends State<CustomerContactForm> {
         debugPrint('Edit contactDesignation 0');
       }
     }
-
-    debugPrint('details.countryId : ${details.resCountry}');
-    debugPrint('details.stateId : ${details.resState}');
-    debugPrint('details.districtId : ${details.resDistrict}');
-    debugPrint('details.cityId : ${details.resCity}');
-
     final selectedCountry = _findCountryById(details.resCountry);
     if (selectedCountry.countryId == 0) {
       debugPrint('selectedCountry 0');
@@ -1246,6 +1226,8 @@ class CustomerContactFormState extends State<CustomerContactForm> {
       _filteredDistricts = []; // Clear districts when country changes
       _filteredCities = []; // Clear cities when country changes
     });
+
+    _formKey.currentState!.validate();
   }
 
   void _onStateChanged(Geography? selected) {
@@ -1263,6 +1245,8 @@ class CustomerContactFormState extends State<CustomerContactForm> {
           .toList();
       _filteredCities = []; // Clear cities when state changes
     });
+
+    _formKey.currentState!.validate();
   }
 
   void _onDistrictChanged(Geography? selected) {
@@ -1278,6 +1262,8 @@ class CustomerContactFormState extends State<CustomerContactForm> {
               uniqueCityIds.add(geo.cityId)) // Only add unique cities
           .toList();
     });
+
+    _formKey.currentState!.validate();
   }
 
   Widget _buildDropdown({
@@ -1311,31 +1297,32 @@ class CustomerContactFormState extends State<CustomerContactForm> {
         labelStyle: TextStyle(fontSize: labelFontSize),
         border: const OutlineInputBorder(),
       ),
-      validator: (value) => value == null ? 'Please select $label' : null,
+      validator: (value) =>
+          _isSubmitted && value == null ? 'Please select $label' : null,
     );
   }
 
   void unableToGetAddress() async {
     final address =
         '${_selectedCity?.city ?? ''}, ${_selectedState?.state ?? ''}, ${_selectedState?.district ?? ''}, ${_selectedCountry?.country ?? ''}}';
-    debugPrint('Edit customer address 2 $address');
+    debugPrint('Edit contact address 2 $address');
     try {
       List<Location> locations = await locationFromAddress(address);
-      debugPrint('Edit customer address locations size ${locations.length}');
+      debugPrint('Edit contact address locations size ${locations.length}');
       if (locations.isNotEmpty) {
         // Use the first matched location
         Location addressLocation = locations.first;
         debugPrint(
-            'Edit customer address latitude ${addressLocation.latitude}, longitude : ${addressLocation.longitude}');
+            'Edit contact address latitude ${addressLocation.latitude}, longitude : ${addressLocation.longitude}');
         LatLng initialPosition =
             LatLng(addressLocation.latitude, addressLocation.longitude);
         debugPrint(
-            'Edit customer initialPosition latitude ${initialPosition.latitude}, longitude : ${initialPosition.longitude}');
+            'Edit contact initialPosition latitude ${initialPosition.latitude}, longitude : ${initialPosition.longitude}');
 
         // Update marker and position
         _currentPosition = initialPosition;
         debugPrint(
-            'Edit customer _currentPosition latitude ${_currentPosition?.latitude}, longitude : ${_currentPosition?.longitude}');
+            'Edit contact _currentPosition latitude ${_currentPosition?.latitude}, longitude : ${_currentPosition?.longitude}');
 
         _currentMarker = Marker(
           markerId: const MarkerId('currentLocation'),
@@ -1346,10 +1333,9 @@ class CustomerContactFormState extends State<CustomerContactForm> {
         );
 
         await placemarkFromCoordinates(
-          initialPosition.latitude,
-          initialPosition.longitude,
-        ).timeout(
-          const Duration(seconds: 10), // Timeout duration
+                initialPosition.latitude, initialPosition.longitude)
+            .timeout(
+          const Duration(seconds: 10),
           onTimeout: () {
             throw TimeoutException("Geocoding timed out after 10 seconds.");
           },
@@ -1377,24 +1363,24 @@ class CustomerContactFormState extends State<CustomerContactForm> {
 
   void unableToGetAddress2() async {
     final address = _pinCodeController.text.toString().trim();
-    debugPrint('Edit customer address 3 $address');
+    debugPrint('Edit contact address 3 $address');
     try {
       List<Location> locations = await locationFromAddress(address);
-      debugPrint('Edit customer address locations size ${locations.length}');
+      debugPrint('Edit contact address locations size ${locations.length}');
       if (locations.isNotEmpty) {
         // Use the first matched location
         Location addressLocation = locations.first;
         debugPrint(
-            'Edit customer address latitude ${addressLocation.latitude}, longitude : ${addressLocation.longitude}');
+            'Edit contact address latitude ${addressLocation.latitude}, longitude : ${addressLocation.longitude}');
         LatLng initialPosition =
             LatLng(addressLocation.latitude, addressLocation.longitude);
         debugPrint(
-            'Edit customer initialPosition latitude ${initialPosition.latitude}, longitude : ${initialPosition.longitude}');
+            'Edit contact initialPosition latitude ${initialPosition.latitude}, longitude : ${initialPosition.longitude}');
 
         // Update marker and position
         _currentPosition = initialPosition;
         debugPrint(
-            'Edit customer _currentPosition latitude ${_currentPosition?.latitude}, longitude : ${_currentPosition?.longitude}');
+            'Edit contact _currentPosition latitude ${_currentPosition?.latitude}, longitude : ${_currentPosition?.longitude}');
 
         _currentMarker = Marker(
           markerId: const MarkerId('currentLocation'),
@@ -1405,10 +1391,9 @@ class CustomerContactFormState extends State<CustomerContactForm> {
         );
 
         await placemarkFromCoordinates(
-          initialPosition.latitude,
-          initialPosition.longitude,
-        ).timeout(
-          const Duration(seconds: 10), // Timeout duration
+                initialPosition.latitude, initialPosition.longitude)
+            .timeout(
+          const Duration(seconds: 10),
           onTimeout: () {
             throw TimeoutException("Geocoding timed out after 10 seconds.");
           },
@@ -1434,5 +1419,126 @@ class CustomerContactFormState extends State<CustomerContactForm> {
     }
   }
 
-  void submitContact() {}
+  Future<bool> _checkInternetConnection() async {
+    if (!await checkInternetConnection()) {
+      _toastMessage.showToastMessage(
+          "No internet connection. Please check your connection and try again.");
+      return false;
+    }
+    return true;
+  }
+
+  void submitContact() async {
+    FocusScope.of(context).unfocus();
+
+    if (!await _checkInternetConnection()) return;
+
+    if (mounted) {
+      setState(() {
+        _isLoading = true;
+      });
+    }
+    final type = widget.isEdit ? 'Editing' : 'Adding';
+    try {
+      debugPrint('contactId : $contactId');
+      final responseData = await CustomerListService()
+          .insertOrUpdateCustomerContact(
+              widget.type,
+              (_selectedPrimaryContact == true) ? 'Y' : 'N',
+              _selectedSalutationId ?? 0,
+              _selectedContactDesignationId ?? 0,
+              _firstNameController.text.toString().trim(),
+              _lastNameController.text.toString().trim(),
+              _emailIdController.text.toString().trim(),
+              _phoneNumberController.text.toString().trim(),
+              _selectedContactStatus == true ? 'Active' : 'Inactive',
+              userId ?? 0,
+              widget.customerId,
+              validated,
+              _addressController.text.toString().trim(),
+              _selectedCity?.cityId ?? 0,
+              _pinCodeController.text.toString().trim(),
+              _dobController.text.toString().trim(),
+              _anniversaryController.text.toString().trim(),
+              contactId,
+              '',
+              0,
+              token);
+
+      if (responseData.status == 'Success') {
+        String s = responseData.s;
+        String w = responseData.w;
+        debugPrint('s:$s');
+        debugPrint('w:$w');
+        if (w.isNotEmpty) {
+          debugPrint('$type Contact: $w');
+          _toastMessage.showWarnToastMessage(w);
+        } else if (s.isNotEmpty) {
+          debugPrint('$type Contact: $s');
+          _toastMessage.showInfoToastMessage(s);
+          if (mounted) {
+            Navigator.of(context).pop(true);
+          }
+        } else {
+          if (kDebugMode) {
+            print('${widget.type} contact error s or w is empty');
+          }
+          _toastMessage.showToastMessage(
+              "An error occurred while ${type.toLowerCase()} ${widget.type.toLowerCase()} contact.");
+        }
+      } else {
+        if (kDebugMode) {
+          print(
+              'Update contact error ${type.toLowerCase()} ${responseData.status}');
+        }
+        _toastMessage.showToastMessage(
+            "An error occurred while ${type.toLowerCase()} ${widget.type}.");
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('$type Contact Error $e');
+      }
+      _toastMessage.showToastMessage(
+          "An error occurred while ${type.toLowerCase()} ${widget.type.toLowerCase()}.");
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  String? _validatePhoneNumber(String? value) {
+    if (mandatorySettingEmailMobile == 'M' ||
+        mandatorySettingEmailMobile == 'B') {
+      if (value == null || value.isEmpty) {
+        return 'Please enter Phone Number';
+      }
+      if (!Validator.isValidMobile(value)) {
+        return 'Please enter valid Phone Number';
+      }
+    }
+    return null;
+  }
+
+  String? _validateEmail(String? value) {
+    if (mandatorySettingEmailMobile == 'E' ||
+        mandatorySettingEmailMobile == 'B') {
+      if (value == null || value.isEmpty) {
+        return 'Please enter Email Id';
+      }
+      if (!Validator.isValidEmail(value)) {
+        return 'Please enter valid Email Id';
+      }
+    }
+    if (mandatorySettingEmailMobile == 'A') {
+      // Require at least one of Phone Number or Email
+      if ((value == null || value.isEmpty) &&
+          (_phoneNumberController.text.isEmpty)) {
+        return 'Please enter at least one of Phone Number or Email';
+      }
+    }
+    return null;
+  }
 }
