@@ -114,7 +114,7 @@ class CustomerContactFormState extends State<CustomerContactSchoolForm> {
   late String token;
   late int executiveId;
 
-  String validated = '';
+  String validated = 'A';
 
   int contactId = 0;
 

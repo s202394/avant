@@ -823,6 +823,15 @@ class NewCustomerSchoolForm2State extends State<NewCustomerSchoolForm2> {
     }
   }
 
+  Future<bool> _checkInternetConnection() async {
+    if (!await checkInternetConnection()) {
+      _toastMessage.showToastMessage(
+          "No internet connection. Please check your connection and try again.");
+      return false;
+    }
+    return true;
+  }
+
   void _showBooksellerSearchModal() {
     showModalBottomSheet(
       context: context,
@@ -992,6 +1001,8 @@ class NewCustomerSchoolForm2State extends State<NewCustomerSchoolForm2> {
   }
 
   void searchBookseller() async {
+    if (!await _checkInternetConnection()) return;
+
     setState(() {
       _isLoading = true;
     });
@@ -1063,6 +1074,9 @@ class NewCustomerSchoolForm2State extends State<NewCustomerSchoolForm2> {
 
   void checkForEdit() {
     final customerData = widget.customerDetailsSchoolResponse;
+
+    _booksellers.addAll(customerData?.bookSellerList ?? []);
+    _selectedBooksellers.addAll(customerData?.bookSellerList ?? []);
 
     if (customerData != null && customerData.schoolDetails != null) {
       final schoolDetails = customerData.schoolDetails;
@@ -1140,9 +1154,13 @@ class NewCustomerSchoolForm2State extends State<NewCustomerSchoolForm2> {
         debugPrint('Edit decisionMonth 0');
       }
 
+      String mode = schoolDetails?.purchaseMode ?? '';
+      if (mode.isNotEmpty && schoolDetails?.purchaseMode == 'Bookseller') {
+        mode = 'Book Seller';
+      }
       final purchaseMode =
           customerEntryMasterResponse.purchaseModeList.firstWhere(
-        (b) => b.modeValue == schoolDetails?.purchaseMode,
+        (b) => b.modeValue == mode,
         orElse: () {
           debugPrint(
               'Edit Purchase Mode ID ${schoolDetails?.purchaseMode} not found.');

@@ -1187,7 +1187,9 @@ class NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
     }
   }
 
-  void goToContact() {
+  void goToContact() async {
+    if (!await _checkInternetConnection()) return;
+
     Navigator.push(
       context,
       MaterialPageRoute(

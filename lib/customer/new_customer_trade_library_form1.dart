@@ -1515,7 +1515,9 @@ class NewCustomerTradeLibraryForm1State
     return true;
   }
 
-  void goToContact() {
+  void goToContact() async {
+    if (!await _checkInternetConnection()) return;
+
     Navigator.push(
       context,
       MaterialPageRoute(

@@ -1,12 +1,16 @@
+import 'package:avant/model/search_bookseller_response.dart';
+
 class FetchCustomerDetailsSchoolResponse {
   final String status;
   final SchoolDetails? schoolDetails;
+  final List<BookSellers> bookSellerList;
   final List<EnrolmentList> enrolmentList;
   final List<SchoolComments> comments;
 
   FetchCustomerDetailsSchoolResponse({
     required this.status,
     required this.schoolDetails,
+    required this.bookSellerList,
     required this.enrolmentList,
     required this.comments,
   });
@@ -19,6 +23,10 @@ class FetchCustomerDetailsSchoolResponse {
       schoolDetail = SchoolDetails.fromJson(schoolDetailsData[0]);
     }
 
+    var booksellerList = json["BookSellerList"] as List;
+    List<BookSellers> listBookseller =
+        booksellerList.map((i) => BookSellers.fromJson(i)).toList();
+
     var enrolmentList = json["EnrolmentList"] as List;
     List<EnrolmentList> listEnrolment =
         enrolmentList.map((i) => EnrolmentList.fromJson(i)).toList();
@@ -30,6 +38,7 @@ class FetchCustomerDetailsSchoolResponse {
     return FetchCustomerDetailsSchoolResponse(
       status: json['Status'] ?? '',
       schoolDetails: schoolDetail,
+      bookSellerList: listBookseller,
       enrolmentList: listEnrolment,
       comments: commentList,
     );
@@ -39,6 +48,7 @@ class FetchCustomerDetailsSchoolResponse {
     return {
       'Status': status,
       'SchoolDetails': schoolDetails?.toJson(),
+      'BookSellerList': bookSellerList.map((e) => e.toJson()).toList(),
       'EnrolmentList': enrolmentList.map((e) => e.toJson()).toList(),
       'Comments': comments.map((e) => e.toJson()).toList(),
     };
@@ -422,7 +432,7 @@ class Comments {
   final String comment;
   final int existence;
 
- Comments({
+  Comments({
     required this.sNo,
     required this.commentDate,
     required this.enteredBy,

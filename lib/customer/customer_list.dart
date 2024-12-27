@@ -317,7 +317,8 @@ class CustomerListState extends State<CustomerList> {
     );
   }
 
-  void addCustomer() {
+  void addCustomer() async {
+    if (!await _checkInternetConnection()) return;
     if (widget.type == 'Trade') {
       Navigator.push(
         context,
@@ -334,7 +335,8 @@ class CustomerListState extends State<CustomerList> {
     }
   }
 
-  void editCustomer(CommonCustomerList customer) {
+  void editCustomer(CommonCustomerList customer) async {
+    if (!await _checkInternetConnection()) return;
     if (widget.type == 'Trade' || widget.type == 'Library') {
       Navigator.push(
         context,

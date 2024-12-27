@@ -400,7 +400,7 @@ class SetupValuesService {
     if (setupValuesFromDB.isNotEmpty) {
       // If we have data in the database, return it
       if (kDebugMode) {
-        print('Setup values found in DB: $setupValuesFromDB');
+        print('Setup values found in DB.');
       }
       return setupValuesFromDB;
     } else {

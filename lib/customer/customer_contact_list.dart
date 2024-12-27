@@ -358,6 +358,9 @@ class CustomerContactListState extends State<CustomerContactList> {
 
   void navigateToContactForm(
       {required bool isEdit, ContactList? customer}) async {
+
+    if (!await _checkInternetConnection()) return;
+
     final form = widget.type == 'School'
         ? CustomerContactSchoolForm(
             type: widget.type,
