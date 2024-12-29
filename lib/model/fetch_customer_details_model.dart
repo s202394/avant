@@ -23,17 +23,20 @@ class FetchCustomerDetailsSchoolResponse {
       schoolDetail = SchoolDetails.fromJson(schoolDetailsData[0]);
     }
 
-    var booksellerList = json["BookSellerList"] as List;
-    List<BookSellers> listBookseller =
-        booksellerList.map((i) => BookSellers.fromJson(i)).toList();
+    var booksellerList = json["BookSellerList"] as List? ?? [];
+    List<BookSellers> listBookseller = booksellerList.isEmpty
+        ? []
+        : booksellerList.map((i) => BookSellers.fromJson(i)).toList();
 
     var enrolmentList = json["EnrolmentList"] as List;
-    List<EnrolmentList> listEnrolment =
-        enrolmentList.map((i) => EnrolmentList.fromJson(i)).toList();
+    List<EnrolmentList> listEnrolment = enrolmentList.isEmpty
+        ? []
+        : enrolmentList.map((i) => EnrolmentList.fromJson(i)).toList();
 
     var listComments = json["Comments"] as List;
-    List<SchoolComments> commentList =
-        listComments.map((i) => SchoolComments.fromJson(i)).toList();
+    List<SchoolComments> commentList = listComments.isEmpty
+        ? []
+        : listComments.map((i) => SchoolComments.fromJson(i)).toList();
 
     return FetchCustomerDetailsSchoolResponse(
       status: json['Status'] ?? '',

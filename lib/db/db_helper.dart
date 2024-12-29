@@ -1204,4 +1204,24 @@ class DatabaseHelper {
     }
     return null;
   }
+
+  Future<String?> getCustomerContactFirstLastNameMandatory() async {
+    final db = await database;
+    final List<Map<String, dynamic>> result = await db.query(
+      'setupValues',
+      columns: ['KeyValue', 'KeyStatus'],
+      where: 'KeyName = ?',
+      whereArgs: ['CustomerContactFirstLastNameMandatory'],
+      limit: 1,
+    );
+
+    if (result.isNotEmpty) {
+      // Check if KeyStatus is true, and if so, return KeyValue
+      if (result.first['KeyStatus'] == 1) {
+        // Assuming 1 = true in the database
+        return result.first['KeyValue'] as String?;
+      }
+    }
+    return null;
+  }
 }

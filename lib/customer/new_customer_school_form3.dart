@@ -14,6 +14,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../common/utils.dart';
 import '../model/fetch_customer_details_model.dart';
 import '../model/search_bookseller_response.dart';
 import '../views/common_app_bar.dart';
@@ -138,6 +139,9 @@ class NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
 
   bool hasCheckedForEdit = false;
 
+  String? mandatorySettingEmailMobile;
+  String? mandatoryCustomerContactFirstLastName;
+
   late CustomerEntryMasterResponse customerEntryMasterResponse;
 
   @override
@@ -168,6 +172,14 @@ class NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
   }
 
   Future<CustomerEntryMasterResponse> initializePreferencesAndData() async {
+    mandatorySettingEmailMobile =
+        await dbHelper.getTeacherMobileEmailMandatory();
+    debugPrint('mandatorySettingEmailMobile:$mandatorySettingEmailMobile');
+    mandatoryCustomerContactFirstLastName =
+        await dbHelper.getCustomerContactFirstLastNameMandatory();
+    debugPrint(
+        'mandatoryCustomerContactFirstLastName:$mandatoryCustomerContactFirstLastName');
+
     // Check if data exists in the database
     CustomerEntryMasterResponse? existingData =
         await dbHelper.getCustomerEntryMasterResponse();
@@ -854,7 +866,7 @@ class NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
           widget.keyCustomer,
           widget.customerStatus,
           "",
-          "<CustomerExecutive_Data><CustomerExecutive><AccountTableExecutiveId>${executiveId ?? 0}</AccountTableExecutiveId></CustomerExecutive></CustomerExecutive_Data>",
+          "<CustomerExecutive_Data><CustomerExecutive><AccountTableExecutiveId>${widget.customerDetailsSchoolResponse?.schoolDetails?.xmlAccountTableExecutiveId ?? 0}</AccountTableExecutiveId></CustomerExecutive></CustomerExecutive_Data>",
           "<CustomerComment/>",
           userId ?? 0,
           position.latitude,
@@ -1040,7 +1052,7 @@ class NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
             keyboardType: (label == 'Mobile' || label == 'Pin Code')
                 ? TextInputType.phone
                 : TextInputType.text,
-            inputFormatters: _getInputFormatters(label),
+            inputFormatters: getInputFormatters(label),
             decoration: InputDecoration(
               labelText: label,
               labelStyle: TextStyle(fontSize: labelFontSize),
@@ -1052,24 +1064,21 @@ class NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
             maxLines: maxLines,
             validator: (value) {
               if ((value == null || value.isEmpty) &&
-                  (label == 'Contact Last Name' ||
-                      (_contactAddressController.text.isNotEmpty &&
-                          label == 'Pin Code'))) {
+                  (label == 'Contact First Name' ||
+                      (label == 'Contact Last Name'))) {
+                return validateName(
+                    label, value, mandatoryCustomerContactFirstLastName);
+              } else if ((value == null || value.isEmpty) &&
+                  (_contactAddressController.text.isNotEmpty &&
+                      label == 'Pin Code')) {
                 return 'Please enter $label';
-              }
-              if (label == 'Mobile' &&
-                  value != null &&
-                  value.isNotEmpty &&
-                  !Validator.isValidMobile(value)) {
-                return 'Please enter valid $label';
-              }
-              if (label == 'Email' &&
-                  value != null &&
-                  value.isNotEmpty &&
-                  !Validator.isValidEmail(value)) {
-                return 'Please enter valid $label';
-              }
-              if (label == 'Pin Code' &&
+              } else if (label == 'Mobile Number') {
+                return validatePhoneNumber(
+                    label, value, mandatorySettingEmailMobile);
+              } else if (label == 'Email') {
+                return validateEmail(label, value, mandatorySettingEmailMobile,
+                    _phoneNumberController.text.isEmpty);
+              } else if (label == 'Pin Code' &&
                   _contactAddressController.text.isNotEmpty &&
                   value != null &&
                   value.isNotEmpty &&
@@ -1087,37 +1096,6 @@ class NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
         ),
       ),
     );
-  }
-
-  List<TextInputFormatter> _getInputFormatters(String label) {
-    if (label == 'Mobile') {
-      return [
-        LengthLimitingTextInputFormatter(10),
-        FilteringTextInputFormatter.digitsOnly,
-      ];
-    } else if (label == 'Pin Code') {
-      return [
-        LengthLimitingTextInputFormatter(6),
-        FilteringTextInputFormatter.digitsOnly,
-      ];
-    } else if (label == 'Email') {
-      return [
-        FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9@._-]')),
-      ];
-    } else if (label == 'PAN') {
-      return [
-        LengthLimitingTextInputFormatter(10),
-        FilteringTextInputFormatter.allow(
-            RegExp(r'^[A-Z]{0,5}[0-9]{0,4}[A-Z]?$')),
-      ];
-    } else if (label == 'GST') {
-      return [
-        FilteringTextInputFormatter.allow(RegExp(
-            r'^[0-9]{0,2}[A-Z]{0,5}[0-9]{0,4}[A-Z]{0,1}[1-9A-Z]{0,1}Z?[0-9A-Z]{0,1}$')),
-      ];
-    } else {
-      return [];
-    }
   }
 
   Widget _buildDropdownFieldCity(

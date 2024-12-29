@@ -191,7 +191,7 @@ class CustomerListState extends State<CustomerList> {
     return Column(
       children: [
         ListTile(
-          title: CustomText(customer.name),
+          title: CustomText('${customer.name} ${getCode(customer.code)}'),
           subtitle: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -207,7 +207,7 @@ class CustomerListState extends State<CustomerList> {
                   labelFontSize: 14, valueFontSize: 12),
             ],
           ),
-          trailing: Row(
+          trailing: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               InkWell(
@@ -217,14 +217,14 @@ class CustomerListState extends State<CustomerList> {
                   }
                   editCustomer(customer);
                 },
-                child: const Icon(Icons.edit, size: 30, color: Colors.blue),
+                child: const Icon(Icons.edit, size: 20, color: Colors.blue),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(height: 10),
               InkWell(
                 onTap: () {
                   deleteCustomerDialog(customer);
                 },
-                child: const Icon(Icons.delete, size: 30, color: Colors.red),
+                child: const Icon(Icons.delete, size: 20, color: Colors.red),
               ),
             ],
           ),

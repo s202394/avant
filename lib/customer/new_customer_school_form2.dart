@@ -6,9 +6,9 @@ import 'package:avant/model/customer_entry_master_model.dart';
 import 'package:avant/customer/new_customer_school_form3.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../common/utils.dart';
 import '../model/fetch_customer_details_model.dart';
 import '../model/geography_model.dart';
 import '../model/search_bookseller_response.dart';
@@ -556,7 +556,7 @@ class NewCustomerSchoolForm2State extends State<NewCustomerSchoolForm2> {
           textCapitalization: (label == 'PAN Number' || label == 'GST Number')
               ? TextCapitalization.characters
               : TextCapitalization.none,
-          inputFormatters: _getInputFormatters(label),
+          inputFormatters: getInputFormatters(label),
         ),
       ),
     );
@@ -775,26 +775,6 @@ class NewCustomerSchoolForm2State extends State<NewCustomerSchoolForm2> {
         },
       ),
     );
-  }
-
-  List<TextInputFormatter> _getInputFormatters(String label) {
-    if (label == 'Phone Number' || label == 'Mobile') {
-      return [
-        LengthLimitingTextInputFormatter(10),
-        FilteringTextInputFormatter.digitsOnly,
-      ];
-    } else if (label == 'Pin Code') {
-      return [
-        LengthLimitingTextInputFormatter(6),
-        FilteringTextInputFormatter.digitsOnly,
-      ];
-    } else if (label == 'Email Id') {
-      return [
-        FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9@._-]')),
-      ];
-    } else {
-      return [];
-    }
   }
 
   void _submitForm() {
@@ -1090,14 +1070,14 @@ class NewCustomerSchoolForm2State extends State<NewCustomerSchoolForm2> {
           return Classes(classNumId: 0, className: '');
         },
       );
-      if (startClasses.classNumId > 0) {
+      if (startClasses.classNumId == 0) {
+        debugPrint('Edit startClasses class 0');
+      } else {
         debugPrint('startClasses.className ${startClasses.className}');
         setState(() {
           _selectedStartClass = startClasses;
           startClassController.text = startClasses.className;
         });
-      } else {
-        debugPrint('Edit startClasses class 0');
       }
 
       final endClasses = customerEntryMasterResponse.classesList.firstWhere(
@@ -1108,14 +1088,14 @@ class NewCustomerSchoolForm2State extends State<NewCustomerSchoolForm2> {
           return Classes(classNumId: 0, className: '');
         },
       );
-      if (endClasses.classNumId > 0) {
+      if (endClasses.classNumId == 0) {
+        debugPrint('Edit endClasses class 0');
+      } else {
         debugPrint('endClasses.className ${endClasses.className}');
         setState(() {
           _selectedEndClass = endClasses;
           endClassController.text = endClasses.className;
         });
-      } else {
-        debugPrint('Edit endClasses class 0');
       }
 
       final samplingMonth = customerEntryMasterResponse.monthsList.firstWhere(

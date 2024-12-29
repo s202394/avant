@@ -114,6 +114,8 @@ class CustomerContactFormState extends State<CustomerContactForm> {
   String validated = 'A';
 
   String? mandatorySettingEmailMobile;
+  String? mandatoryCustomerContactFirstLastName;
+
   String? profileCode;
 
   bool hasCheckedForEdit = false;
@@ -178,6 +180,11 @@ class CustomerContactFormState extends State<CustomerContactForm> {
   Future<void> _initializeMandatorySettings() async {
     mandatorySettingEmailMobile =
         await dbHelper.getTeacherMobileEmailMandatory();
+
+    mandatoryCustomerContactFirstLastName =
+    await dbHelper.getCustomerContactFirstLastNameMandatory();
+    debugPrint(
+        'mandatoryCustomerContactFirstLastName:$mandatoryCustomerContactFirstLastName');
 
     prefs = await SharedPreferences.getInstance();
     userId = await getUserId();
@@ -872,56 +879,46 @@ class CustomerContactFormState extends State<CustomerContactForm> {
   }
 
   Widget _buildTextField(
-    String label,
-    TextEditingController controller,
-    GlobalKey<FormFieldState> fieldKey,
-    FocusNode focusNode, {
-    int maxLines = 1,
-    double labelFontSize = 14.0,
-    double textFontSize = 14.0,
-  }) {
+      String label,
+      TextEditingController controller,
+      GlobalKey<FormFieldState> fieldKey,
+      FocusNode focusNode, {
+        int maxLines = 1,
+        double labelFontSize = 14.0,
+        double textFontSize = 14.0,
+      }) {
     bool isDateField = label == "Date of Birth" || label == "Anniversary";
+
     // Calculate the maximum selectable date for Date of Birth
     DateTime maxDate = label == "Date of Birth"
         ? DateTime.now().subtract(const Duration(days: 365 * 18))
         : DateTime.now();
 
     DateTime initialDate = label == "Date of Birth" ? maxDate : DateTime.now();
-    TextInputType inputType = TextInputType.text;
-    TextCapitalization textCapitalization = TextCapitalization.none;
-    if (label == 'Mobile Number' || label == 'Pin Code') {
-      inputType = TextInputType.number;
-    }
-    if (label == 'Email') {
-      inputType = TextInputType.emailAddress;
-    }
-    if (label == 'First Name' || label == 'Last Name') {
-      inputType = TextInputType.name;
-      textCapitalization = TextCapitalization.words;
-    }
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: InkWell(
         onTap: isDateField
             ? () async {
-                final DateTime? picked = await showDatePicker(
-                  context: context,
-                  initialDate: initialDate,
-                  firstDate: DateTime(1970, 1, 1),
-                  lastDate: maxDate,
-                  builder: (BuildContext context, Widget? child) {
-                    return Theme(
-                      data: ThemeData.light(),
-                      child: child!,
-                    );
-                  },
-                );
+          final DateTime? picked = await showDatePicker(
+            context: context,
+            initialDate: initialDate,
+            firstDate: DateTime(1970, 1, 1),
+            lastDate: maxDate,
+            builder: (BuildContext context, Widget? child) {
+              return Theme(
+                data: ThemeData.light(),
+                child: child!,
+              );
+            },
+          );
 
-                if (picked != null) {
-                  controller.text = DateFormat('dd MMM yyyy').format(picked);
-                  fieldKey.currentState?.validate();
-                }
-              }
+          if (picked != null) {
+            controller.text = DateFormat('dd MMM yyyy').format(picked);
+            fieldKey.currentState?.validate();
+          }
+        }
             : null,
         child: IgnorePointer(
           ignoring: isDateField,
@@ -929,9 +926,15 @@ class CustomerContactFormState extends State<CustomerContactForm> {
             key: fieldKey,
             style: TextStyle(fontSize: textFontSize),
             controller: controller,
-            keyboardType: inputType,
-            textCapitalization: textCapitalization,
-            inputFormatters: _getInputFormatters(label),
+            keyboardType: (label == 'Mobile Number' ||
+                label == 'Phone Number' ||
+                label == 'Phone' ||
+                label == 'Mobile' ||
+                label == 'Pin Code')
+                ? TextInputType.phone
+                : TextInputType.text,
+            inputFormatters: getInputFormatters(label),
+            focusNode: focusNode,
             decoration: InputDecoration(
               labelText: label,
               labelStyle: TextStyle(fontSize: labelFontSize),
@@ -942,21 +945,34 @@ class CustomerContactFormState extends State<CustomerContactForm> {
             textAlign: TextAlign.start,
             maxLines: maxLines,
             validator: (value) {
-              if ((value == null || value.isEmpty) &&
-                  (label == 'Last Name' ||
-                      (_addressController.text.isNotEmpty &&
-                          label == 'Pin Code'))) {
-                return 'Please enter $label';
-              } else if (label == 'Mobile Number') {
-                return _validatePhoneNumber(value);
-              } else if (label == 'Email') {
-                return _validateEmail(value);
-              } else if (label == 'Pin Code' &&
-                  _addressController.text.isNotEmpty &&
-                  value != null &&
-                  value.isNotEmpty &&
-                  value.length < 6) {
-                return 'Please enter valid $label';
+              if (_isSubmitted) {
+                if ((value == null || value.isEmpty) &&
+                    (label == 'First Name' || (label == 'Last Name'))) {
+                  return validateName(
+                      label, value, mandatoryCustomerContactFirstLastName);
+                } else if ((value == null || value.isEmpty) &&
+                    (_addressController.text.isNotEmpty &&
+                        label == 'Pin Code')) {
+                  return 'Please enter $label';
+                } else if (label == 'Mobile Number' ||
+                    label == 'Phone Number' ||
+                    label == 'Phone' ||
+                    label == 'Mobile') {
+                  return validatePhoneNumber(
+                      label, value, mandatorySettingEmailMobile);
+                } else if (label == 'Email' || label == 'Email Id') {
+                  return validateEmail(
+                      label,
+                      value,
+                      mandatorySettingEmailMobile,
+                      _phoneNumberController.text.isEmpty);
+                } else if (label == 'Pin Code' &&
+                    _addressController.text.isNotEmpty &&
+                    value != null &&
+                    value.isNotEmpty &&
+                    value.length < 6) {
+                  return 'Please enter valid $label';
+                }
               }
               return null;
             },
@@ -1507,38 +1523,5 @@ class CustomerContactFormState extends State<CustomerContactForm> {
         });
       }
     }
-  }
-
-  String? _validatePhoneNumber(String? value) {
-    if (mandatorySettingEmailMobile == 'M' ||
-        mandatorySettingEmailMobile == 'B') {
-      if (value == null || value.isEmpty) {
-        return 'Please enter Phone Number';
-      }
-      if (!Validator.isValidMobile(value)) {
-        return 'Please enter valid Phone Number';
-      }
-    }
-    return null;
-  }
-
-  String? _validateEmail(String? value) {
-    if (mandatorySettingEmailMobile == 'E' ||
-        mandatorySettingEmailMobile == 'B') {
-      if (value == null || value.isEmpty) {
-        return 'Please enter Email Id';
-      }
-      if (!Validator.isValidEmail(value)) {
-        return 'Please enter valid Email Id';
-      }
-    }
-    if (mandatorySettingEmailMobile == 'A') {
-      // Require at least one of Phone Number or Email
-      if ((value == null || value.isEmpty) &&
-          (_phoneNumberController.text.isEmpty)) {
-        return 'Please enter at least one of Phone Number or Email';
-      }
-    }
-    return null;
   }
 }

@@ -3343,6 +3343,7 @@ class CustomerListService {
       print('Request body: $body');
       print('Response body: ${response.body}');
       print('Response status: ${response.statusCode}');
+      print('token: $token');
     }
     if (response.statusCode == 200) {
       final jsonResponse = json.decode(response.body);

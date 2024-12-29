@@ -195,7 +195,7 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
     }
 
     Position position = await Geolocator.getCurrentPosition();
-    if(mounted) {
+    if (mounted) {
       setState(() {
         _currentPosition = LatLng(position.latitude, position.longitude);
         // _addressController.text = "${position.latitude}, ${position.longitude}";

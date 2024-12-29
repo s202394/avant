@@ -119,6 +119,7 @@ class CustomerContactFormState extends State<CustomerContactSchoolForm> {
   int contactId = 0;
 
   String? mandatorySettingEmailMobile;
+  String? mandatoryCustomerContactFirstLastName;
 
   bool hasCheckedForEdit = false;
 
@@ -188,6 +189,10 @@ class CustomerContactFormState extends State<CustomerContactSchoolForm> {
     mandatorySettingEmailMobile =
         await dbHelper.getTeacherMobileEmailMandatory();
     debugPrint('mandatorySettingEmailMobile:$mandatorySettingEmailMobile');
+    mandatoryCustomerContactFirstLastName =
+        await dbHelper.getCustomerContactFirstLastNameMandatory();
+    debugPrint(
+        'mandatoryCustomerContactFirstLastName:$mandatoryCustomerContactFirstLastName');
 
     prefs = await SharedPreferences.getInstance();
     userId = await getUserId();
@@ -981,6 +986,7 @@ class CustomerContactFormState extends State<CustomerContactSchoolForm> {
     double textFontSize = 14.0,
   }) {
     bool isDateField = label == "Date of Birth" || label == "Anniversary";
+
     // Calculate the maximum selectable date for Date of Birth
     DateTime maxDate = label == "Date of Birth"
         ? DateTime.now().subtract(const Duration(days: 365 * 18))
@@ -1018,10 +1024,15 @@ class CustomerContactFormState extends State<CustomerContactSchoolForm> {
             key: fieldKey,
             style: TextStyle(fontSize: textFontSize),
             controller: controller,
-            keyboardType: (label == 'Mobile Number' || label == 'Pin Code')
+            keyboardType: (label == 'Mobile Number' ||
+                    label == 'Phone Number' ||
+                    label == 'Phone' ||
+                    label == 'Mobile' ||
+                    label == 'Pin Code')
                 ? TextInputType.phone
                 : TextInputType.text,
-            inputFormatters: _getInputFormatters(label),
+            inputFormatters: getInputFormatters(label),
+            focusNode: focusNode,
             decoration: InputDecoration(
               labelText: label,
               labelStyle: TextStyle(fontSize: labelFontSize),
@@ -1034,14 +1045,25 @@ class CustomerContactFormState extends State<CustomerContactSchoolForm> {
             validator: (value) {
               if (_isSubmitted) {
                 if ((value == null || value.isEmpty) &&
-                    (label == 'Last Name' ||
-                        (_addressController.text.isNotEmpty &&
-                            label == 'Pin Code'))) {
+                    (label == 'First Name' || (label == 'Last Name'))) {
+                  return validateName(
+                      label, value, mandatoryCustomerContactFirstLastName);
+                } else if ((value == null || value.isEmpty) &&
+                    (_addressController.text.isNotEmpty &&
+                        label == 'Pin Code')) {
                   return 'Please enter $label';
-                } else if (label == 'Mobile Number') {
-                  return _validatePhoneNumber(value);
-                } else if (label == 'Email') {
-                  return _validateEmail(value);
+                } else if (label == 'Mobile Number' ||
+                    label == 'Phone Number' ||
+                    label == 'Phone' ||
+                    label == 'Mobile') {
+                  return validatePhoneNumber(
+                      label, value, mandatorySettingEmailMobile);
+                } else if (label == 'Email' || label == 'Email Id') {
+                  return validateEmail(
+                      label,
+                      value,
+                      mandatorySettingEmailMobile,
+                      _phoneNumberController.text.isEmpty);
                 } else if (label == 'Pin Code' &&
                     _addressController.text.isNotEmpty &&
                     value != null &&
