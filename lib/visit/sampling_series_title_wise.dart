@@ -506,7 +506,7 @@ class SamplingSeriesTitleWiseState extends State<SamplingSeriesTitleWise>
       ),
       bottomNavigationBar: Padding(
         padding: const EdgeInsets.all(8.0),
-        child: _cartBooksCount > 0 ? _buildTwoOptions() : _buildSingleOption(),
+        child: _cartBooksCount > 0 ? _buildThreeOption() : _buildTwoOptions(),
       ),
     );
   }
@@ -524,7 +524,7 @@ class SamplingSeriesTitleWiseState extends State<SamplingSeriesTitleWise>
               });
               if (_formKey.currentState?.validate() == true &&
                   _areDropdownsSelected()) {
-                _submitForm();
+                _submitForm(false);
               }
             },
             style: ElevatedButton.styleFrom(
@@ -532,7 +532,77 @@ class SamplingSeriesTitleWiseState extends State<SamplingSeriesTitleWise>
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
             ),
-            child: const CustomText('Next', color: Colors.white, fontSize: 14),
+            child: const CustomText('Add', color: Colors.white, fontSize: 14),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: ElevatedButton(
+            onPressed: () {
+              setState(() {
+                _submitted = true;
+              });
+              if (_formKey.currentState?.validate() == true &&
+                  _areDropdownsSelected()) {
+                _submitForm(true);
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            ),
+            child:
+                const CustomText('Add More', color: Colors.white, fontSize: 14),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // Widget to display when book count is greater than 0
+  Widget _buildThreeOption() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Expanded(
+          child: ElevatedButton(
+            onPressed: () {
+              setState(() {
+                _submitted = true;
+              });
+              if (_formKey.currentState?.validate() == true &&
+                  _areDropdownsSelected()) {
+                _submitForm(false);
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.blue,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            ),
+            child: const CustomText('Add', color: Colors.white, fontSize: 14),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: ElevatedButton(
+            onPressed: () {
+              setState(() {
+                _submitted = true;
+              });
+              if (_formKey.currentState?.validate() == true &&
+                  _areDropdownsSelected()) {
+                _submitForm(true);
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            ),
+            child:
+                const CustomText('Add More', color: Colors.white, fontSize: 14),
           ),
         ),
         const SizedBox(width: 8), // Spacing between the buttons
@@ -542,7 +612,7 @@ class SamplingSeriesTitleWiseState extends State<SamplingSeriesTitleWise>
               goToCart();
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.green,
+              backgroundColor: Colors.orange,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
             ),
@@ -551,27 +621,6 @@ class SamplingSeriesTitleWiseState extends State<SamplingSeriesTitleWise>
           ),
         ),
       ],
-    );
-  }
-
-  // Widget to display when book count is 0
-  Widget _buildSingleOption() {
-    return ElevatedButton(
-      onPressed: () {
-        setState(() {
-          _submitted = true;
-        });
-        if (_formKey.currentState?.validate() == true &&
-            _areDropdownsSelected()) {
-          _submitForm();
-        }
-      },
-      style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.blue,
-        foregroundColor: Colors.white,
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-      ),
-      child: const CustomText('Next', color: Colors.white),
     );
   }
 
@@ -630,7 +679,7 @@ class SamplingSeriesTitleWiseState extends State<SamplingSeriesTitleWise>
     return books.where((book) => book.quantity > 0).length;
   }
 
-  void _submitForm() {
+  void _submitForm(bool isAddMore) {
     if (kDebugMode) {
       print('Form submitted!');
     }
@@ -645,7 +694,11 @@ class SamplingSeriesTitleWiseState extends State<SamplingSeriesTitleWise>
       toastMessage.showToastMessage('Please add some books to continue');
       return;
     }
-    goToCart();
+    if (isAddMore) {
+      Navigator.of(context).pop(false);
+    } else {
+      goToCart();
+    }
   }
 
   bool _areDropdownsSelected() {

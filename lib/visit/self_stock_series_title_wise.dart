@@ -261,7 +261,7 @@ class SelfStockSeriesTitleWiseState extends State<SelfStockSeriesTitleWise>
       ),
       bottomNavigationBar: Padding(
         padding: const EdgeInsets.all(8.0),
-        child: _cartBooksCount > 0 ? _buildTwoOptions() : _buildSingleOption(),
+        child: _cartBooksCount > 0 ? _buildThreeOption() : _buildTwoOptions(),
       ),
     );
   }
@@ -275,7 +275,7 @@ class SelfStockSeriesTitleWiseState extends State<SelfStockSeriesTitleWise>
           child: ElevatedButton(
             onPressed: () {
               if (_formKey.currentState?.validate() == true) {
-                _submitForm();
+                _submitForm(false);
               }
             },
             style: ElevatedButton.styleFrom(
@@ -283,7 +283,65 @@ class SelfStockSeriesTitleWiseState extends State<SelfStockSeriesTitleWise>
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
             ),
-            child: const CustomText('Next', color: Colors.white, fontSize: 14),
+            child: const CustomText('Add', color: Colors.white, fontSize: 14),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: ElevatedButton(
+            onPressed: () {
+              if (_formKey.currentState?.validate() == true) {
+                _submitForm(true);
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            ),
+            child:
+                const CustomText('Add More', color: Colors.white, fontSize: 14),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // Widget to display when book count is greater than 0
+  Widget _buildThreeOption() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Expanded(
+          child: ElevatedButton(
+            onPressed: () {
+              if (_formKey.currentState?.validate() == true) {
+                _submitForm(false);
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.blue,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            ),
+            child: const CustomText('Add', color: Colors.white, fontSize: 14),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: ElevatedButton(
+            onPressed: () {
+              if (_formKey.currentState?.validate() == true) {
+                _submitForm(true);
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            ),
+            child:
+                const CustomText('Add More', color: Colors.white, fontSize: 14),
           ),
         ),
         const SizedBox(width: 8), // Spacing between the buttons
@@ -293,7 +351,7 @@ class SelfStockSeriesTitleWiseState extends State<SelfStockSeriesTitleWise>
               gotoCart();
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.green,
+              backgroundColor: Colors.orange,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
             ),
@@ -310,23 +368,6 @@ class SelfStockSeriesTitleWiseState extends State<SelfStockSeriesTitleWise>
     setState(() {
       _cartBooksCount = count;
     });
-  }
-
-  // Widget to display when book count is 0
-  Widget _buildSingleOption() {
-    return ElevatedButton(
-      onPressed: () {
-        if (_formKey.currentState?.validate() == true) {
-          _submitForm();
-        }
-      },
-      style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.blue,
-        foregroundColor: Colors.white,
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-      ),
-      child: const CustomText('Next', color: Colors.white),
-    );
   }
 
   Widget _noDataLayout() {
@@ -384,7 +425,7 @@ class SelfStockSeriesTitleWiseState extends State<SelfStockSeriesTitleWise>
     return books.where((book) => book.quantity > 0).length;
   }
 
-  void _submitForm() {
+  void _submitForm(bool isAddMore) {
     if (kDebugMode) {
       print('Form submitted!');
     }
@@ -400,7 +441,11 @@ class SelfStockSeriesTitleWiseState extends State<SelfStockSeriesTitleWise>
       toastMessage.showToastMessage('Please add some books to continue');
       return;
     }
-    gotoCart();
+    if (isAddMore) {
+      Navigator.of(context).pop(false);
+    } else {
+      gotoCart();
+    }
   }
 
   void gotoCart() {
