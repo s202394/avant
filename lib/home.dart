@@ -59,6 +59,8 @@ class HomePageState extends State<HomePage> with WidgetsBindingObserver {
   bool _hasInternet = true;
   bool isPunchedIn = false;
 
+  bool _isPermissionRequesting = false;
+
   Timer? _timer;
 
   @override
@@ -257,13 +259,17 @@ class HomePageState extends State<HomePage> with WidgetsBindingObserver {
   }
 
   Future<void> startForegroundService() async {
+    if (!mounted) {
+      return;
+    }
+    if (_isPermissionRequesting) return; // Prevent duplicate requests
+    _isPermissionRequesting = true;
+
     try {
-      // Check and request notification permission on Android
       if (await Permission.notification.isDenied) {
         PermissionStatus status = await Permission.notification.request();
 
         if (!status.isGranted) {
-          // Inform the user if permission is denied
           if (context.mounted) {
             showDialog(
               context: context,
@@ -284,10 +290,16 @@ class HomePageState extends State<HomePage> with WidgetsBindingObserver {
         }
       }
 
-      await FlutterForegroundTask.startService(
-          notificationTitle: 'DART CRM', notificationText: 'Location Tracking');
+      if (await Permission.notification.isGranted) {
+        await FlutterForegroundTask.startService(
+            notificationTitle: 'DART CRM',
+            notificationText: 'Location Tracking');
+        return;
+      }
     } catch (e) {
       debugPrint("Error starting foreground service: $e");
+    } finally {
+      _isPermissionRequesting = false; // Reset flag
     }
   }
 

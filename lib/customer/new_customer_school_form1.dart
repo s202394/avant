@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:avant/api/api_service.dart';
-import 'package:avant/common/common.dart';
 import 'package:avant/common/toast.dart';
 import 'package:avant/db/db_helper.dart';
 import 'package:avant/model/customer_entry_master_model.dart';
@@ -16,6 +15,7 @@ import 'package:location/location.dart' as loc;
 import '../common/location.dart';
 import '../common/utils.dart';
 import '../model/fetch_customer_details_model.dart';
+import '../model/login_model.dart';
 import '../views/common_app_bar.dart';
 import '../views/custom_text.dart';
 import 'package:geocoding/geocoding.dart';
@@ -25,6 +25,7 @@ class NewCustomerSchoolForm1 extends StatefulWidget {
   final String type;
   final bool isEdit;
   final String action;
+
 
   const NewCustomerSchoolForm1({
     super.key,
@@ -166,9 +167,9 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
     mandatorySetting = await dbHelper.getSchoolMobileEmailMandatory();
 
     prefs = await SharedPreferences.getInstance();
+    executiveId = await getExecutiveId() ?? 0;
     setState(() {
       token = prefs.getString('token') ?? '';
-      executiveId = prefs.getInt('executiveId') ?? 0;
       _cityAccess = prefs.getString('CityAccess') ?? '';
     });
   }
@@ -678,6 +679,7 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
               onChanged: (selected) {
                 setState(() {
                   _selectedCity = selected;
+                  _formKey.currentState!.validate();
                 });
               },
             ),
@@ -798,24 +800,24 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
           context,
           MaterialPageRoute(
             builder: (context) => NewCustomerSchoolForm2(
-              type: widget.type,
-              customerName: _customerNameController.text,
-              address: _addressController.text,
-              cityId: _selectedCity?.cityId ?? 0,
-              cityName: _selectedCity?.city ?? '',
-              pinCode: _pinCodeController.text,
-              phoneNumber: _phoneNumberController.text,
-              emailId: _emailIdController.text,
-              boardId: _selectedBoard?.boardId ?? 0,
-              chainSchoolId: _selectedChainSchool?.chainSchoolId ?? 0,
-              keyCustomer: (_selectedKeyCustomer ?? false) ? "Y" : "N",
-              customerStatus:
-                  (_selectedCustomerStatus ?? false) ? "Active" : "Inactive",
-              isEdit: widget.isEdit,
-              validated: validated,
-              customerDetailsSchoolResponse:
-                  widget.isEdit ? customerDetailsSchoolResponse : null,
-            ),
+                type: widget.type,
+                customerName: _customerNameController.text,
+                address: _addressController.text,
+                cityId: _selectedCity?.cityId ?? 0,
+                cityName: _selectedCity?.city ?? '',
+                pinCode: _pinCodeController.text,
+                phoneNumber: _phoneNumberController.text,
+                emailId: _emailIdController.text,
+                boardId: _selectedBoard?.boardId ?? 0,
+                chainSchoolId: _selectedChainSchool?.chainSchoolId ?? 0,
+                keyCustomer: (_selectedKeyCustomer ?? false) ? "Y" : "N",
+                customerStatus:
+                    (_selectedCustomerStatus ?? false) ? "Active" : "Inactive",
+                isEdit: widget.isEdit,
+                validated: validated,
+                customerDetailsSchoolResponse:
+                    widget.isEdit ? customerDetailsSchoolResponse : null,
+                ),
           ),
         );
       }
@@ -892,20 +894,17 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
           validator: (value) {
             if (_isSubmitted) {
               if (label == 'Email Id') {
-                if (value == null || value.isEmpty) {
-                  return null;
-                }
-                if (!Validator.isValidEmail(value)) {
-                  return 'Please enter valid $label';
-                }
+                return validateEmail(label, value, mandatorySetting,
+                    _phoneNumberController.text.isEmpty);
+              }
+
+              if (label == 'Phone Number') {
+                return validatePhoneNumber(label, value, mandatorySetting);
               }
               if (value == null || value.isEmpty) {
                 return 'Please enter $label';
               }
               if (label == 'Pin Code' && value.length < 6) {
-                return 'Please enter valid $label';
-              }
-              if (label == 'Phone Number' && !Validator.isValidMobile(value)) {
                 return 'Please enter valid $label';
               }
             }
@@ -1244,6 +1243,7 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
       _filteredDistricts = []; // Clear districts when country changes
       _filteredCities = []; // Clear cities when country changes
     });
+    _formKey.currentState!.validate();
   }
 
   void _onStateChanged(Geography? selected) {
@@ -1261,6 +1261,7 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
           .toList();
       _filteredCities = []; // Clear cities when state changes
     });
+    _formKey.currentState!.validate();
   }
 
   void _onDistrictChanged(Geography? selected) {
@@ -1276,6 +1277,7 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
               uniqueCityIds.add(geo.cityId)) // Only add unique cities
           .toList();
     });
+    _formKey.currentState!.validate();
   }
 
   Widget _buildDropdown({
@@ -1309,8 +1311,12 @@ class NewCustomerSchoolForm1State extends State<NewCustomerSchoolForm1> {
         labelStyle: TextStyle(fontSize: labelFontSize),
         border: const OutlineInputBorder(),
       ),
-      validator: (value) =>
-          value == null && _isSubmitted ? 'Please select $label' : null,
+      validator: (value) {
+        if (_isSubmitted && value == null) {
+          return 'Please select $label';
+        }
+        return null;
+      },
     );
   }
 

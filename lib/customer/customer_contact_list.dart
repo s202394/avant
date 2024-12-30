@@ -229,16 +229,16 @@ class CustomerContactListState extends State<CustomerContactList> {
               const SizedBox(width: 10),
               InkWell(
                 onTap: (contact.primaryContact.toLowerCase() == 'yes' &&
-                    contact.validationStatus.toLowerCase() == 'yes')
+                        contact.validationStatus.toLowerCase() == 'yes')
                     ? null
                     : () {
-                  deleteCustomerDialog(contact);
-                },
+                        deleteCustomerDialog(contact);
+                      },
                 child: Icon(
                   Icons.delete,
                   size: 30,
                   color: (contact.primaryContact.toLowerCase() == 'yes' &&
-                      contact.validationStatus.toLowerCase() == 'yes')
+                          contact.validationStatus.toLowerCase() == 'yes')
                       ? Colors.grey
                       : Colors.red,
                 ),
@@ -358,8 +358,11 @@ class CustomerContactListState extends State<CustomerContactList> {
 
   void navigateToContactForm(
       {required bool isEdit, ContactList? customer}) async {
-
     if (!await _checkInternetConnection()) return;
+
+    if (!mounted) {
+      return;
+    }
 
     final form = widget.type == 'School'
         ? CustomerContactSchoolForm(

@@ -37,7 +37,8 @@ String getCode(String? input) {
 List<TextInputFormatter> getInputFormatters(String label) {
   if (label == 'Phone Number' ||
       label == 'Mobile' ||
-      label == 'Mobile Number') {
+      label == 'Mobile Number' ||
+      label == 'Phone') {
     return [
       LengthLimitingTextInputFormatter(10),
       FilteringTextInputFormatter.digitsOnly,

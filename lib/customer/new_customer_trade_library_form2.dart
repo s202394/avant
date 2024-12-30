@@ -4,18 +4,18 @@ import 'package:avant/model/customer_entry_master_model.dart';
 import 'package:avant/model/login_model.dart';
 import 'package:avant/db/db_helper.dart';
 import 'package:avant/model/geography_model.dart';
-import 'package:avant/home.dart';
 import 'package:avant/service/location_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:avant/common/toast.dart';
 
+import '../common/utils.dart';
 import '../views/common_app_bar.dart';
 import '../views/custom_text.dart';
+import 'customer_list.dart';
 
 class NewCustomerTradeLibraryForm2 extends StatefulWidget {
   final String type;
@@ -401,7 +401,10 @@ class NewCustomerTradeLibraryForm2State
         print(
             "Latitude: ${position.latitude}, Longitude: ${position.longitude}");
       }
-
+      final pinCode = widget.pinCode.isNotEmpty ? int.parse(widget.pinCode) : 0;
+      final contactPinCode = _contactPinCodeController.text.isNotEmpty
+          ? int.parse(_contactPinCodeController.text)
+          : 0;
       final responseData = await CreateNewCustomerService().createNewCustomer(
           widget.type,
           widget.customerName,
@@ -410,7 +413,7 @@ class NewCustomerTradeLibraryForm2State
           widget.phoneNumber,
           widget.address,
           widget.cityId,
-          int.parse(widget.pinCode),
+          pinCode,
           widget.keyCustomer,
           widget.customerStatus,
           widget.customerCategoryId,
@@ -425,7 +428,7 @@ class NewCustomerTradeLibraryForm2State
           "Y",
           _contactAddressController.text,
           _selectedCity?.cityId ?? 0,
-          int.parse(_contactPinCodeController.text),
+          contactPinCode,
           _selectedSalutationId ?? 0,
           _selectedContactDesignationId ?? 0,
           position.latitude,
@@ -439,8 +442,10 @@ class NewCustomerTradeLibraryForm2State
           if (mounted) {
             Navigator.pushAndRemoveUntil(
               context,
-              MaterialPageRoute(builder: (context) => const HomePage()),
-              (Route<dynamic> route) => false,
+              MaterialPageRoute(
+                builder: (context) => CustomerList(type: widget.type),
+              ),
+              (route) => route.isFirst,
             );
           }
         } else {
@@ -565,7 +570,7 @@ class NewCustomerTradeLibraryForm2State
             keyboardType: (label == 'Mobile' || label == 'Pin Code')
                 ? TextInputType.phone
                 : TextInputType.text,
-            inputFormatters: _getInputFormatters(label),
+            inputFormatters: getInputFormatters(label),
             decoration: InputDecoration(
               labelText: label,
               labelStyle: TextStyle(fontSize: labelFontSize),
@@ -577,14 +582,22 @@ class NewCustomerTradeLibraryForm2State
             maxLines: maxLines,
             validator: (value) {
               if (label == 'Phone Number') {
-                return _validatePhoneNumber(value);
+                return validatePhoneNumber(label, value, mandatorySetting);
               } else if (label == 'Email Id') {
-                return _validateEmail(value);
-              } else if (value == null || value.isEmpty) {
+                return validateEmail(label, value, mandatorySetting,
+                    _phoneNumberController.text.isEmpty);
+              } else if ((value == null || value.isEmpty) &&
+                  (_contactAddressController.text.isNotEmpty &&
+                      label == 'Pin Code')) {
                 return 'Please enter $label';
-              } else if (label == 'Pin Code' && value.length < 6) {
-                return 'Please enter valid $label';
+              } else if ((value == null || value.isEmpty) &&
+                  (_contactAddressController.text.isNotEmpty &&
+                      label == 'Pin Code')) {
+                return 'Please enter $label';
               }
+              /*else if (value == null || value.isEmpty) {
+                return 'Please enter $label';
+              }*/
               return null;
             },
             onChanged: (value) {
@@ -596,37 +609,6 @@ class NewCustomerTradeLibraryForm2State
         ),
       ),
     );
-  }
-
-  List<TextInputFormatter> _getInputFormatters(String label) {
-    if (label == 'Mobile') {
-      return [
-        LengthLimitingTextInputFormatter(10),
-        FilteringTextInputFormatter.digitsOnly,
-      ];
-    } else if (label == 'Pin Code') {
-      return [
-        LengthLimitingTextInputFormatter(6),
-        FilteringTextInputFormatter.digitsOnly,
-      ];
-    } else if (label == 'Email') {
-      return [
-        FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9@._-]')),
-      ];
-    } else if (label == 'PAN') {
-      return [
-        LengthLimitingTextInputFormatter(10),
-        FilteringTextInputFormatter.allow(
-            RegExp(r'^[A-Z]{0,5}[0-9]{0,4}[A-Z]?$')),
-      ];
-    } else if (label == 'GST') {
-      return [
-        FilteringTextInputFormatter.allow(RegExp(
-            r'^[0-9]{0,2}[A-Z]{0,5}[0-9]{0,4}[A-Z]{0,1}[1-9A-Z]{0,1}Z?[0-9A-Z]{0,1}$')),
-      ];
-    } else {
-      return [];
-    }
   }
 
   Widget _buildDropdownFieldCity(
@@ -666,7 +648,8 @@ class NewCustomerTradeLibraryForm2State
           border: const OutlineInputBorder(),
         ),
         validator: (value) {
-          if (value == null || value.city.isEmpty) {
+          if ((value == null || value.city.isEmpty) &&
+              _contactAddressController.text.isNotEmpty) {
             return 'Please select $label';
           }
           return null;
@@ -687,36 +670,5 @@ class NewCustomerTradeLibraryForm2State
   Future<void> _initializeMandatorySettings() async {
     mandatorySetting = await dbHelper.getTeacherMobileEmailMandatory();
     setState(() {});
-  }
-
-  String? _validatePhoneNumber(String? value) {
-    if (mandatorySetting == 'M' || mandatorySetting == 'B') {
-      if (value == null || value.isEmpty) {
-        return 'Please enter Phone Number';
-      }
-      if (!Validator.isValidMobile(value)) {
-        return 'Please enter valid Phone Number';
-      }
-    }
-    return null;
-  }
-
-  String? _validateEmail(String? value) {
-    if (mandatorySetting == 'E' || mandatorySetting == 'B') {
-      if (value == null || value.isEmpty) {
-        return 'Please enter Email Id';
-      }
-      if (!Validator.isValidEmail(value)) {
-        return 'Please enter valid Email Id';
-      }
-    }
-    if (mandatorySetting == 'A') {
-      // Require at least one of Phone Number or Email
-      if ((value == null || value.isEmpty) &&
-          (_phoneNumberController.text.isEmpty)) {
-        return 'Please enter at least one of Phone Number or Email';
-      }
-    }
-    return null;
   }
 }

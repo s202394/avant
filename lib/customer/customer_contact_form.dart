@@ -9,7 +9,6 @@ import 'package:avant/model/geography_model.dart';
 import 'package:avant/model/login_model.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -182,16 +181,16 @@ class CustomerContactFormState extends State<CustomerContactForm> {
         await dbHelper.getTeacherMobileEmailMandatory();
 
     mandatoryCustomerContactFirstLastName =
-    await dbHelper.getCustomerContactFirstLastNameMandatory();
+        await dbHelper.getCustomerContactFirstLastNameMandatory();
     debugPrint(
         'mandatoryCustomerContactFirstLastName:$mandatoryCustomerContactFirstLastName');
 
     prefs = await SharedPreferences.getInstance();
     userId = await getUserId();
+    executiveId = await getExecutiveId() ?? 0;
     profileCode = await getProfileCode() ?? '';
     setState(() {
       token = prefs.getString('token') ?? '';
-      executiveId = prefs.getInt('executiveId') ?? 0;
       _cityAccess = prefs.getString('CityAccess') ?? '';
     });
   }
@@ -842,6 +841,7 @@ class CustomerContactFormState extends State<CustomerContactForm> {
     } else {
       // Focus on the first field with an error
       List<FocusNode> focusNodes = [
+        _firstNameFocusNode,
         _lastNameFocusNode,
         _emailIdFocusNode,
         _phoneNumberFocusNode,
@@ -858,35 +858,15 @@ class CustomerContactFormState extends State<CustomerContactForm> {
     }
   }
 
-  List<TextInputFormatter> _getInputFormatters(String label) {
-    if (label == 'Phone Number' || label == 'Mobile Number') {
-      return [
-        LengthLimitingTextInputFormatter(10),
-        FilteringTextInputFormatter.digitsOnly,
-      ];
-    } else if (label == 'Pin Code') {
-      return [
-        LengthLimitingTextInputFormatter(6),
-        FilteringTextInputFormatter.digitsOnly,
-      ];
-    } else if (label == 'Email Id') {
-      return [
-        FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9@._-]')),
-      ];
-    } else {
-      return [];
-    }
-  }
-
   Widget _buildTextField(
-      String label,
-      TextEditingController controller,
-      GlobalKey<FormFieldState> fieldKey,
-      FocusNode focusNode, {
-        int maxLines = 1,
-        double labelFontSize = 14.0,
-        double textFontSize = 14.0,
-      }) {
+    String label,
+    TextEditingController controller,
+    GlobalKey<FormFieldState> fieldKey,
+    FocusNode focusNode, {
+    int maxLines = 1,
+    double labelFontSize = 14.0,
+    double textFontSize = 14.0,
+  }) {
     bool isDateField = label == "Date of Birth" || label == "Anniversary";
 
     // Calculate the maximum selectable date for Date of Birth
@@ -901,24 +881,24 @@ class CustomerContactFormState extends State<CustomerContactForm> {
       child: InkWell(
         onTap: isDateField
             ? () async {
-          final DateTime? picked = await showDatePicker(
-            context: context,
-            initialDate: initialDate,
-            firstDate: DateTime(1970, 1, 1),
-            lastDate: maxDate,
-            builder: (BuildContext context, Widget? child) {
-              return Theme(
-                data: ThemeData.light(),
-                child: child!,
-              );
-            },
-          );
+                final DateTime? picked = await showDatePicker(
+                  context: context,
+                  initialDate: initialDate,
+                  firstDate: DateTime(1970, 1, 1),
+                  lastDate: maxDate,
+                  builder: (BuildContext context, Widget? child) {
+                    return Theme(
+                      data: ThemeData.light(),
+                      child: child!,
+                    );
+                  },
+                );
 
-          if (picked != null) {
-            controller.text = DateFormat('dd MMM yyyy').format(picked);
-            fieldKey.currentState?.validate();
-          }
-        }
+                if (picked != null) {
+                  controller.text = DateFormat('dd MMM yyyy').format(picked);
+                  fieldKey.currentState?.validate();
+                }
+              }
             : null,
         child: IgnorePointer(
           ignoring: isDateField,
@@ -927,10 +907,10 @@ class CustomerContactFormState extends State<CustomerContactForm> {
             style: TextStyle(fontSize: textFontSize),
             controller: controller,
             keyboardType: (label == 'Mobile Number' ||
-                label == 'Phone Number' ||
-                label == 'Phone' ||
-                label == 'Mobile' ||
-                label == 'Pin Code')
+                    label == 'Phone Number' ||
+                    label == 'Phone' ||
+                    label == 'Mobile' ||
+                    label == 'Pin Code')
                 ? TextInputType.phone
                 : TextInputType.text,
             inputFormatters: getInputFormatters(label),
@@ -966,12 +946,6 @@ class CustomerContactFormState extends State<CustomerContactForm> {
                       value,
                       mandatorySettingEmailMobile,
                       _phoneNumberController.text.isEmpty);
-                } else if (label == 'Pin Code' &&
-                    _addressController.text.isNotEmpty &&
-                    value != null &&
-                    value.isNotEmpty &&
-                    value.length < 6) {
-                  return 'Please enter valid $label';
                 }
               }
               return null;

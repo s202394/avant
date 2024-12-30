@@ -96,6 +96,7 @@ flutter:
    - images/light-2.png
    - images/travel.png
    - images/ic_book.png
+   - images/group.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware

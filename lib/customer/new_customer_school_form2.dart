@@ -11,6 +11,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../common/utils.dart';
 import '../model/fetch_customer_details_model.dart';
 import '../model/geography_model.dart';
+import '../model/login_model.dart';
 import '../model/search_bookseller_response.dart';
 import '../views/common_app_bar.dart';
 import '../views/custom_text.dart';
@@ -32,6 +33,7 @@ class NewCustomerSchoolForm2 extends StatefulWidget {
   final String validated;
   final FetchCustomerDetailsSchoolResponse? customerDetailsSchoolResponse;
 
+
   const NewCustomerSchoolForm2(
       {super.key,
       required this.type,
@@ -48,7 +50,7 @@ class NewCustomerSchoolForm2 extends StatefulWidget {
       required this.customerStatus,
       required this.isEdit,
       required this.validated,
-      this.customerDetailsSchoolResponse});
+      this.customerDetailsSchoolResponse,});
 
   @override
   NewCustomerSchoolForm2State createState() => NewCustomerSchoolForm2State();
@@ -139,9 +141,9 @@ class NewCustomerSchoolForm2State extends State<NewCustomerSchoolForm2> {
 
   void initialize() async {
     prefs = await SharedPreferences.getInstance();
+    executiveId = await getExecutiveId() ?? 0;
     setState(() {
       token = prefs.getString('token') ?? '';
-      executiveId = prefs.getInt('executiveId') ?? 0;
       _cityAccess = prefs.getString('CityAccess') ?? '';
     });
   }
@@ -1047,7 +1049,8 @@ class NewCustomerSchoolForm2State extends State<NewCustomerSchoolForm2> {
             isEdit: widget.isEdit,
             validated: widget.validated,
             customerDetailsSchoolResponse:
-                widget.customerDetailsSchoolResponse),
+                widget.customerDetailsSchoolResponse,
+        ),
       ),
     );
   }

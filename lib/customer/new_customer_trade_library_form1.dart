@@ -3,22 +3,20 @@ import 'dart:async';
 import 'package:avant/api/api_service.dart';
 import 'package:avant/common/common.dart';
 import 'package:avant/common/toast.dart';
-import 'package:avant/customer/customer_contact_list.dart';
+import 'package:avant/customer/new_customer_trade_library_form2.dart';
 import 'package:avant/db/db_helper.dart';
 import 'package:avant/model/customer_entry_master_model.dart';
 import 'package:avant/model/geography_model.dart';
-import 'package:avant/customer/new_customer_trade_library_form2.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:location/location.dart' as loc;
+import 'package:shared_preferences/shared_preferences.dart';
+
 import '../common/location.dart';
 import '../common/utils.dart';
-import '../home.dart';
 import '../model/fetch_customer_details_model.dart';
 import '../model/login_model.dart';
 import '../service/location_service.dart';
@@ -177,10 +175,10 @@ class NewCustomerTradeLibraryForm1State
     prefs = await SharedPreferences.getInstance();
 
     userId = await getUserId();
+    executiveId = await getExecutiveId() ?? 0;
 
     setState(() {
       token = prefs.getString('token') ?? '';
-      executiveId = prefs.getInt('executiveId') ?? 0;
       _cityAccess = prefs.getString('CityAccess') ?? '';
     });
   }
@@ -208,9 +206,11 @@ class NewCustomerTradeLibraryForm1State
 
     Position position = await Geolocator.getCurrentPosition();
     setState(() {
-      _currentPosition = LatLng(position.latitude, position.longitude);
-      // _addressController.text = "${position.latitude}, ${position.longitude}";
-      _getUserLocation();
+      if (mounted) {
+        _currentPosition = LatLng(position.latitude, position.longitude);
+        // _addressController.text = "${position.latitude}, ${position.longitude}";
+        _getUserLocation();
+      }
     });
   }
 
@@ -693,6 +693,7 @@ class NewCustomerTradeLibraryForm1State
                 setState(() {
                   _selectedCity = selected;
                 });
+                _formKey.currentState!.validate();
               },
             ),
             const SizedBox(height: 8),
@@ -786,29 +787,6 @@ class NewCustomerTradeLibraryForm1State
                 ),
               ],
             ),
-            Visibility(
-              visible: widget.isEdit,
-              child: GestureDetector(
-                onTap: () {
-                  goToContact();
-                },
-                child: const Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    Text(
-                      "Contact",
-                      style: TextStyle(
-                        fontSize: 30,
-                        color: Colors.blue,
-                        decoration: TextDecoration.underline,
-                        decorationColor: Colors.blue,
-                        decorationThickness: 2,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
             const SizedBox(height: 16.0),
             GestureDetector(
               onTap: () {
@@ -894,38 +872,6 @@ class NewCustomerTradeLibraryForm1State
     }
   }
 
-  List<TextInputFormatter> _getInputFormatters(String label) {
-    if (label == 'Phone Number' || label == 'Mobile') {
-      return [
-        LengthLimitingTextInputFormatter(10),
-        FilteringTextInputFormatter.digitsOnly,
-      ];
-    } else if (label == 'Pin Code') {
-      return [
-        LengthLimitingTextInputFormatter(6),
-        FilteringTextInputFormatter.digitsOnly,
-      ];
-    } else if (label == 'PAN') {
-      return [
-        LengthLimitingTextInputFormatter(10),
-        FilteringTextInputFormatter.allow(
-            RegExp(r'^[A-Z]{0,5}[0-9]{0,4}[A-Z]?$')),
-      ];
-    } else if (label == 'Email Id') {
-      return [
-        FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9@._-]')),
-      ];
-    } else if (label == 'GST') {
-      return [
-        FilteringTextInputFormatter.allow(RegExp(
-            r'^[0-9]{0,2}[A-Z]{0,5}[0-9]{0,4}[A-Z]{0,1}[1-9A-Z]{0,1}Z?[0-9A-Z]{0,1}$')),
-        // Enforces GST format
-      ];
-    } else {
-      return [];
-    }
-  }
-
   Widget _buildTextField(
     String label,
     TextEditingController controller,
@@ -965,10 +911,12 @@ class NewCustomerTradeLibraryForm1State
               if (label == 'GST' && value.length < 15) {
                 return 'Please enter valid $label';
               }
-            } else if (label == 'Phone Number') {
-              return _validatePhoneNumber(value);
+            }
+            if (label == 'Phone Number') {
+              return validatePhoneNumber(label, value, mandatorySetting);
             } else if (label == 'Email Id') {
-              return _validateEmail(value);
+              return validateEmail(label, value, mandatorySetting,
+                  _phoneNumberController.text.isEmpty);
             } else if (value == null || value.isEmpty) {
               return 'Please enter $label';
             } else if (label == 'Pin Code' && value.length < 6) {
@@ -990,41 +938,10 @@ class NewCustomerTradeLibraryForm1State
           textCapitalization: (label == 'PAN' || label == 'GST')
               ? TextCapitalization.characters
               : TextCapitalization.none,
-          inputFormatters: _getInputFormatters(label),
+          inputFormatters: getInputFormatters(label),
         ),
       ),
     );
-  }
-
-  String? _validatePhoneNumber(String? value) {
-    if (mandatorySetting == 'M' || mandatorySetting == 'B') {
-      if (value == null || value.isEmpty) {
-        return 'Please enter Phone Number';
-      }
-      if (!Validator.isValidMobile(value)) {
-        return 'Please enter valid Phone Number';
-      }
-    }
-    return null;
-  }
-
-  String? _validateEmail(String? value) {
-    if (mandatorySetting == 'E' || mandatorySetting == 'B') {
-      if (value == null || value.isEmpty) {
-        return 'Please enter Email Id';
-      }
-      if (!Validator.isValidEmail(value)) {
-        return 'Please enter valid Email Id';
-      }
-    }
-    if (mandatorySetting == 'A') {
-      // Require at least one of Phone Number or Email
-      if ((value == null || value.isEmpty) &&
-          (_phoneNumberController.text.isEmpty)) {
-        return 'Please enter at least one of Phone Number or Email';
-      }
-    }
-    return null;
   }
 
   Future<void> checkForEdit() async {
@@ -1055,6 +972,8 @@ class NewCustomerTradeLibraryForm1State
     _pinCodeController.text = details.pinCode;
     _phoneNumberController.text = details.mobile;
     _emailIdController.text = details.emailId;
+    _panController.text = details.panNumber;
+    _gstController.text = details.gstNumber;
 
     _selectedKeyCustomer = details.keyCustomer == 'Y';
     _selectedCustomerStatus = details.customerStatus == 'Active';
@@ -1221,6 +1140,7 @@ class NewCustomerTradeLibraryForm1State
       _filteredDistricts = []; // Clear districts when country changes
       _filteredCities = []; // Clear cities when country changes
     });
+    _formKey.currentState!.validate();
   }
 
   void _onStateChanged(Geography? selected) {
@@ -1238,6 +1158,7 @@ class NewCustomerTradeLibraryForm1State
           .toList();
       _filteredCities = []; // Clear cities when state changes
     });
+    _formKey.currentState!.validate();
   }
 
   void _onDistrictChanged(Geography? selected) {
@@ -1253,6 +1174,7 @@ class NewCustomerTradeLibraryForm1State
               uniqueCityIds.add(geo.cityId)) // Only add unique cities
           .toList();
     });
+    _formKey.currentState!.validate();
   }
 
   Widget _buildDropdown({
@@ -1424,6 +1346,15 @@ class NewCustomerTradeLibraryForm1State
       if (kDebugMode) {
         print(
             "Latitude: ${position.latitude}, Longitude: ${position.longitude}");
+        print(
+            'xmlAccountTableExecutiveId:${customerDetails?.toJson().toString()}');
+        print('executiveId:$executiveId');
+      }
+
+      String xmlAccountTableExecutiveId =
+          customerDetails?.xmlAccountTableExecutiveId ?? '$executiveId';
+      if (xmlAccountTableExecutiveId.isEmpty) {
+        xmlAccountTableExecutiveId = '$executiveId';
       }
 
       final responseData = await UpdateCustomerService().updateCustomer(
@@ -1439,7 +1370,7 @@ class NewCustomerTradeLibraryForm1State
           (_selectedKeyCustomer ?? false) ? "Y" : "N",
           (_selectedCustomerStatus ?? false) ? "Active" : "Inactive",
           createDynamicXml(_selectedCustomerCategoryWithItems),
-          customerDetails?.xmlAccountTableExecutiveId ?? '',
+          xmlAccountTableExecutiveId,
           "<CustomerComment/>",
           userId ?? 0,
           position.latitude,
@@ -1455,11 +1386,7 @@ class NewCustomerTradeLibraryForm1State
         if (s.isNotEmpty || w.isNotEmpty) {
           _toastMessage.showInfoToastMessage(s);
           if (mounted) {
-            Navigator.pushAndRemoveUntil(
-              context,
-              MaterialPageRoute(builder: (context) => const HomePage()),
-              (Route<dynamic> route) => false,
-            );
+            Navigator.of(context).pop(true);
           }
         } else {
           if (kDebugMode) {
@@ -1513,17 +1440,5 @@ class NewCustomerTradeLibraryForm1State
       return false;
     }
     return true;
-  }
-
-  void goToContact() async {
-    if (!await _checkInternetConnection()) return;
-
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => CustomerContactList(
-            type: widget.type, customerId: customerId, validated: validated),
-      ),
-    );
   }
 }

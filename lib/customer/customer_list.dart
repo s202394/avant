@@ -14,6 +14,7 @@ import '../model/login_model.dart';
 import '../views/common_app_bar.dart';
 import '../views/custom_text.dart';
 import '../views/rich_text.dart';
+import 'customer_contact_list.dart';
 import 'new_customer_trade_library_form1.dart';
 
 class CustomerList extends StatefulWidget {
@@ -207,24 +208,29 @@ class CustomerListState extends State<CustomerList> {
                   labelFontSize: 14, valueFontSize: 12),
             ],
           ),
-          trailing: Column(
+          trailing: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               InkWell(
                 onTap: () {
-                  if (kDebugMode) {
-                    print('Edit tapped');
-                  }
                   editCustomer(customer);
                 },
                 child: const Icon(Icons.edit, size: 20, color: Colors.blue),
               ),
-              const SizedBox(height: 10),
+              const SizedBox(width: 10),
               InkWell(
                 onTap: () {
                   deleteCustomerDialog(customer);
                 },
                 child: const Icon(Icons.delete, size: 20, color: Colors.red),
+              ),
+              const SizedBox(width: 10),
+              InkWell(
+                onTap: () {
+                  goToContact(customer);
+                },
+                child: Image.asset('images/group.png',
+                    height: 20, width: 20, color: Colors.green),
               ),
             ],
           ),
@@ -322,19 +328,23 @@ class CustomerListState extends State<CustomerList> {
     if (!mounted) {
       return;
     }
-    if (widget.type == 'Trade' || widget.type == 'Library') {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-            builder: (context) =>
-                NewCustomerTradeLibraryForm1(type: widget.type)),
-      );
-    } else {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-            builder: (context) => NewCustomerSchoolForm1(type: widget.type)),
-      );
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => widget.type == 'Trade' || widget.type == 'Library'
+            ? NewCustomerTradeLibraryForm1(type: widget.type)
+            : NewCustomerSchoolForm1(type: widget.type),
+      ),
+    );
+
+    // Refresh the list if the result is true
+    if (result == true) {
+      setState(() {
+        customerList.clear();
+        pageNumber = 1;
+        hasMore = true;
+      });
+      _fetchCustomerData();
     }
   }
 
@@ -343,20 +353,49 @@ class CustomerListState extends State<CustomerList> {
     if (!mounted) {
       return;
     }
-    if (widget.type == 'Trade' || widget.type == 'Library') {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-            builder: (context) => NewCustomerTradeLibraryForm1(
-                type: widget.type, isEdit: true, action: customer.action)),
-      );
-    } else {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-            builder: (context) => NewCustomerSchoolForm1(
-                type: widget.type, isEdit: true, action: customer.action)),
-      );
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => widget.type == 'Trade' || widget.type == 'Library'
+            ? NewCustomerTradeLibraryForm1(
+                type: widget.type,
+                isEdit: true,
+                action: customer.action,
+              )
+            : NewCustomerSchoolForm1(
+                type: widget.type,
+                isEdit: true,
+                action: customer.action,
+              ),
+      ),
+    );
+
+    // Refresh the list if the result is true
+    if (result == true) {
+      setState(() {
+        customerList.clear();
+        pageNumber = 1;
+        hasMore = true;
+      });
+      _fetchCustomerData();
     }
+  }
+
+  void goToContact(CommonCustomerList customer) async {
+    if (!await _checkInternetConnection()) return;
+
+    if (!mounted) {
+      return;
+    }
+    int customerId = extractNumericPart(customer.action);
+    String validated = extractStringPart(customer.action);
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => CustomerContactList(
+            type: widget.type, customerId: customerId, validated: validated),
+      ),
+    );
   }
 }

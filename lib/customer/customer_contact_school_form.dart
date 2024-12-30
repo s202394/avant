@@ -195,9 +195,9 @@ class CustomerContactFormState extends State<CustomerContactSchoolForm> {
 
     prefs = await SharedPreferences.getInstance();
     userId = await getUserId();
+    executiveId = await getExecutiveId() ?? 0;
     setState(() {
       token = prefs.getString('token') ?? '';
-      executiveId = prefs.getInt('executiveId') ?? 0;
       _cityAccess = prefs.getString('CityAccess') ?? '';
     });
   }
