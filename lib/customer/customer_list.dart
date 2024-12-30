@@ -319,7 +319,10 @@ class CustomerListState extends State<CustomerList> {
 
   void addCustomer() async {
     if (!await _checkInternetConnection()) return;
-    if (widget.type == 'Trade') {
+    if (!mounted) {
+      return;
+    }
+    if (widget.type == 'Trade' || widget.type == 'Library') {
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -337,6 +340,9 @@ class CustomerListState extends State<CustomerList> {
 
   void editCustomer(CommonCustomerList customer) async {
     if (!await _checkInternetConnection()) return;
+    if (!mounted) {
+      return;
+    }
     if (widget.type == 'Trade' || widget.type == 'Library') {
       Navigator.push(
         context,

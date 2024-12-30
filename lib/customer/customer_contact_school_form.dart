@@ -9,7 +9,6 @@ import 'package:avant/model/customer_entry_master_model.dart';
 import 'package:avant/model/geography_model.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -956,26 +955,6 @@ class CustomerContactFormState extends State<CustomerContactSchoolForm> {
     }
   }
 
-  List<TextInputFormatter> _getInputFormatters(String label) {
-    if (label == 'Mobile Number') {
-      return [
-        LengthLimitingTextInputFormatter(10),
-        FilteringTextInputFormatter.digitsOnly,
-      ];
-    } else if (label == 'Pin Code') {
-      return [
-        LengthLimitingTextInputFormatter(6),
-        FilteringTextInputFormatter.digitsOnly,
-      ];
-    } else if (label == 'Email') {
-      return [
-        FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9@._-]')),
-      ];
-    } else {
-      return [];
-    }
-  }
-
   Widget _buildTextField(
     String label,
     TextEditingController controller,
@@ -1624,39 +1603,6 @@ class CustomerContactFormState extends State<CustomerContactSchoolForm> {
     }
   }
 
-  String? _validatePhoneNumber(String? value) {
-    if (mandatorySettingEmailMobile == 'M' ||
-        mandatorySettingEmailMobile == 'B') {
-      if (value == null || value.isEmpty) {
-        return 'Please enter Phone Number';
-      }
-      if (!Validator.isValidMobile(value)) {
-        return 'Please enter valid Phone Number';
-      }
-    }
-    return null;
-  }
-
-  String? _validateEmail(String? value) {
-    if (mandatorySettingEmailMobile == 'E' ||
-        mandatorySettingEmailMobile == 'B') {
-      if (value == null || value.isEmpty) {
-        return 'Please enter Email Id';
-      }
-      if (!Validator.isValidEmail(value)) {
-        return 'Please enter valid Email Id';
-      }
-    }
-    if (mandatorySettingEmailMobile == 'A') {
-      // Require at least one of Phone Number or Email
-      if ((value == null || value.isEmpty) &&
-          (_phoneNumberController.text.isEmpty)) {
-        return 'Please enter at least one of Mobile Number or Email';
-      }
-    }
-    return null;
-  }
-
   void submitContact() async {
     FocusScope.of(context).unfocus();
 
@@ -1756,7 +1702,7 @@ class CustomerContactFormState extends State<CustomerContactSchoolForm> {
 
           // Transform decisionMaker to "Y" for "Yes" and "N" for "No"
           String decisionValue = row.decisionMaker == "Yes" ? "Y" : "N";
-          xml.write('<DecisionId>${decisionValue}</DecisionId>');
+          xml.write('<DecisionId>$decisionValue</DecisionId>');
 
           xml.write('</data_CCD>');
         }

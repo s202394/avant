@@ -135,6 +135,7 @@ class NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
 
   bool _isLoading = false;
 
+  final Map<int, TextEditingController> _gridControllers = {};
   final Map<int, String> _classValues = {};
 
   bool hasCheckedForEdit = false;
@@ -256,6 +257,10 @@ class NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
     _emailIdController.dispose();
     _dobController.dispose();
     _anniversaryController.dispose();
+
+    for (var controller in _gridControllers.values) {
+      controller.dispose();
+    }
     super.dispose();
   }
 
@@ -409,13 +414,17 @@ class NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
                     final classItem = data.classesList[index];
                     final isEnabled = _isClassInRange(classItem);
 
-                    // Controller for the TextField
-                    final TextEditingController controller =
-                        TextEditingController(
-                      text: isEnabled
-                          ? _classValues[classItem.classNumId] ?? ''
-                          : '0',
-                    );
+                    // Initialize or reuse the controller
+                    if (!_gridControllers.containsKey(classItem.classNumId)) {
+                      _gridControllers[classItem.classNumId] =
+                          TextEditingController(
+                        text: isEnabled
+                            ? _classValues[classItem.classNumId] ?? ''
+                            : '0',
+                      );
+                    }
+
+                    final controller = _gridControllers[classItem.classNumId]!;
 
                     return Row(
                       children: [
@@ -1065,7 +1074,7 @@ class NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
             validator: (value) {
               if ((value == null || value.isEmpty) &&
                   (label == 'Contact First Name' ||
-                      (label == 'Contact Last Name'))) {
+                      label == 'Contact Last Name')) {
                 return validateName(
                     label, value, mandatoryCustomerContactFirstLastName);
               } else if ((value == null || value.isEmpty) &&
@@ -1160,14 +1169,26 @@ class NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
     if (customerData != null) {
       for (final enrolment in customerData.enrolmentList) {
         _classValues[enrolment.classNumId] = enrolment.enrolValue.toString();
+
+        // Update the controller if it already exists
+        if (_gridControllers.containsKey(enrolment.classNumId)) {
+          _gridControllers[enrolment.classNumId]!.text = enrolment.enrolValue.toString();
+        } else {
+          // Initialize a new controller if not present
+          _gridControllers[enrolment.classNumId] = TextEditingController(
+            text: enrolment.enrolValue.toString(),
+          );
+        }
       }
-      setState(() {});
+      setState(() {}); // Trigger a UI rebuild
     }
   }
 
   void goToContact() async {
     if (!await _checkInternetConnection()) return;
-
+    if (!mounted) {
+      return;
+    }
     Navigator.push(
       context,
       MaterialPageRoute(

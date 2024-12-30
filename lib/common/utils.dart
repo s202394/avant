@@ -69,16 +69,21 @@ List<TextInputFormatter> getInputFormatters(String label) {
 }
 
 String? validateName(String label, String? value, String? mandatory) {
-  if (mandatory == 'F' && label == 'Contact First Name') {
+  if (mandatory == 'F' &&
+      (label == 'Contact First Name' || label == 'First Name')) {
     if (value == null || value.isEmpty) {
       return 'Please enter $label';
     }
-  } else if (mandatory == 'L' && label == 'Contact Last Name') {
+  } else if (mandatory == 'L' &&
+      (label == 'Contact Last Name' || label == 'Last Name')) {
     if (value == null || value.isEmpty) {
       return 'Please enter $label';
     }
   } else if (mandatory == 'B') {
-    if ((label == 'Contact First Name' || label == 'Contact Last Name') &&
+    if ((label == 'Contact First Name' ||
+            label == 'Contact Last Name' ||
+            label == 'First Name' ||
+            label == 'Last Name') &&
         (value == null || value.isEmpty)) {
       return 'Please enter $label';
     }
