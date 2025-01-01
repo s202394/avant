@@ -1,4 +1,5 @@
 import 'package:avant/views/custom_text.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 class MultiSelectDropdown<T> extends StatefulWidget {
@@ -33,6 +34,16 @@ class MultiSelectDropdownState<T> extends State<MultiSelectDropdown<T>> {
   void initState() {
     super.initState();
     _selectedItems = List.from(widget.selectedItems);
+  }
+
+  @override
+  void didUpdateWidget(covariant MultiSelectDropdown<T> oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!listEquals(oldWidget.selectedItems, widget.selectedItems)) {
+      setState(() {
+        _selectedItems = List.from(widget.selectedItems);
+      });
+    }
   }
 
   @override

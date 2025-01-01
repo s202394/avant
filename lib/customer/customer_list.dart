@@ -394,7 +394,11 @@ class CustomerListState extends State<CustomerList> {
       context,
       MaterialPageRoute(
         builder: (context) => CustomerContactList(
-            type: widget.type, customerId: customerId, validated: validated),
+          type: widget.type,
+          customerId: customerId,
+          validated: validated,
+          validationStatus: customer.validationStatus,
+        ),
       ),
     );
   }

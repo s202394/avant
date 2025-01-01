@@ -19,12 +19,15 @@ class CustomerContactList extends StatefulWidget {
   final String type;
   final int customerId;
   final String validated;
+  final String validationStatus;
 
-  const CustomerContactList(
-      {super.key,
-      required this.type,
-      required this.customerId,
-      required this.validated});
+  const CustomerContactList({
+    super.key,
+    required this.type,
+    required this.customerId,
+    required this.validated,
+    required this.validationStatus,
+  });
 
   @override
   CustomerContactListState createState() => CustomerContactListState();
@@ -134,50 +137,52 @@ class CustomerContactListState extends State<CustomerContactList> {
     }
 
     return Scaffold(
-      appBar: const CommonAppBar(title: 'List Of Contacts'),
-      body: RefreshIndicator(
-        onRefresh: _refreshContactData,
-        child: contactList.isEmpty && !isLoading
-            ? const Center(
-                child: Text('No contact found.'),
-              )
-            : NotificationListener<ScrollNotification>(
-                onNotification: (scrollInfo) {
-                  if (scrollInfo.metrics.pixels ==
-                          scrollInfo.metrics.maxScrollExtent &&
-                      hasMore &&
-                      !isLoading) {
-                    _fetchContactData();
-                  }
-                  return true;
-                },
-                child: ListView.builder(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  // Ensures ListView is scrollable
-                  itemCount: contactList.length + (hasMore ? 1 : 0),
-                  itemBuilder: (context, index) {
-                    if (index == contactList.length) {
-                      return const Center(
-                        child: Padding(
-                          padding: EdgeInsets.all(8.0),
-                          child: CircularProgressIndicator(),
-                        ),
-                      );
+        appBar: const CommonAppBar(title: 'List Of Contacts'),
+        body: RefreshIndicator(
+          onRefresh: _refreshContactData,
+          child: contactList.isEmpty && !isLoading
+              ? const Center(
+                  child: Text('No contact found.'),
+                )
+              : NotificationListener<ScrollNotification>(
+                  onNotification: (scrollInfo) {
+                    if (scrollInfo.metrics.pixels ==
+                            scrollInfo.metrics.maxScrollExtent &&
+                        hasMore &&
+                        !isLoading) {
+                      _fetchContactData();
                     }
-                    var contact = contactList[index];
-                    return _buildContactTile(contact);
+                    return true;
                   },
+                  child: ListView.builder(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    // Ensures ListView is scrollable
+                    itemCount: contactList.length + (hasMore ? 1 : 0),
+                    itemBuilder: (context, index) {
+                      if (index == contactList.length) {
+                        return const Center(
+                          child: Padding(
+                            padding: EdgeInsets.all(8.0),
+                            child: CircularProgressIndicator(),
+                          ),
+                        );
+                      }
+                      var contact = contactList[index];
+                      return _buildContactTile(contact);
+                    },
+                  ),
                 ),
-              ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          addContact();
-        },
-        backgroundColor: Colors.blue,
-        child: const Icon(Icons.add, color: Colors.white),
-      ),
-    );
+        ),
+        floatingActionButton: Visibility(
+          visible: widget.validationStatus == 'Yes',
+          child: FloatingActionButton(
+            onPressed: () {
+              addContact();
+            },
+            backgroundColor: Colors.blue,
+            child: const Icon(Icons.add, color: Colors.white),
+          ),
+        ));
   }
 
   Future<void> _refreshContactData() async {

@@ -9,14 +9,11 @@ import 'package:avant/model/customer_entry_master_model.dart';
 import 'package:avant/model/geography_model.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:location/location.dart' as loc;
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../common/location.dart';
 import '../common/utils.dart';
+import '../map/my_map_widget.dart';
 import '../model/fetch_customer_details_model.dart';
 import '../model/login_model.dart';
 import '../service/location_service.dart';
@@ -81,10 +78,6 @@ class NewCustomerTradeLibraryForm1State
   final FocusNode _panFocusNode = FocusNode();
   final FocusNode _gstFocusNode = FocusNode();
 
-  late GoogleMapController mapController;
-  LatLng? _currentPosition;
-  Marker? _currentMarker;
-
   Geography? _selectedCountry;
   Geography? _selectedState;
   Geography? _selectedDistrict;
@@ -112,9 +105,13 @@ class NewCustomerTradeLibraryForm1State
   String? mandatorySetting;
 
   bool _isLoading = false;
+  bool _isSubmitted = false;
+
   bool isMapControllerInitialized = false;
   int retryCount = 0;
   bool hasCheckedForEdit = false;
+
+  final GlobalKey<MyMapWidgetState> _mapKey = GlobalKey<MyMapWidgetState>();
 
   List<CustomerCategory> _selectedCustomerCategoryWithItems = [];
 
@@ -131,8 +128,6 @@ class NewCustomerTradeLibraryForm1State
     _panController.dispose();
     _gstController.dispose();
 
-    mapController.dispose();
-
     super.dispose();
   }
 
@@ -141,8 +136,6 @@ class NewCustomerTradeLibraryForm1State
     super.initState();
 
     _initializeMandatorySettings();
-
-    _setInitialLocation();
 
     futureData = Future<CustomerEntryMasterResponse>.value(
       CustomerEntryMasterResponse(
@@ -181,291 +174,6 @@ class NewCustomerTradeLibraryForm1State
       token = prefs.getString('token') ?? '';
       _cityAccess = prefs.getString('CityAccess') ?? '';
     });
-  }
-
-  Future<void> _setInitialLocation() async {
-    bool serviceEnabled;
-    LocationPermission permission;
-
-    serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      return;
-    }
-
-    permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
-        return;
-      }
-    }
-
-    if (permission == LocationPermission.deniedForever) {
-      return;
-    }
-
-    Position position = await Geolocator.getCurrentPosition();
-    setState(() {
-      if (mounted) {
-        _currentPosition = LatLng(position.latitude, position.longitude);
-        // _addressController.text = "${position.latitude}, ${position.longitude}";
-        _getUserLocation();
-      }
-    });
-  }
-
-  Future<void> _getUserLocation() async {
-    loc.Location location = loc.Location(); // Using alias for location package
-    bool serviceEnabled;
-    loc.PermissionStatus permissionGranted;
-
-    // Check if location services are enabled
-    serviceEnabled = await location.serviceEnabled();
-    if (!serviceEnabled) {
-      serviceEnabled = await location.requestService();
-      if (!serviceEnabled) {
-        return; // Exit if the user does not enable location services
-      }
-    }
-
-    // Check location permissions
-    permissionGranted = await location.hasPermission();
-    if (permissionGranted == loc.PermissionStatus.denied) {
-      permissionGranted = await location.requestPermission();
-      if (permissionGranted != loc.PermissionStatus.granted) {
-        return; // Exit if the user does not grant location permissions
-      }
-    }
-    debugPrint('Customer address ${_addressController.text.toString()}');
-    // Handle edit mode and pre-filled address
-    if (widget.isEdit && _addressController.text.toString().isNotEmpty) {
-      editAddress();
-    } else {
-      addAddress();
-    }
-  }
-
-  void addAddress() async {
-    loc.Location location = loc.Location();
-    debugPrint('Add customer address');
-    // Get current user location
-    try {
-      loc.LocationData locationData = await location.getLocation();
-      LatLng initialPosition =
-          LatLng(locationData.latitude!, locationData.longitude!);
-
-      if (!mounted) return; // Exit if widget is no longer mounted
-
-      setState(() {
-        debugPrint('Customer address ${_addressController.text.toString()}');
-        debugPrint(
-            'Add customer address _currentPosition ${_currentPosition?.latitude} ${_currentPosition?.longitude}');
-        _currentPosition = initialPosition;
-        _currentMarker = Marker(
-          markerId: const MarkerId('currentLocation'),
-          position: initialPosition,
-          draggable: true,
-          onTap: () => _onMarkerTapped(initialPosition),
-          onDragEnd: (newPosition) => _onMarkerDragEnd(newPosition),
-        );
-        _updateAddressFromPosition(initialPosition);
-      });
-    } catch (e) {
-      if (kDebugMode) {
-        print("Error fetching user location: $e");
-      }
-    }
-  }
-
-  void editAddress() async {
-    final address =
-        '${_customerNameController.text.toString().trim()}, ${_addressController.text.toString().trim()}, ${_pinCodeController.text.toString().trim()}';
-    debugPrint('Edit customer address 1 $address');
-    try {
-      List<Location> locations = await locationFromAddress(address);
-      debugPrint('Edit customer address locations size ${locations.length}');
-      if (locations.isNotEmpty) {
-        // Use the first matched location
-        Location addressLocation = locations.first;
-        debugPrint(
-            'Edit customer address latitude ${addressLocation.latitude}, longitude : ${addressLocation.longitude}');
-        LatLng initialPosition =
-            LatLng(addressLocation.latitude, addressLocation.longitude);
-        debugPrint(
-            'Edit customer initialPosition latitude ${initialPosition.latitude}, longitude : ${initialPosition.longitude}');
-
-        // Update marker and position
-        _currentPosition = initialPosition;
-        debugPrint(
-            'Edit customer _currentPosition latitude ${_currentPosition?.latitude}, longitude : ${_currentPosition?.longitude}');
-
-        _currentMarker = Marker(
-          markerId: const MarkerId('currentLocation'),
-          position: initialPosition,
-          draggable: true,
-          onTap: () => _onMarkerTapped(initialPosition),
-          onDragEnd: (newPosition) => _onMarkerDragEnd(newPosition),
-        );
-
-        await placemarkFromCoordinates(
-          initialPosition.latitude,
-          initialPosition.longitude,
-        ).timeout(
-          const Duration(seconds: 10), // Timeout duration
-          onTimeout: () {
-            throw TimeoutException("Geocoding timed out after 10 seconds.");
-          },
-        );
-
-        setState(() {
-          _currentMarker =
-              _currentMarker!.copyWith(positionParam: _currentPosition);
-          debugPrint("_currentMarker markerId ${_currentMarker?.markerId}");
-        });
-
-        debugPrint("_currentMarker ${_currentMarker?.position.longitude}");
-        _animateToPosition(initialPosition);
-
-        debugPrint("animateCamera.");
-      } else {
-        debugPrint("Fetching location empty.");
-      }
-    } catch (e) {
-      debugPrint("Error fetching location from address: $e");
-      unableToGetAddress();
-      return;
-    }
-  }
-
-  // Relocate the map to the center
-  Future<void> _relocateMapToCenter(LatLng position) async {
-    if (isMapControllerInitialized) {
-      await mapController.animateCamera(
-        CameraUpdate.newLatLng(position),
-      );
-    }
-  }
-
-  void _animateToPosition(LatLng position) {
-    debugPrint("isMapControllerInitialized: $isMapControllerInitialized");
-    if (isMapControllerInitialized) {
-      mapController.animateCamera(
-        CameraUpdate.newLatLng(position),
-      );
-    } else {
-      if (kDebugMode) {
-        print("Error: mapController is not initialized yet.");
-      }
-      if (retryCount < 3) {
-        debugPrint("if retryCount: $retryCount");
-        retryCount++;
-        editAddress();
-      } else {
-        debugPrint("else retryCount: $retryCount");
-      }
-    }
-  }
-
-  // Update the address when the marker is tapped
-  Future<void> _onMarkerTapped(LatLng position) async {
-    _relocateMapToCenter(position);
-    await _updateAddressFromPosition(position);
-  }
-
-  // Update the address when the marker is dragged
-  Future<void> _onMarkerDragEnd(LatLng newPosition) async {
-    _updateAddressFromPosition(newPosition);
-  }
-
-  Future<void> _updateAddressFromPosition(LatLng position) async {
-    try {
-      // Adding timeout to the geocoding request
-      List<Placemark> placemarks = await placemarkFromCoordinates(
-        position.latitude,
-        position.longitude,
-      ).timeout(
-        const Duration(seconds: 10), // Timeout duration
-        onTimeout: () {
-          throw TimeoutException("Geocoding timed out after 10 seconds.");
-        },
-      );
-
-      setState(() {
-        _currentMarker = _currentMarker!.copyWith(positionParam: position);
-      });
-      getAddress(placemarks, position);
-    } catch (e) {
-      if (kDebugMode) {
-        print("Error retrieving address: $e");
-      }
-      setState(() {
-        _addressController.text = "Unable to retrieve address";
-      });
-    }
-  }
-
-  void getAddress(List<Placemark> placemarks, LatLng position) {
-    String address = buildAddress(placemarks);
-
-    // Update the address field in the UI
-    setState(() {
-      _addressController.text = address;
-      if (kDebugMode) {
-        print(address);
-      }
-    });
-  }
-
-  Widget _buildMapContainer() {
-    return GestureDetector(
-      onVerticalDragUpdate: (_) {},
-      child: Container(
-        height: 300.0,
-        decoration: BoxDecoration(
-          border: Border.all(width: 1.0),
-          borderRadius: BorderRadius.circular(8.0),
-        ),
-        child: _currentPosition == null
-            ? const Center(child: CircularProgressIndicator())
-            : GoogleMap(
-                initialCameraPosition: CameraPosition(
-                  target: _currentPosition!,
-                  zoom: 14.0,
-                ),
-                markers: _currentMarker != null ? {_currentMarker!} : {},
-                myLocationEnabled: true,
-                myLocationButtonEnabled: true,
-                onMapCreated: (controller) {
-                  mapController = controller;
-                  setState(() {
-                    isMapControllerInitialized = true;
-                  });
-                },
-                onTap: (LatLng tappedPosition) {
-                  _updateMarkerAndAddress(tappedPosition);
-                },
-              ),
-      ),
-    );
-  }
-
-  Future<void> _updateMarkerAndAddress(LatLng position) async {
-    // Update the marker position
-    setState(() {
-      _currentMarker = Marker(
-        markerId: const MarkerId('currentLocation'),
-        position: position,
-        draggable: true,
-        onDragEnd: (newPosition) => _updateMarkerAndAddress(newPosition),
-      );
-    });
-
-    // Fetch and update address based on tapped position
-    List<Placemark> placemarks = await placemarkFromCoordinates(
-      position.latitude,
-      position.longitude,
-    );
-    getAddress(placemarks, position);
   }
 
   void _fetchData() async {
@@ -629,9 +337,6 @@ class NewCustomerTradeLibraryForm1State
   }
 
   Widget buildForm(CustomerEntryMasterResponse data) {
-    if (widget.isEdit && customerDetails == null) {
-      return const Center(child: CircularProgressIndicator());
-    }
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16.0),
       child: Form(
@@ -654,7 +359,14 @@ class NewCustomerTradeLibraryForm1State
             _buildTextField('${widget.type} Name', _customerNameController,
                 _customerNameFieldKey, _customerNameFocusNode),
             const SizedBox(height: 10),
-            _buildMapContainer(),
+            MyMapWidget(
+              key: _mapKey,
+              onAddressSelected: (address) {
+                setState(() {
+                  _addressController.text = address;
+                });
+              },
+            ),
             const SizedBox(height: 10),
             _buildTextField('Address', _addressController, _addressFieldKey,
                 _addressFocusNode,
@@ -692,6 +404,7 @@ class NewCustomerTradeLibraryForm1State
               onChanged: (selected) {
                 setState(() {
                   _selectedCity = selected;
+                  debugPrint('_selectedCity:$_selectedCity');
                 });
                 _formKey.currentState!.validate();
               },
@@ -726,9 +439,8 @@ class NewCustomerTradeLibraryForm1State
                     onChanged: (newValue) {
                       setState(() {
                         _selectedKeyCustomer = newValue;
-                        if (kDebugMode) {
-                          print("_selectedKeyCustomer:$_selectedKeyCustomer");
-                        }
+                        debugPrint(
+                            "_selectedKeyCustomer:$_selectedKeyCustomer");
                       });
                     },
                   ),
@@ -741,9 +453,8 @@ class NewCustomerTradeLibraryForm1State
                     onChanged: (newValue) {
                       setState(() {
                         _selectedKeyCustomer = newValue;
-                        if (kDebugMode) {
-                          print("_selectedKeyCustomer:$_selectedKeyCustomer");
-                        }
+                        debugPrint(
+                            "_selectedKeyCustomer:$_selectedKeyCustomer");
                       });
                     },
                   ),
@@ -761,10 +472,8 @@ class NewCustomerTradeLibraryForm1State
                     onChanged: (newValue) {
                       setState(() {
                         _selectedCustomerStatus = newValue;
-                        if (kDebugMode) {
-                          print(
-                              "_selectedCustomerStatus:$_selectedCustomerStatus");
-                        }
+                        debugPrint(
+                            "_selectedCustomerStatus:$_selectedCustomerStatus");
                       });
                     },
                   ),
@@ -777,10 +486,8 @@ class NewCustomerTradeLibraryForm1State
                     onChanged: (newValue) {
                       setState(() {
                         _selectedCustomerStatus = newValue;
-                        if (kDebugMode) {
-                          print(
-                              "_selectedCustomerStatus:$_selectedCustomerStatus");
-                        }
+                        debugPrint(
+                            "_selectedCustomerStatus:$_selectedCustomerStatus");
                       });
                     },
                   ),
@@ -790,21 +497,32 @@ class NewCustomerTradeLibraryForm1State
             const SizedBox(height: 16.0),
             GestureDetector(
               onTap: () {
-                _submitForm();
+                if (widget.isEdit) {
+                  if (customerDetails != null &&
+                      (customerDetails?.msgWarning ?? '') == 'N') {
+                    _submitForm();
+                  }
+                } else {
+                  _submitForm();
+                }
               },
               child: Container(
                 width: double.infinity,
-                color: Colors.blue,
-                child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16),
+                color: (widget.isEdit)
+                    ? ((customerDetails != null &&
+                            (customerDetails?.msgWarning ?? '') == 'N')
+                        ? Colors.blue
+                        : Colors.grey)
+                    : Colors.blue,
+                child: const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 8.0, horizontal: 16),
                   child: Text(
-                    widget.isEdit ? 'Update' : 'Next',
+                    'Next',
                     textAlign: TextAlign.center,
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
-                      fontSize: 18,
+                      fontSize: 16,
                     ),
                   ),
                 ),
@@ -818,6 +536,8 @@ class NewCustomerTradeLibraryForm1State
 
   void _submitForm() {
     FocusScope.of(context).unfocus();
+
+    _isSubmitted = true;
 
     if (_formKey.currentState!.validate()) {
       if (_selectedKeyCustomer == null) {
@@ -890,9 +610,9 @@ class NewCustomerTradeLibraryForm1State
         ),
         child: TextFormField(
           key: fieldKey,
-          style: TextStyle(fontSize: textFontSize),
           controller: controller,
           focusNode: focusNode,
+          style: TextStyle(fontSize: textFontSize),
           decoration: InputDecoration(
               labelText: label,
               labelStyle: TextStyle(fontSize: labelFontSize),
@@ -901,26 +621,21 @@ class NewCustomerTradeLibraryForm1State
           enabled: enabled,
           maxLines: maxLines,
           validator: (value) {
-            if (label == 'PAN' || label == 'GST') {
+            if (_isSubmitted) {
+              if (label == 'Email Id') {
+                return validateEmail(label, value, mandatorySetting,
+                    _phoneNumberController.text.isEmpty);
+              }
+
+              if (label == 'Phone Number') {
+                return validatePhoneNumber(label, value, mandatorySetting);
+              }
               if (value == null || value.isEmpty) {
-                return null;
+                return 'Please enter $label';
               }
-              if (label == 'PAN' && value.length < 10) {
+              if (label == 'Pin Code' && value.length < 6) {
                 return 'Please enter valid $label';
               }
-              if (label == 'GST' && value.length < 15) {
-                return 'Please enter valid $label';
-              }
-            }
-            if (label == 'Phone Number') {
-              return validatePhoneNumber(label, value, mandatorySetting);
-            } else if (label == 'Email Id') {
-              return validateEmail(label, value, mandatorySetting,
-                  _phoneNumberController.text.isEmpty);
-            } else if (value == null || value.isEmpty) {
-              return 'Please enter $label';
-            } else if (label == 'Pin Code' && value.length < 6) {
-              return 'Please enter valid $label';
             }
             return null;
           },
@@ -935,9 +650,6 @@ class NewCustomerTradeLibraryForm1State
           keyboardType: (label == 'Phone Number' || label == 'Pin Code')
               ? TextInputType.phone
               : TextInputType.text,
-          textCapitalization: (label == 'PAN' || label == 'GST')
-              ? TextCapitalization.characters
-              : TextCapitalization.none,
           inputFormatters: getInputFormatters(label),
         ),
       ),
@@ -1020,7 +732,11 @@ class NewCustomerTradeLibraryForm1State
 
     setCustomerCategories(details);
 
-    editAddress();
+    final address =
+        '${details.customerName}, ${details.address}, ${_selectedCity?.city}, ${_selectedCity?.district}, ${_selectedCity?.state}, ${_selectedCity?.country}, ${details.pinCode}';
+    if (_mapKey.currentState != null && address.isNotEmpty) {
+      _mapKey.currentState!.setAddress(address);
+    }
   }
 
   void setCustomerCategories(CustomerDetails details) {
@@ -1208,127 +924,13 @@ class NewCustomerTradeLibraryForm1State
         labelStyle: TextStyle(fontSize: labelFontSize),
         border: const OutlineInputBorder(),
       ),
-      validator: (value) => value == null ? 'Please select $label' : null,
+      validator: (value) {
+        if (value == null && _isSubmitted) {
+          return 'Please select $label';
+        }
+        return null;
+      },
     );
-  }
-
-  void unableToGetAddress() async {
-    final address =
-        '${_selectedCity?.city ?? ''}, ${_selectedState?.state ?? ''}, ${_selectedState?.district ?? ''}, ${_selectedCountry?.country ?? ''}}';
-    debugPrint('Edit customer address 2 $address');
-    try {
-      List<Location> locations = await locationFromAddress(address);
-      debugPrint('Edit customer address locations size ${locations.length}');
-      if (locations.isNotEmpty) {
-        // Use the first matched location
-        Location addressLocation = locations.first;
-        debugPrint(
-            'Edit customer address latitude ${addressLocation.latitude}, longitude : ${addressLocation.longitude}');
-        LatLng initialPosition =
-            LatLng(addressLocation.latitude, addressLocation.longitude);
-        debugPrint(
-            'Edit customer initialPosition latitude ${initialPosition.latitude}, longitude : ${initialPosition.longitude}');
-
-        // Update marker and position
-        _currentPosition = initialPosition;
-        debugPrint(
-            'Edit customer _currentPosition latitude ${_currentPosition?.latitude}, longitude : ${_currentPosition?.longitude}');
-
-        _currentMarker = Marker(
-          markerId: const MarkerId('currentLocation'),
-          position: initialPosition,
-          draggable: true,
-          onTap: () => _onMarkerTapped(initialPosition),
-          onDragEnd: (newPosition) => _onMarkerDragEnd(newPosition),
-        );
-
-        await placemarkFromCoordinates(
-          initialPosition.latitude,
-          initialPosition.longitude,
-        ).timeout(
-          const Duration(seconds: 10), // Timeout duration
-          onTimeout: () {
-            throw TimeoutException("Geocoding timed out after 10 seconds.");
-          },
-        );
-
-        setState(() {
-          _currentMarker =
-              _currentMarker!.copyWith(positionParam: _currentPosition);
-          debugPrint("_currentMarker markerId ${_currentMarker?.markerId}");
-        });
-
-        debugPrint("_currentMarker ${_currentMarker?.position.longitude}");
-        _animateToPosition(initialPosition);
-
-        debugPrint("animateCamera.");
-      } else {
-        debugPrint("Fetching location empty.");
-      }
-    } catch (e) {
-      debugPrint("Error fetching location from address: $e");
-      unableToGetAddress2();
-      return;
-    }
-  }
-
-  void unableToGetAddress2() async {
-    final address = _pinCodeController.text.toString().trim();
-    debugPrint('Edit customer address 3 $address');
-    try {
-      List<Location> locations = await locationFromAddress(address);
-      debugPrint('Edit customer address locations size ${locations.length}');
-      if (locations.isNotEmpty) {
-        // Use the first matched location
-        Location addressLocation = locations.first;
-        debugPrint(
-            'Edit customer address latitude ${addressLocation.latitude}, longitude : ${addressLocation.longitude}');
-        LatLng initialPosition =
-            LatLng(addressLocation.latitude, addressLocation.longitude);
-        debugPrint(
-            'Edit customer initialPosition latitude ${initialPosition.latitude}, longitude : ${initialPosition.longitude}');
-
-        // Update marker and position
-        _currentPosition = initialPosition;
-        debugPrint(
-            'Edit customer _currentPosition latitude ${_currentPosition?.latitude}, longitude : ${_currentPosition?.longitude}');
-
-        _currentMarker = Marker(
-          markerId: const MarkerId('currentLocation'),
-          position: initialPosition,
-          draggable: true,
-          onTap: () => _onMarkerTapped(initialPosition),
-          onDragEnd: (newPosition) => _onMarkerDragEnd(newPosition),
-        );
-
-        await placemarkFromCoordinates(
-          initialPosition.latitude,
-          initialPosition.longitude,
-        ).timeout(
-          const Duration(seconds: 10), // Timeout duration
-          onTimeout: () {
-            throw TimeoutException("Geocoding timed out after 10 seconds.");
-          },
-        );
-
-        setState(() {
-          _currentMarker =
-              _currentMarker!.copyWith(positionParam: _currentPosition);
-          debugPrint("_currentMarker markerId ${_currentMarker?.markerId}");
-        });
-
-        debugPrint("_currentMarker ${_currentMarker?.position.longitude}");
-        _animateToPosition(initialPosition);
-
-        debugPrint("animateCamera.");
-      } else {
-        debugPrint("Fetching location empty.");
-      }
-    } catch (e) {
-      debugPrint("Error fetching location from address: $e");
-      addAddress();
-      return;
-    }
   }
 
   void updateCustomer() async {
