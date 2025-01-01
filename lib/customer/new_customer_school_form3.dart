@@ -2,7 +2,6 @@ import 'package:avant/api/api_service.dart';
 import 'package:avant/common/common.dart';
 import 'package:avant/common/toast.dart';
 import 'package:avant/db/db_helper.dart';
-import 'package:avant/home.dart';
 import 'package:avant/model/customer_entry_master_model.dart';
 import 'package:avant/model/login_model.dart';
 import 'package:avant/service/location_service.dart';
@@ -16,6 +15,7 @@ import '../model/fetch_customer_details_model.dart';
 import '../model/search_bookseller_response.dart';
 import '../views/common_app_bar.dart';
 import '../views/custom_text.dart';
+import 'customer_list.dart';
 import 'new_customer_school_form4.dart';
 
 class NewCustomerSchoolForm3 extends StatefulWidget {
@@ -46,34 +46,33 @@ class NewCustomerSchoolForm3 extends StatefulWidget {
   final String validated;
   final FetchCustomerDetailsSchoolResponse? customerDetailsSchoolResponse;
 
-
-  const NewCustomerSchoolForm3(
-      {super.key,
-      required this.type,
-      required this.customerName,
-      required this.address,
-      required this.cityId,
-      required this.cityName,
-      required this.pinCode,
-      required this.phoneNumber,
-      required this.emailId,
-      required this.boardId,
-      required this.chainSchoolId,
-      required this.keyCustomer,
-      required this.customerStatus,
-      required this.startClassId,
-      required this.endClassId,
-      required this.samplingMonthId,
-      required this.decisionMonthId,
-      required this.medium,
-      required this.ranking,
-      required this.pan,
-      required this.gst,
-      required this.purchaseMode,
-      required this.bookseller,
-      required this.isEdit,
-      required this.validated,
-      this.customerDetailsSchoolResponse,
+  const NewCustomerSchoolForm3({
+    super.key,
+    required this.type,
+    required this.customerName,
+    required this.address,
+    required this.cityId,
+    required this.cityName,
+    required this.pinCode,
+    required this.phoneNumber,
+    required this.emailId,
+    required this.boardId,
+    required this.chainSchoolId,
+    required this.keyCustomer,
+    required this.customerStatus,
+    required this.startClassId,
+    required this.endClassId,
+    required this.samplingMonthId,
+    required this.decisionMonthId,
+    required this.medium,
+    required this.ranking,
+    required this.pan,
+    required this.gst,
+    required this.purchaseMode,
+    required this.bookseller,
+    required this.isEdit,
+    required this.validated,
+    this.customerDetailsSchoolResponse,
   });
 
   @override
@@ -521,8 +520,10 @@ class NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
           if (mounted) {
             Navigator.pushAndRemoveUntil(
               context,
-              MaterialPageRoute(builder: (context) => const HomePage()),
-              (Route<dynamic> route) => false,
+              MaterialPageRoute(
+                builder: (context) => CustomerList(type: widget.type),
+              ),
+              (route) => route.isFirst,
             );
           }
         } else if (w.isNotEmpty) {
@@ -649,31 +650,31 @@ class NewCustomerSchoolForm3State extends State<NewCustomerSchoolForm3> {
       context,
       MaterialPageRoute(
         builder: (context) => NewCustomerSchoolForm4(
-            type: widget.type,
-            customerName: widget.customerName,
-            address: widget.address,
-            cityId: widget.cityId,
-            cityName: widget.cityName,
-            pinCode: widget.pinCode,
-            phoneNumber: widget.phoneNumber,
-            emailId: widget.emailId,
-            boardId: widget.boardId,
-            chainSchoolId: widget.chainSchoolId,
-            keyCustomer: widget.keyCustomer,
-            customerStatus: widget.customerStatus,
-            startClassId: widget.startClassId,
-            endClassId: widget.endClassId,
-            samplingMonthId: widget.samplingMonthId,
-            decisionMonthId: widget.decisionMonthId,
-            medium: widget.medium,
-            ranking: widget.ranking,
-            pan: widget.pan,
-            gst: widget.gst,
-            purchaseMode: widget.purchaseMode,
-            bookseller: widget.bookseller,
-            xmlClassName: xmlClassName,
-            validated: widget.validated,
-           ),
+          type: widget.type,
+          customerName: widget.customerName,
+          address: widget.address,
+          cityId: widget.cityId,
+          cityName: widget.cityName,
+          pinCode: widget.pinCode,
+          phoneNumber: widget.phoneNumber,
+          emailId: widget.emailId,
+          boardId: widget.boardId,
+          chainSchoolId: widget.chainSchoolId,
+          keyCustomer: widget.keyCustomer,
+          customerStatus: widget.customerStatus,
+          startClassId: widget.startClassId,
+          endClassId: widget.endClassId,
+          samplingMonthId: widget.samplingMonthId,
+          decisionMonthId: widget.decisionMonthId,
+          medium: widget.medium,
+          ranking: widget.ranking,
+          pan: widget.pan,
+          gst: widget.gst,
+          purchaseMode: widget.purchaseMode,
+          bookseller: widget.bookseller,
+          xmlClassName: xmlClassName,
+          validated: widget.validated,
+        ),
       ),
     );
   }
