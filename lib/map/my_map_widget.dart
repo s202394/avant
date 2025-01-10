@@ -25,6 +25,7 @@ class MyMapWidgetState extends State<MyMapWidget> {
   bool _isLoading = true; // Loader flag
   final Set<Marker> _markers = {};
   LatLng? _currentLocation;
+  bool isAddressSet = false;
 
   @override
   void initState() {
@@ -35,9 +36,13 @@ class MyMapWidgetState extends State<MyMapWidget> {
   // Initialize map by fetching the current location
   Future<void> _initializeMap() async {
     try {
-      final location = loc.Location();
-      await _checkLocationService(location);
-      await _getCurrentLocation(location);
+      if (_currentLocation == null && !isAddressSet) {
+        // Only fetch the location if no address is set
+        debugPrint('_currentLocation !isAddressSet');
+        final location = loc.Location();
+        await _checkLocationService(location);
+        await _getCurrentLocation(location);
+      }
     } catch (e) {
       debugPrint('Error initializing map: $e');
     } finally {
@@ -64,25 +69,28 @@ class MyMapWidgetState extends State<MyMapWidget> {
 
 // Get the current location and update the marker and camera
   Future<void> _getCurrentLocation(loc.Location location) async {
-    final currentLocation = await location.getLocation();
-    _currentLocation =
-        LatLng(currentLocation.latitude!, currentLocation.longitude!);
-
     try {
-      // Fetch the address from coordinates
-      final address = await _getAddressFromLatLng(_currentLocation!);
-      _updateMarker(_currentLocation!, address);
+      final currentLocation = await location.getLocation();
+      _currentLocation =
+          LatLng(currentLocation.latitude!, currentLocation.longitude!);
+      debugPrint('_currentLocation: $_currentLocation');
+      if (!isAddressSet) {
+        // Only fetch and set the address if it's not already explicitly set
+        final address = await _getAddressFromLatLng(_currentLocation!);
+        _updateMarker(_currentLocation!, address);
 
-      // Trigger the address callback only if the address is valid
-      if (address.isNotEmpty && address != "Unknown Address") {
-        widget.onAddressSelected?.call(address);
+        if (address.isNotEmpty && address != "Unknown Address") {
+          widget.onAddressSelected?.call(address);
+        }
+        debugPrint('_currentLocation not isAddressSet');
+        _moveCamera(_currentLocation!, 14.0);
       }
     } catch (e) {
       debugPrint('Error fetching address for current location: $e');
-      _updateMarker(_currentLocation!, "Unknown Address");
+      if (!isAddressSet) {
+        _updateMarker(_currentLocation!, "Unknown Address");
+      }
     }
-
-    _moveCamera(_currentLocation!, 14.0);
   }
 
   // Update marker on the map
@@ -111,6 +119,9 @@ class MyMapWidgetState extends State<MyMapWidget> {
 
   // Stop the loading spinner
   void _stopLoading() {
+    if (!mounted) {
+      return;
+    }
     setState(() {
       _isLoading = false;
     });
@@ -152,16 +163,21 @@ class MyMapWidgetState extends State<MyMapWidget> {
       final locations = await locationFromAddress(address);
       if (locations.isNotEmpty) {
         final position =
-        LatLng(locations.first.latitude, locations.first.longitude);
+            LatLng(locations.first.latitude, locations.first.longitude);
+        _currentLocation = position;
         _updateMarker(position, address);
         _moveCamera(position, 14.0);
 
-        // Call onAddressSelected only if a valid address is set
+        // Mark the address as explicitly set
+        isAddressSet = true;
+
+        debugPrint('_currentLocation isAddressSet');
+
+        // Optionally trigger the callback
         // widget.onAddressSelected?.call(address);
       }
     } catch (e) {
       debugPrint('Error setting address: $e');
-      // Do not call onAddressSelected if there's an error
     } finally {
       _stopLoading();
     }

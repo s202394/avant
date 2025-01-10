@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:avant/api/api_service.dart';
 import 'package:avant/approval/approval_list_form.dart';
@@ -70,10 +69,22 @@ class HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
     _loadPunchState();
 
-    _requestLocationPermission();
+    // _requestLocationPermission();
   }
 
-  Future<void> _initForegroundTask() async {
+  Future<void> _startTracking() async {
+    await Workmanager().registerPeriodicTask(
+      "locationTask",
+      "trackLocation",
+      frequency: const Duration(minutes: 1),
+    );
+  }
+
+  Future<void> _stopTracking() async {
+    await Workmanager().cancelAll();
+  }
+
+/*  Future<void> _initForegroundTask() async {
     if (kDebugMode) {
       print('Initializing Location Foreground Task');
     }
@@ -194,9 +205,9 @@ class HomePageState extends State<HomePage> with WidgetsBindingObserver {
             .request(); // Request regular location permission for older versions
       }
     }
-  }
+  }*/
 
-  @override
+  /*@override
   void dispose() {
     if (kDebugMode) {
       print('Location dispose');
@@ -221,7 +232,7 @@ class HomePageState extends State<HomePage> with WidgetsBindingObserver {
       // App is in foreground, stop foreground service and start Timer
       stopForegroundTask();
     }
-  }
+  }*/
 
   void startForegroundTask() {
     if (kDebugMode) {
@@ -375,13 +386,13 @@ class HomePageState extends State<HomePage> with WidgetsBindingObserver {
       isPunchedIn = prefs.getBool('isPunchedIn') ?? false;
     });
 
-    if (isPunchedIn) {
+    /*if (isPunchedIn) {
       if (kDebugMode) {
         print('Location startForegroundTask');
       }
       WidgetsBinding.instance.addObserver(this);
       startForegroundTask();
-    }
+    }*/
   }
 
   // Update Punch State in SharedPreferences
@@ -406,11 +417,13 @@ class HomePageState extends State<HomePage> with WidgetsBindingObserver {
       if (kDebugMode) {
         print('Location punchedIn false DART CRM cancel');
       }
-      await Workmanager().cancelByUniqueName("DART CRM");
+      // await Workmanager().cancelByUniqueName("DART CRM");
     }
 
     // Store the punch-in state
     await prefs.setBool('isPunchedIn', punchedIn);
+
+    checkTracking();
   }
 
   Future<void> checkPunchStateOnAppStart() async {
@@ -445,8 +458,8 @@ class HomePageState extends State<HomePage> with WidgetsBindingObserver {
     if (kDebugMode) {
       print('Location punchedIn true startForegroundTask');
     }
-    WidgetsBinding.instance.addObserver(this);
-    startForegroundTask();
+    // WidgetsBinding.instance.addObserver(this);
+    // startForegroundTask();
 
     if (kDebugMode) {
       print("You have punched in.");
@@ -852,6 +865,14 @@ class HomePageState extends State<HomePage> with WidgetsBindingObserver {
   void deleteAllCartItems() {
     databaseHelper.deleteAllCartItems();
     databaseHelper.deleteAllFollowUpActionCarts();
+  }
+
+  void checkTracking() {
+    if (isPunchedIn) {
+      _startTracking();
+    } else {
+      _stopTracking();
+    }
   }
 }
 

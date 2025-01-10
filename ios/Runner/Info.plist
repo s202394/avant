@@ -57,5 +57,10 @@
     <string>We need your location to show your current position.</string>
     <key>NSAllowsArbitraryLoads</key>
     <true/>
+    <key>UIBackgroundModes</key>
+    <array>
+        <string>location</string>
+        <string>fetch</string>
+    </array>
 </dict>
 </plist>

@@ -223,13 +223,20 @@ class CustomerContactListState extends State<CustomerContactList> {
             mainAxisSize: MainAxisSize.min,
             children: [
               InkWell(
-                onTap: () {
-                  if (kDebugMode) {
-                    print('Edit tapped');
-                  }
-                  editContact(contact);
-                },
-                child: const Icon(Icons.edit, size: 30, color: Colors.blue),
+                onTap: (contact.primaryContact.toLowerCase() == 'yes' &&
+                        contact.validationStatus.toLowerCase() == 'yes')
+                    ? null
+                    : () {
+                        editContact(contact);
+                      },
+                child: Icon(
+                  Icons.edit,
+                  size: 30,
+                  color: (contact.primaryContact.toLowerCase() == 'yes' &&
+                          contact.validationStatus.toLowerCase() == 'yes')
+                      ? Colors.grey
+                      : Colors.blue,
+                ),
               ),
               const SizedBox(width: 10),
               InkWell(

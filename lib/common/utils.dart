@@ -55,14 +55,24 @@ List<TextInputFormatter> getInputFormatters(String label) {
   } else if (label == 'PAN Number' || label == 'PAN') {
     return [
       LengthLimitingTextInputFormatter(10),
-      FilteringTextInputFormatter.allow(
-          RegExp(r'^[A-Z]{0,5}[0-9]{0,4}[A-Z]?$')),
+      FilteringTextInputFormatter.allow(RegExp(r'^[a-zA-Z0-9]{0,10}$')),
+      TextInputFormatter.withFunction((oldValue, newValue) {
+        return TextEditingValue(
+          text: newValue.text.toUpperCase(),
+          selection: newValue.selection,
+        );
+      }),
     ];
   } else if (label == 'GST Number' || label == 'GST') {
     return [
       LengthLimitingTextInputFormatter(15),
-      FilteringTextInputFormatter.allow(RegExp(
-          r'^[0-9]{0,2}[A-Z]{0,5}[0-9]{0,4}[A-Z]{0,1}[1-9A-Z]{0,1}Z?[0-9A-Z]{0,1}$')),
+      FilteringTextInputFormatter.allow(RegExp(r'^[a-zA-Z0-9]{0,15}$')),
+      TextInputFormatter.withFunction((oldValue, newValue) {
+        return TextEditingValue(
+          text: newValue.text.toUpperCase(),
+          selection: newValue.selection,
+        );
+      }),
     ];
   } else {
     return [];

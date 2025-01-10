@@ -15,7 +15,7 @@ import 'model/login_model.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  Workmanager().initialize(callbackDispatcher, isInDebugMode: true);
+  /*Workmanager().initialize(callbackDispatcher, isInDebugMode: true);
 
   Workmanager().registerPeriodicTask(
     "DART CRM",
@@ -26,7 +26,9 @@ void main() {
       requiresBatteryNotLow: false,
       requiresCharging: false,
     ),
-  );
+  );*/
+
+  Workmanager().initialize(callbackDispatcher, isInDebugMode: true);
 
   runApp(
     MaterialApp(
@@ -59,9 +61,9 @@ class SplashScreenState extends State<SplashScreen> {
     prefs = await SharedPreferences.getInstance();
     setState(() {
       _isAlreadyLogin = prefs.getBool('is_already_login') ?? false;
-      emailOrPhone=  prefs.getString('username')??'';
-      password= prefs.getString('password')??'';
-      token= prefs.getString('token')??'';
+      emailOrPhone = prefs.getString('username') ?? '';
+      password = prefs.getString('password') ?? '';
+      token = prefs.getString('token') ?? '';
     });
   }
 
@@ -70,13 +72,7 @@ class SplashScreenState extends State<SplashScreen> {
     super.initState();
 
     _loadData();
-    Timer(const Duration(seconds: 3), () {
-      if(_isAlreadyLogin){
-        _loginUser(emailOrPhone,password);
-      }else{
-        _navigateToHomePage();
-      }
-    });
+    checkLogin();
   }
 
   @override
@@ -98,7 +94,6 @@ class SplashScreenState extends State<SplashScreen> {
     );
   }
 
-
   Future<void> _loginUser(String emailOrPhone, String password) async {
     final String ipAddress = await getIpAddress();
     final String deviceInfo = await getDeviceInfo();
@@ -109,8 +104,8 @@ class SplashScreenState extends State<SplashScreen> {
           'Login details ipAddress : $ipAddress , deviceInfo : $deviceInfo , deviceId : $deviceId');
     }
 
-    final responseData = await LoginService().login(
-        emailOrPhone, password, ipAddress, deviceId, deviceInfo, token);
+    final responseData = await LoginService()
+        .login(emailOrPhone, password, ipAddress, deviceId, deviceInfo, token);
     final loginResponse = await LoginResponse.fromJson(responseData);
     if (loginResponse.executiveData.loginBlocked == 'N') {
       final String? userId = prefs.getString('userId');
@@ -152,9 +147,22 @@ class SplashScreenState extends State<SplashScreen> {
       context,
       MaterialPageRoute(
         builder: (context) =>
-        _isAlreadyLogin ? const HomePage() : const LoginPage(),
+            _isAlreadyLogin ? const HomePage() : const LoginPage(),
       ),
     );
+  }
+
+  void checkLogin() async {
+    await Future.delayed(const Duration(seconds: 3));
+    if (_isAlreadyLogin && await _checkInternetConnection()) {
+      _loginUser(emailOrPhone, password);
+    } else {
+      _navigateToHomePage();
+    }
+  }
+
+  Future<bool> _checkInternetConnection() async {
+    return await checkInternetConnection();
   }
 }
 

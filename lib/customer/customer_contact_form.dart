@@ -458,7 +458,7 @@ class CustomerContactFormState extends State<CustomerContactForm> {
             _buildTextField('Anniversary', _anniversaryController,
                 _anniversaryFieldKey, _anniversaryFocusNode),
             const SizedBox(height: 10),
-            MyMapWidget(
+            /*MyMapWidget(
               key: _mapKey,
               onAddressSelected: (address) {
                 setState(() {
@@ -466,7 +466,7 @@ class CustomerContactFormState extends State<CustomerContactForm> {
                 });
               },
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 10),*/
             _buildTextField('Address', _addressController, _addressFieldKey,
                 _addressFocusNode,
                 maxLines: 5),
@@ -722,6 +722,9 @@ class CustomerContactFormState extends State<CustomerContactForm> {
   }
 
   Future<void> checkForEdit() async {
+    setState(() {
+      _isLoading = true; // Start loader
+    });
     try {
       contactId = extractNumericPart(widget.action ?? '');
       validated = extractStringPart(widget.action ?? '');
@@ -733,6 +736,10 @@ class CustomerContactFormState extends State<CustomerContactForm> {
       _populateCustomerDetails(contactDetailsResponse.contactDetails);
     } catch (e) {
       debugPrint('Error in checkForEdit: $e');
+    } finally {
+      setState(() {
+        _isLoading = false; // Stop loader after fetching details
+      });
     }
   }
 

@@ -211,7 +211,7 @@ class NewCustomerTradeLibraryForm1State
       if (dbData.isNotEmpty) {
         setState(() {
           _allGeographies = dbData;
-          _initializeCountries();
+          _initializeGeographyHierarchy();
         });
       } else {
         await _fetchGeographyData(); // Fetch from API if DB is empty
@@ -226,31 +226,17 @@ class NewCustomerTradeLibraryForm1State
       GeographyService geographyService = GeographyService();
       GeographyResponse geographyResponse =
           await geographyService.fetchGeographyData(
-        _cityAccess,
+        '',
         executiveId,
         token,
       );
+
       setState(() {
-        List<Geography> geographyList = geographyResponse.geographyList;
-        _filteredCountries = geographyList
-            .where((g) =>
-                geographyList.indexWhere((e) => e.countryId == g.countryId) ==
-                geographyList.indexOf(g))
-            .toList();
-
-        _filteredCities = geographyResponse.geographyList.toList();
-
-        if (kDebugMode) {
-          print('_filteredCities:${_filteredCities.toString()}');
-        }
-        if (kDebugMode) {
-          print('_filteredCities unique:${_filteredCities.toString()}');
-        }
+        _allGeographies = geographyResponse.geographyList;
+        _initializeGeographyHierarchy();
       });
     } catch (e) {
-      if (kDebugMode) {
-        print("Error fetching geography data: $e");
-      }
+      debugPrint("Error fetching geography data: $e");
       rethrow;
     }
   }
@@ -404,9 +390,9 @@ class NewCustomerTradeLibraryForm1State
               onChanged: (selected) {
                 setState(() {
                   _selectedCity = selected;
-                  debugPrint('_selectedCity:$_selectedCity');
+                  debugPrint('_selectedCity:${_selectedCity?.city}');
                 });
-                _formKey.currentState!.validate();
+                _formKey.currentState?.validate();
               },
             ),
             const SizedBox(height: 8),
@@ -423,7 +409,7 @@ class NewCustomerTradeLibraryForm1State
               itemLabelBuilder: (item) => item.customerCategoryName,
               onChanged: _onCategoryChanged,
               isMandatory: true,
-              isSubmitted: false,
+              isSubmitted: _isSubmitted,
             ),
             _buildTextField('PAN', _panController, _panFieldKey, _panFocusNode),
             _buildTextField('GST', _gstController, _gstFieldKey, _gstFocusNode),
@@ -514,12 +500,13 @@ class NewCustomerTradeLibraryForm1State
                         ? Colors.blue
                         : Colors.grey)
                     : Colors.blue,
-                child: const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 8.0, horizontal: 16),
+                child: Padding(
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16),
                   child: Text(
-                    'Next',
+                    widget.isEdit ? 'Submit' : 'Next',
                     textAlign: TextAlign.center,
-                    style: TextStyle(
+                    style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
@@ -626,25 +613,40 @@ class NewCustomerTradeLibraryForm1State
                 return validateEmail(label, value, mandatorySetting,
                     _phoneNumberController.text.isEmpty);
               }
-
               if (label == 'Phone Number') {
                 return validatePhoneNumber(label, value, mandatorySetting);
               }
-              if (value == null || value.isEmpty) {
+              if ((value == null || value.isEmpty) &&
+                  (label == 'Pin Code' ||
+                      label == 'Trade Name' ||
+                      label == 'Library Name')) {
                 return 'Please enter $label';
               }
-              if (label == 'Pin Code' && value.length < 6) {
+              if (value != null &&
+                  value.isNotEmpty &&
+                  label == 'Pin Code' &&
+                  value.length < 6) {
                 return 'Please enter valid $label';
+              }
+              if (value != null && value.isNotEmpty) {
+                debugPrint('label 1:$label');
+                if (label == 'PAN' &&
+                    !RegExp(r'^[A-Z]{5}[0-9]{4}[A-Z]$').hasMatch(value)) {
+                  return 'Please enter valid $label';
+                }
+                if (label == 'GST' &&
+                    !RegExp(r'^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$')
+                        .hasMatch(value)) {
+                  return 'Please enter valid $label';
+                }
               }
             }
             return null;
           },
           onChanged: (value) {
-            if (value.isNotEmpty) {
-              setState(() {
-                fieldKey.currentState?.validate();
-              });
-            }
+            setState(() {
+              fieldKey.currentState?.validate();
+            });
           },
           textAlign: TextAlign.start,
           keyboardType: (label == 'Phone Number' || label == 'Pin Code')
@@ -657,6 +659,9 @@ class NewCustomerTradeLibraryForm1State
   }
 
   Future<void> checkForEdit() async {
+    setState(() {
+      _isLoading = true; // Start loader
+    });
     try {
       customerId = extractNumericPart(widget.action);
       validated = extractStringPart(widget.action);
@@ -673,10 +678,25 @@ class NewCustomerTradeLibraryForm1State
       _populateCustomerDetails(response.customerDetails);
     } catch (e) {
       debugPrint('Error in checkForEdit: $e');
+    } finally {
+      setState(() {
+        _isLoading = false; // Stop loader after fetching details
+      });
     }
   }
 
-  void _populateCustomerDetails(CustomerDetails? details) {
+  Timer? _addressDebounce;
+
+  void _debounceSetAddress(String address) {
+    if (_addressDebounce?.isActive ?? false) _addressDebounce!.cancel();
+    _addressDebounce = Timer(const Duration(milliseconds: 300), () {
+      if (_mapKey.currentState != null && address.isNotEmpty) {
+        _mapKey.currentState!.setAddress(address);
+      }
+    });
+  }
+
+  void _populateCustomerDetails(CustomerDetails? details) async {
     if (details == null) return;
     customerDetails = details;
     _customerNameController.text = details.customerName;
@@ -734,9 +754,7 @@ class NewCustomerTradeLibraryForm1State
 
     final address =
         '${details.customerName}, ${details.address}, ${_selectedCity?.city}, ${_selectedCity?.district}, ${_selectedCity?.state}, ${_selectedCity?.country}, ${details.pinCode}';
-    if (_mapKey.currentState != null && address.isNotEmpty) {
-      _mapKey.currentState!.setAddress(address);
-    }
+    _debounceSetAddress(address);
   }
 
   void setCustomerCategories(CustomerDetails details) {
@@ -828,14 +846,26 @@ class NewCustomerTradeLibraryForm1State
     );
   }
 
-  void _initializeCountries() {
+  void _initializeGeographyHierarchy() {
+    // Parse city access IDs
+    List<int> cityIds =
+        _cityAccess.split(',').map((id) => int.parse(id)).toList();
+    debugPrint('cityIds:$cityIds');
+    debugPrint('cityIds:${cityIds.length}');
+
+    // Filter geography data based on city access
+    _allGeographies =
+        _allGeographies.where((g) => cityIds.contains(g.cityId)).toList();
     // Get unique countries
+    Set<int> uniqueCountryIds = {};
     _filteredCountries = _allGeographies
-        .where((geo) =>
-            _allGeographies
-                .indexWhere((item) => item.countryId == geo.countryId) ==
-            _allGeographies.indexOf(geo))
+        .where((g) => uniqueCountryIds.add(g.countryId))
         .toList();
+    debugPrint('_filteredCountries:${_filteredCountries.length}');
+    // Initialize other lists as empty
+    _filteredStates = [];
+    _filteredDistricts = [];
+    _filteredCities = [];
   }
 
   void _onCountryChanged(Geography? selected) {
@@ -845,18 +875,25 @@ class NewCustomerTradeLibraryForm1State
       _selectedDistrict = null;
       _selectedCity = null;
 
-      // Filter unique states for the selected country
+      if (selected == null) {
+        _filteredStates = [];
+        _filteredDistricts = [];
+        _filteredCities = [];
+        return;
+      }
+
+      // Filter unique states for the selected country based on city access
       final Set<int> uniqueStateIds = {};
       _filteredStates = _allGeographies
           .where((geo) =>
-              geo.countryId == selected?.countryId &&
-              uniqueStateIds.add(geo.stateId)) // Only add unique states
+              geo.countryId == selected.countryId &&
+              uniqueStateIds.add(geo.stateId)) // Only unique states
           .toList();
 
-      _filteredDistricts = []; // Clear districts when country changes
-      _filteredCities = []; // Clear cities when country changes
+      _filteredDistricts = [];
+      _filteredCities = [];
     });
-    _formKey.currentState!.validate();
+    _formKey.currentState?.validate();
   }
 
   void _onStateChanged(Geography? selected) {
@@ -865,16 +902,23 @@ class NewCustomerTradeLibraryForm1State
       _selectedDistrict = null;
       _selectedCity = null;
 
-      // Filter unique cities for the selected state
+      if (selected == null) {
+        _filteredDistricts = [];
+        _filteredCities = [];
+        return;
+      }
+
+      // Filter unique districts for the selected state based on city access
       final Set<int> uniqueDistrictIds = {};
       _filteredDistricts = _allGeographies
           .where((geo) =>
-              geo.stateId == selected?.stateId &&
-              uniqueDistrictIds.add(geo.districtId)) // Only add unique district
+              geo.stateId == selected.stateId &&
+              uniqueDistrictIds.add(geo.districtId)) // Only unique districts
           .toList();
-      _filteredCities = []; // Clear cities when state changes
+
+      _filteredCities = [];
     });
-    _formKey.currentState!.validate();
+    _formKey.currentState?.validate();
   }
 
   void _onDistrictChanged(Geography? selected) {
@@ -882,15 +926,20 @@ class NewCustomerTradeLibraryForm1State
       _selectedDistrict = selected;
       _selectedCity = null;
 
-      // Filter unique cities for the selected state
+      if (selected == null) {
+        _filteredCities = [];
+        return;
+      }
+
+      // Filter unique cities for the selected district based on city access
       final Set<int> uniqueCityIds = {};
       _filteredCities = _allGeographies
           .where((geo) =>
-              geo.districtId == selected?.districtId &&
-              uniqueCityIds.add(geo.cityId)) // Only add unique cities
+              geo.districtId == selected.districtId &&
+              uniqueCityIds.add(geo.cityId)) // Only unique cities
           .toList();
     });
-    _formKey.currentState!.validate();
+    _formKey.currentState?.validate();
   }
 
   Widget _buildDropdown({

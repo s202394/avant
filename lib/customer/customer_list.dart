@@ -31,8 +31,9 @@ class CustomerListState extends State<CustomerList> {
   late String token;
   late int? executiveId;
   late int? userId;
-  late String? profileCode;
+  late String profileCode;
   late String downHierarchy;
+  late String cityAccess;
 
   bool _hasError = false;
 
@@ -56,7 +57,8 @@ class CustomerListState extends State<CustomerList> {
     downHierarchy = prefs.getString('DownHierarchy') ?? '';
     userId = await getUserId() ?? 0;
     executiveId = await getExecutiveId();
-    profileCode = await getProfileCode();
+    profileCode = await getProfileCode()??'';
+    cityAccess = prefs.getString('CityAccess') ?? '';
     await _fetchCustomerData();
   }
 
@@ -80,8 +82,8 @@ class CustomerListState extends State<CustomerList> {
           pageSize,
           pageNumber,
           widget.type,
-          profileCode ?? '',
-          "",
+          profileCode,
+          cityAccess,
           "",
           token,
         );
@@ -96,8 +98,8 @@ class CustomerListState extends State<CustomerList> {
           pageSize,
           pageNumber,
           widget.type,
-          profileCode ?? '',
-          "",
+          profileCode,
+          cityAccess,
           "",
           token,
         );

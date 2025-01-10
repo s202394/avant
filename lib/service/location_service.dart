@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:flutter/material.dart';
@@ -61,27 +60,20 @@ class LocationService {
 
   Future<String> getAddress(double latitude, double longitude) async {
     try {
-      if (kDebugMode) {
-        print("latitude:$latitude longitude:$longitude");
-      }
+      debugPrint("latitude:$latitude longitude:$longitude");
       // Get the list of place mark for the coordinates
       List<Placemark> placeMark =
           await placemarkFromCoordinates(latitude, longitude);
-      if (kDebugMode) {
-        print("placeMark:${placeMark.length}");
-      }
+      debugPrint("placeMark:${placeMark.length}");
       // Get the first place mark
       Placemark place = placeMark.first;
-      if (kDebugMode) {
-        print(
-            "address : ${place.street}, ${place.locality}, ${place.administrativeArea}, ${place.country}, ${place.isoCountryCode}");
-      }
+      debugPrint(
+          "address : ${place.street}, ${place.locality}, ${place.administrativeArea}, ${place.country}, ${place.isoCountryCode}");
       // Format the address
       return '${place.street}, ${place.locality}, ${place.administrativeArea}, ${place.country}, ${place.isoCountryCode}';
     } catch (e) {
-      if (kDebugMode) {
-        print('Error occurred while get address: $e');
-      }
+      debugPrint('Error occurred while get address: $e');
+      debugPrintStack();
       return '';
     }
   }
@@ -113,20 +105,14 @@ class LocationService {
         Placemark place = placemarks[0];
         String address =
             '${place.street}, ${place.locality}, ${place.administrativeArea}, ${place.country}, ${place.postalCode}';
-        if (kDebugMode) {
-          print("address : $address");
-        }
+        debugPrint("address : $address");
         return address;
       } else {
-        if (kDebugMode) {
-          print("No address found for the given coordinates.");
-        }
+        debugPrint("No address found for the given coordinates.");
         return '';
       }
     } catch (e) {
-      if (kDebugMode) {
-        print("Error occurred while getting address: $e");
-      }
+      debugPrint("Error occurred while getting address: $e");
       return '';
     }
   }
@@ -153,27 +139,17 @@ class LocationService {
         String msgType = responseData.success.msgType;
         String msgText = responseData.success.msgText;
         if (msgType.isNotEmpty && msgType == 's') {
-          if (kDebugMode) {
-            print(msgText);
-          }
+          debugPrint(msgText);
         } else if (msgType.isNotEmpty && msgType == 'e') {
-          if (kDebugMode) {
-            print('Failed to send location : $msgText');
-          }
+          debugPrint('Failed to send location : $msgText');
         } else {
-          if (kDebugMode) {
-            print('Failed to send location $msgType $msgText');
-          }
+          debugPrint('Failed to send location $msgType $msgText');
         }
       } else {
-        if (kDebugMode) {
-          print('Failed to send location ${responseData.status}');
-        }
+        debugPrint('Failed to send location ${responseData.status}');
       }
     } catch (e) {
-      if (kDebugMode) {
-        print('Error fetching or sending location: $e');
-      }
+      debugPrint('Error fetching or sending location: $e');
     }
   }
 }

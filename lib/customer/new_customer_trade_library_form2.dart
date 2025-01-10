@@ -103,8 +103,10 @@ class NewCustomerTradeLibraryForm2State
   late String token;
 
   bool _isLoading = false;
+  bool _isSubmitted = false;
 
-  String? mandatorySetting;
+  String? mandatorySettingEmailMobile;
+  String? mandatoryCustomerContactFirstLastName;
 
   @override
   void initState() {
@@ -350,12 +352,7 @@ class NewCustomerTradeLibraryForm2State
                 const SizedBox(height: 20),
                 GestureDetector(
                   onTap: () {
-                    if (_formKey.currentState!.validate()) {
-                      if (kDebugMode) {
-                        print("Add ${widget.type} data API");
-                      }
-                      _submitForm();
-                    }
+                    _submitForm();
                   },
                   child: Container(
                     width: double.infinity,
@@ -388,10 +385,13 @@ class NewCustomerTradeLibraryForm2State
   }
 
   void _submitForm() async {
+    _isSubmitted = true;
     FocusScope.of(context).unfocus();
 
     if (!await _checkInternetConnection()) return;
-
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
     setState(() {
       _isLoading = true;
     });
@@ -512,7 +512,8 @@ class NewCustomerTradeLibraryForm2State
           fieldKey.currentState?.validate();
         },
         validator: (newValue) {
-          if (newValue == null || newValue.isEmpty) {
+          if ((newValue == null || newValue.isEmpty) &&
+              label == 'Contact Designation') {
             return 'Please select $label';
           }
           return null;
@@ -581,29 +582,36 @@ class NewCustomerTradeLibraryForm2State
             textAlign: TextAlign.start,
             maxLines: maxLines,
             validator: (value) {
-              if (label == 'Phone Number') {
-                return validatePhoneNumber(label, value, mandatorySetting);
-              } else if (label == 'Email Id') {
-                return validateEmail(label, value, mandatorySetting,
-                    _phoneNumberController.text.isEmpty);
-              } else if ((value == null || value.isEmpty) &&
-                  (_contactAddressController.text.isNotEmpty &&
-                      label == 'Pin Code')) {
-                return 'Please enter $label';
-              } else if ((value == null || value.isEmpty) &&
-                  (_contactAddressController.text.isNotEmpty &&
-                      label == 'Pin Code')) {
-                return 'Please enter $label';
-              }
-              /*else if (value == null || value.isEmpty) {
+              if (_isSubmitted) {
+                if ((value == null || value.isEmpty) &&
+                    (label == 'Contact First Name' ||
+                        (label == 'Contact Last Name'))) {
+                  return validateName(
+                      label, value, mandatoryCustomerContactFirstLastName);
+                } else if (label == 'Mobile') {
+                  return validatePhoneNumber(
+                      label, value, mandatorySettingEmailMobile);
+                } else if (label == 'Email') {
+                  return validateEmail(
+                      label,
+                      value,
+                      mandatorySettingEmailMobile,
+                      _phoneNumberController.text.isEmpty);
+                } else if ((value == null || value.isEmpty) &&
+                    (_contactAddressController.text.isNotEmpty &&
+                        label == 'Pin Code')) {
+                  return 'Please enter $label';
+                }
+                /*else if (value == null || value.isEmpty) {
                 return 'Please enter $label';
               }*/
+              }
               return null;
             },
             onChanged: (value) {
-              if (value.isNotEmpty) {
+              setState(() {
                 fieldKey.currentState?.validate();
-              }
+              });
             },
           ),
         ),
@@ -668,7 +676,11 @@ class NewCustomerTradeLibraryForm2State
   }
 
   Future<void> _initializeMandatorySettings() async {
-    mandatorySetting = await dbHelper.getTeacherMobileEmailMandatory();
+    mandatorySettingEmailMobile =
+        await dbHelper.getTeacherMobileEmailMandatory();
+
+    mandatoryCustomerContactFirstLastName =
+        await dbHelper.getCustomerContactFirstLastNameMandatory();
     setState(() {});
   }
 }
