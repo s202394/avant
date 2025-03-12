@@ -1,4 +1,7 @@
 import 'dart:async';
+import 'dart:developer';
+import 'dart:io';
+import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:avant/api/api_service.dart';
 import 'package:avant/approval/approval_list_form.dart';
@@ -27,6 +30,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:workmanager/workmanager.dart';
 
 import 'customer/customer_list.dart';
+import 'model/check_in_check_out_response.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -61,6 +65,9 @@ class HomePageState extends State<HomePage> with WidgetsBindingObserver {
   bool _isPermissionRequesting = false;
 
   Timer? _timer;
+
+  Position? currentLocation;
+  StreamSubscription? subscription;
 
   @override
   void initState() {
@@ -261,11 +268,9 @@ class HomePageState extends State<HomePage> with WidgetsBindingObserver {
     userId = await getUserId() ?? 0;
     isPunchedIn = prefs.getBool('isPunchedIn') ?? false;
     if (isPunchedIn) {
-      if (kDebugMode) {
-        print("Fetching location...");
-        LocationService()
-            .sendLocationToServer(executiveId ?? 0, userId ?? 0, token ?? '');
-      }
+      print("Fetching location...");
+      LocationService()
+          .sendLocationToServer(executiveId ?? 0, userId ?? 0, token ?? '');
     }
   }
 
@@ -393,6 +398,8 @@ class HomePageState extends State<HomePage> with WidgetsBindingObserver {
       WidgetsBinding.instance.addObserver(this);
       startForegroundTask();
     }*/
+
+    checkTracking();
   }
 
   // Update Punch State in SharedPreferences
@@ -869,9 +876,94 @@ class HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
   void checkTracking() {
     if (isPunchedIn) {
-      _startTracking();
+      // _startTracking();
+      startListeningLocation();
     } else {
-      _stopTracking();
+      // _stopTracking();
+      subscription?.cancel();
+    }
+  }
+
+  locationPermission({VoidCallback? isSuccess}) async {
+    bool serviceEnabled;
+    LocationPermission permission;
+
+    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      await Geolocator.openLocationSettings();
+    }
+
+    permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        await Geolocator.openAppSettings();
+      }
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      await Geolocator.openAppSettings();
+      return Future.error(
+          'Location permission is permanently denied, we annot request permissions.');
+    }
+    {
+      isSuccess?.call();
+    }
+  }
+
+  startListeningLocation() {
+    locationPermission(isSuccess: () async {
+      subscription = Geolocator.getPositionStream(
+        locationSettings: Platform.isAndroid
+            ? AndroidSettings(
+                foregroundNotificationConfig:
+                    const ForegroundNotificationConfig(
+                        notificationTitle: "Location fetching in background.",
+                        notificationText:
+                            "Your current location is listed in background.",
+                        enableWakeLock: true))
+            : AppleSettings(
+                accuracy: LocationAccuracy.high,
+                activityType: ActivityType.fitness,
+                pauseLocationUpdatesAutomatically: false,
+                showBackgroundLocationIndicator: false),
+      ).listen((event) async {
+        currentLocation = event;
+        log(currentLocation.toString(), name: 'currentLocation');
+
+        sendLocationToServer();
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    subscription?.cancel();
+    super.dispose();
+  }
+
+  Future<void> sendLocationToServer() async {
+    log('sendLocationToServer called');
+    CheckInCheckOutService service = CheckInCheckOutService();
+
+    String executiveLocationXml =
+        "<DocumentElement><ExecutiveLocation><DateTime>${getCurrentDateTimeWithSecond()}</DateTime><Lat>${currentLocation?.latitude ?? 0.0}</Lat><Long>${currentLocation?.longitude ?? 0.0}</Long></ExecutiveLocation></DocumentElement>";
+
+    CheckInCheckOutResponse responseData = await service.fetchExecutiveLocation(
+        executiveId ?? 0, userId ?? 0, executiveLocationXml, token ?? '');
+
+    if (responseData.status == 'Success') {
+      String msgType = responseData.success.msgType;
+      String msgText = responseData.success.msgText;
+      if (msgType.isNotEmpty && msgType == 's') {
+        log(msgText);
+      } else if (msgType.isNotEmpty && msgType == 'e') {
+        log('Failed to send location : $msgText');
+      } else {
+        log('Failed to send location $msgType $msgText');
+      }
+    } else {
+      log('Failed to send location ${responseData.status}');
     }
   }
 }

@@ -55,6 +55,8 @@
     <string>We need your location to show your current position.</string>
     <key>NSLocationAlwaysUsageDescription</key>
     <string>We need your location to show your current position.</string>
+    <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+    <string>We need your location to show your current position.</string>
     <key>NSAllowsArbitraryLoads</key>
     <true/>
     <key>UIBackgroundModes</key>
